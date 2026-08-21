@@ -1,0 +1,760 @@
+{
+  "schemaVersion": 2,
+  "run": {
+    "ids": [],
+    "source": "pending",
+    "github": {
+      "cpythonVersion": "3.15.0rc1"
+    },
+    "complete": false,
+    "targetPackages": 20,
+    "expectedPlatforms": [
+      "Linux",
+      "macOS",
+      "Windows"
+    ],
+    "expectedObservations": 60,
+    "completedObservations": 0
+  },
+  "dataset": {
+    "source": "https://github.com/hugovk/top-pypi-packages/blob/main/top-pypi-packages-30-days.json",
+    "updated": "2026-08-01 06:34:08",
+    "window": "30 days"
+  },
+  "methodology": {
+    "name": "Paired isolated upstream test-suite run",
+    "summary": "Each package is tested in separate clean checkouts and virtual environments with identical commands. Only PYTHON_JIT changes.",
+    "interpretation": "A JIT-only failure is a regression lead for human triage, not automatically a confirmed CPython bug."
+  },
+  "pythonByPlatform": {},
+  "summary": {
+    "packages": {
+      "not-tested": 20
+    },
+    "observations": {
+      "not-tested": 60
+    }
+  },
+  "packages": [
+    {
+      "rank": 1,
+      "name": "boto3",
+      "downloads": 3717556977,
+      "repository": "https://github.com/boto/boto3",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 2,
+      "name": "packaging",
+      "downloads": 2198449167,
+      "repository": "https://github.com/pypa/packaging",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 3,
+      "name": "typing-extensions",
+      "downloads": 1904238788,
+      "repository": "https://github.com/python/typing_extensions",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 4,
+      "name": "certifi",
+      "downloads": 1861401883,
+      "repository": "https://github.com/certifi/python-certifi",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 5,
+      "name": "urllib3",
+      "downloads": 1843477278,
+      "repository": "https://github.com/urllib3/urllib3",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 6,
+      "name": "idna",
+      "downloads": 1760742555,
+      "repository": "https://github.com/kjd/idna",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 7,
+      "name": "requests",
+      "downloads": 1756048205,
+      "repository": "https://github.com/psf/requests",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 8,
+      "name": "charset-normalizer",
+      "downloads": 1674555757,
+      "repository": "https://github.com/jawah/charset_normalizer",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 9,
+      "name": "setuptools",
+      "downloads": 1563563625,
+      "repository": "https://github.com/pypa/setuptools",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 10,
+      "name": "botocore",
+      "downloads": 1497531138,
+      "repository": "https://github.com/boto/botocore",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 11,
+      "name": "cryptography",
+      "downloads": 1479413072,
+      "repository": "https://github.com/pyca/cryptography",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 12,
+      "name": "cffi",
+      "downloads": 1303772314,
+      "repository": "https://github.com/python-cffi/cffi",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 13,
+      "name": "pluggy",
+      "downloads": 1280274438,
+      "repository": "https://github.com/pytest-dev/pluggy",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 14,
+      "name": "pygments",
+      "downloads": 1270057742,
+      "repository": "https://github.com/pygments/pygments",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 15,
+      "name": "pyyaml",
+      "downloads": 1194612572,
+      "repository": "https://github.com/yaml/pyyaml",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 16,
+      "name": "python-dateutil",
+      "downloads": 1188011910,
+      "repository": "https://github.com/dateutil/dateutil",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 17,
+      "name": "six",
+      "downloads": 1177269151,
+      "repository": "https://github.com/benjaminp/six",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 18,
+      "name": "aiobotocore",
+      "downloads": 1164834706,
+      "repository": "https://github.com/aio-libs/aiobotocore",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 19,
+      "name": "numpy",
+      "downloads": 1143792865,
+      "repository": "https://github.com/numpy/numpy",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    },
+    {
+      "rank": 20,
+      "name": "pycparser",
+      "downloads": 1107200067,
+      "repository": "https://github.com/eliben/pycparser",
+      "overallStatus": "not-tested",
+      "platforms": {
+        "Linux": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "macOS": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        },
+        "Windows": {
+          "status": "not-tested",
+          "label": "Not completed",
+          "explanation": "Awaiting the first CPython 3.15 survey.",
+          "revision": null,
+          "command": null,
+          "baseline": null,
+          "jit": null
+        }
+      }
+    }
+  ]
+}

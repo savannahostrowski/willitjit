@@ -1,0 +1,353 @@
+[dataset]
+source = "https://github.com/hugovk/top-pypi-packages/blob/main/top-pypi-packages-30-days.json"
+last_update = "2026-08-01 06:34:08"
+window = "30 days"
+
+[[packages]]
+rank = 1
+name = "boto3"
+downloads = 3717556977
+repository = "https://github.com/boto/boto3.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "git+https://github.com/boto/botocore.git@develop", "git+https://github.com/boto/jmespath.git@develop", "git+https://github.com/boto/s3transfer.git@develop"],
+  ["-m", "pip", "install", "-r", "requirements-dev-lock.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "unit", "functional"]
+test_cwd = "tests"
+timeout_seconds = 1800
+note = "Installs the three develop dependencies non-editably because uv rejects editable Git URLs in requirements.txt; integration tests are excluded."
+isolate_home = true
+
+[[packages]]
+rank = 2
+name = "packaging"
+downloads = 2198449167
+repository = "https://github.com/pypa/packaging.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "test"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 3
+name = "typing-extensions"
+downloads = 1904238788
+repository = "https://github.com/python/typing_extensions.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", "."]]
+test = ["-m", "unittest", "discover"]
+test_cwd = "src"
+timeout_seconds = 600
+note = "Matches tox's changedir=src and python -m unittest discover."
+
+[[packages]]
+rank = 4
+name = "certifi"
+downloads = 1861401883
+repository = "https://github.com/certifi/python-certifi.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest"],
+]
+test = ["-W", "error", "-m", "pytest"]
+timeout_seconds = 300
+note = "Matches upstream's warning-as-error pytest invocation."
+
+[[packages]]
+rank = 5
+name = "urllib3"
+downloads = 1843477278
+repository = "https://github.com/urllib3/urllib3.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", ".[socks,brotli,zstd,h2]"],
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "cryptography>=44.0.2", "idna>=3.10", "pyopenssl>=25.0.0", "trustme>=1.2.1"],
+]
+test = ["-m", "pytest", "test"]
+timeout_seconds = 1800
+note = "Uses the upstream dev dependency groups but omits the optional memray lane."
+
+[[packages]]
+rank = 6
+name = "idna"
+downloads = 1760742555
+repository = "https://github.com/kjd/idna.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest>=8.3.2", "hypothesis>=6.141.1"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 7
+name = "requests"
+downloads = 1756048205
+repository = "https://github.com/psf/requests.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", ".[socks]"],
+  ["-m", "pip", "install", "--group", "test"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 8
+name = "charset-normalizer"
+downloads = 1674555757
+repository = "https://github.com/jawah/charset_normalizer.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "dev"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+environment = { CHARSET_NORMALIZER_USE_CYTHON = "0" }
+note = "Matches upstream's primary pure-Python test lane so the JIT exercises Python code."
+
+[[packages]]
+rank = 9
+name = "setuptools"
+downloads = 1563563625
+repository = "https://github.com/pypa/setuptools.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[test,check,cover,enabler,type,core]"]]
+test = ["-m", "pytest"]
+timeout_seconds = 2400
+note = "The full default suite is retained; integration is a separate tox environment."
+environment = { CFLAGS = "-Wno-error=deprecated-declarations" }
+
+[[packages]]
+rank = 10
+name = "botocore"
+downloads = 1497531138
+repository = "https://github.com/boto/botocore.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements-dev-lock.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "unit", "functional"]
+test_cwd = "tests"
+timeout_seconds = 2400
+note = "Matches the repository CI dependencies and unit/functional selection; integration tests are excluded."
+isolate_home = true
+
+[[packages]]
+rank = 11
+name = "cryptography"
+downloads = 1479413072
+repository = "https://github.com/pyca/cryptography.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "./vectors"],
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "test"],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Uses the upstream test dependency group; pytest-xdist is disabled so crashes remain attributable."
+
+[[packages]]
+rank = 12
+name = "cffi"
+downloads = 1303772314
+repository = "https://github.com/python-cffi/cffi.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest", "setuptools", "meson-python", "ninja"],
+]
+test = ["-m", "pytest", "src/c", "testing"]
+timeout_seconds = 1200
+note = "Matches upstream wheel-test dependencies and exposes the selected Python runtime to embedding tests."
+embedded_python = true
+
+[[packages]]
+rank = 13
+name = "pluggy"
+downloads = 1280274438
+repository = "https://github.com/pytest-dev/pluggy.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "testing"],
+]
+test = ["-m", "pytest", "testing"]
+timeout_seconds = 600
+note = "The shallow checkout may produce a synthetic setuptools-scm development version."
+
+[[packages]]
+rank = 14
+name = "pygments"
+downloads = 1270057742
+repository = "https://github.com/pygments/pygments.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest~=8.2", "pytest-randomly", "pytest-cov", "wcag-contrast-ratio"],
+]
+test = ["-m", "pytest"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 15
+name = "pyyaml"
+downloads = 1194612572
+repository = "https://github.com/yaml/pyyaml.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest"],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 900
+note = "The optional libyaml extension is used when platform build dependencies are available."
+
+[[packages]]
+rank = 16
+name = "python-dateutil"
+downloads = 1188011910
+repository = "https://github.com/dateutil/dateutil.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "-r", "requirements-dev.txt"],
+]
+test = ["-m", "pytest", "tests", "docs"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 17
+name = "six"
+downloads = 1177269151
+repository = "https://github.com/benjaminp/six.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest"],
+]
+test = ["-m", "pytest", "-p", "no:xdist"]
+timeout_seconds = 300
+
+[[packages]]
+rank = 18
+name = "aiobotocore"
+downloads = 1164834706
+repository = "https://github.com/aio-libs/aiobotocore.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "test"],
+]
+test = ["-m", "pytest", "-m", "not localonly", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Local-service tests are excluded; dependency support for the development CPython may baseline-block this package."
+isolate_home = true
+
+[[packages]]
+rank = 19
+name = "numpy"
+downloads = 1143792865
+repository = "https://github.com/numpy/numpy.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "meson-python", "meson", "cython", "ninja"],
+  ["-m", "pip", "install", "-e", ".", "--no-build-isolation"],
+  ["-m", "pip", "install", "-r", "requirements/test_requirements.txt"],
+]
+test = ["-m", "pytest", "--pyargs", "numpy", "-p", "no:xdist", "--durations=10"]
+timeout_seconds = 2400
+note = "A heavyweight native-extension lane; recursive submodules match NumPy's upstream CI checkout."
+recursive_submodules = true
+
+[[packages]]
+rank = 20
+name = "pycparser"
+downloads = 1107200067
+repository = "https://github.com/eliben/pycparser.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "."]]
+test = ["-m", "unittest", "discover", "-s", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 21
+name = "pydantic"
+downloads = 1105778495
+repository = "https://github.com/pydantic/pydantic.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "./pydantic-core"],
+  ["-m", "pip", "install", "-e", ".[email,timezone]"],
+  ["-m", "pip", "install", "--group", "dev", "--group", "testing-extra"],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist", "--durations=10"]
+timeout_seconds = 1800
+note = "Builds the bundled pydantic-core and installs the upstream test groups and extras."
+
+[[packages]]
+rank = 22
+name = "pytest"
+downloads = 1091772181
+repository = "https://github.com/pytest-dev/pytest.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "dev"],
+]
+test = ["-m", "pytest", "testing"]
+timeout_seconds = 2400
+note = "Large self-test suite; pytest-xdist is not enabled."
+
+[[packages]]
+rank = 23
+name = "click"
+downloads = 1089240135
+repository = "https://github.com/pallets/click.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "tests"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 24
+name = "iniconfig"
+downloads = 1033526081
+repository = "https://github.com/pytest-dev/iniconfig.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "dev"],
+]
+test = ["-m", "pytest", "testing"]
+timeout_seconds = 600
+note = "The shallow checkout may produce a synthetic setuptools-scm development version."
+
+[[packages]]
+rank = 25
+name = "anyio"
+downloads = 1032777959
+repository = "https://github.com/agronholm/anyio.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", ".[trio]"],
+  ["-m", "pip", "install", "--group", "test"],
+]
+test = ["-m", "pytest"]
+timeout_seconds = 1200
+note = "Uses the same test dependency group and plugin isolation as upstream CI."
+environment = { PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1" }

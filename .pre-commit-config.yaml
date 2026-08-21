@@ -1,0 +1,33 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.0
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: '^(src|tests|api)/.*\.py$'
+      - id: ruff-format
+        files: '^(src|tests|api)/.*\.py$'
+
+  - repo: local
+    hooks:
+      - id: core-tests
+        name: core tests
+        entry: uv run --frozen python -m unittest discover -s tests -v
+        language: system
+        pass_filenames: false
+        files: '^(src|tests)/.*\.py$'
+        stages: [pre-commit]
+      - id: api-tests
+        name: API tests
+        entry: bash -c 'cd api && uv run --frozen --group dev pytest -q'
+        language: system
+        pass_filenames: false
+        files: '^api/.*\.(py|toml)$'
+        stages: [pre-commit]
+      - id: frontend-typecheck
+        name: frontend typecheck
+        entry: bash -c 'cd frontend && npm run typecheck'
+        language: system
+        pass_filenames: false
+        files: '^frontend/(src/.*\.(ts|tsx)|package\.json)$'
+        stages: [pre-commit]
