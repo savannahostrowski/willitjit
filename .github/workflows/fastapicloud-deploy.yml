@@ -68,7 +68,7 @@ jobs:
 
       - name: Deploy to FastAPI Cloud
         working-directory: api
-        run: uv run --frozen --no-dev --group deploy fastapi deploy
+        run: uv run --frozen --no-dev fastapi deploy
         env:
           FASTAPI_CLOUD_TOKEN: ${{ secrets.FASTAPI_CLOUD_TOKEN }}
           FASTAPI_CLOUD_APP_ID: ${{ secrets.FASTAPI_CLOUD_APP_ID }}
