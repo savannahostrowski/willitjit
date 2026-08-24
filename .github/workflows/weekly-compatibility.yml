@@ -221,6 +221,7 @@ jobs:
   publish:
     name: Publish public data feed
     needs: merge
+    if: always() && needs.merge.result == 'success'
     permissions:
       pages: write # Publish only the prepared JSON Pages artifact.
       id-token: write # Authenticate the Pages deployment.

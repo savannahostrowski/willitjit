@@ -11,9 +11,12 @@ def build_history(
 ) -> dict[str, Any]:
     series = _python_series(snapshot)
     points = []
-    if previous and previous.get("schemaVersion") == 1:
-        if previous.get("pythonSeries") == series:
-            points = [_point(value) for value in previous.get("points", [])]
+    if (
+        previous
+        and previous.get("schemaVersion") == 1
+        and previous.get("pythonSeries") == series
+    ):
+        points = [_point(value) for value in previous.get("points", [])]
 
     run = snapshot["run"]
     if run["complete"]:
