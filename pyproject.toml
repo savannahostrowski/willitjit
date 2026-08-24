@@ -8,8 +8,8 @@ version = "0.1.0"
 description = "Run upstream package test suites with the CPython JIT off and on"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
-dependencies = []
+license = "MIT"
+license-files = ["LICENSE"]
 
 [dependency-groups]
 dev = [
@@ -17,10 +17,4 @@ dev = [
 ]
 
 [project.scripts]
-willitjit = "jit_package_compat.cli:main"
-
-[tool.hatch.build.targets.wheel]
-packages = ["src/jit_package_compat"]
-
-[tool.hatch.build.targets.wheel.force-include]
-"src/jit_package_compat/data/top25.toml" = "jit_package_compat/data/top25.toml"
+willitjit = "willitjit.cli:main"

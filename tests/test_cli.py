@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import unittest
 
-from jit_package_compat.cli import _run_exit_code, _select
-from jit_package_compat.models import Package
+from willitjit.cli import _run_exit_code, _select
+from willitjit.models import Package
 
 
 def packages(count: int) -> list[Package]:

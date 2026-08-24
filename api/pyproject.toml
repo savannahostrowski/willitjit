@@ -4,12 +4,14 @@ version = "0.1.0"
 description = "FastAPI host for the Will It JIT? compatibility dashboard"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi-cloud-cli>=0.16.1",
-    "fastapi[standard]>=0.138.1",
+    "fastapi>=0.138.1",
     "fastar>=0.12.0",
 ]
 
 [dependency-groups]
+deploy = [
+    "fastapi-cli[standard]>=0.0.32",
+]
 dev = [
     "httpx>=0.28.1",
     "pytest>=9.0.3",

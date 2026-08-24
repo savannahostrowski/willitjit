@@ -9,8 +9,8 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from jit_package_compat.models import CommandResult, Package
-from jit_package_compat.runner import (
+from willitjit.models import CommandResult, Package
+from willitjit.runner import (
     SurveyRunner,
     classify_jit,
     condition_clone_command,
@@ -35,7 +35,7 @@ def python_probe(*, jit_enabled: bool, ssl_available: bool = True) -> dict:
 
 
 class PythonValidationTests(unittest.TestCase):
-    @patch("jit_package_compat.runner.probe_python")
+    @patch("willitjit.runner.probe_python")
     def test_requires_ssl_in_both_jit_modes(self, probe_mock) -> None:
         probe_mock.side_effect = [
             python_probe(jit_enabled=False, ssl_available=False),
@@ -59,7 +59,7 @@ class ClassificationTests(unittest.TestCase):
 
 
 class SetupCommandTests(unittest.TestCase):
-    @patch("jit_package_compat.runner.shutil.which", return_value="/opt/bin/uv")
+    @patch("willitjit.runner.shutil.which", return_value="/opt/bin/uv")
     def test_uv_installs_into_target_interpreter(self, _which) -> None:
         command = installation_command(
             Path("/tmp/venv/bin/python"),
@@ -78,7 +78,7 @@ class SetupCommandTests(unittest.TestCase):
             ],
         )
 
-    @patch("jit_package_compat.runner.shutil.which", return_value=None)
+    @patch("willitjit.runner.shutil.which", return_value=None)
     def test_falls_back_to_interpreter_pip(self, _which) -> None:
         command = installation_command(
             Path("/tmp/venv/bin/python"),
@@ -226,8 +226,8 @@ class ConditionEnvironmentTests(unittest.TestCase):
 
 
 class FailEarlyTests(unittest.TestCase):
-    @patch("jit_package_compat.runner.subprocess.run")
-    @patch("jit_package_compat.runner.run_logged")
+    @patch("willitjit.runner.subprocess.run")
+    @patch("willitjit.runner.run_logged")
     def test_baseline_failure_skips_jit_condition(
         self, run_logged_mock, subprocess_mock
     ) -> None:

@@ -12,7 +12,7 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
     registry = (
         path.read_text()
         if path
-        else files("jit_package_compat").joinpath("data/top25.toml").read_text()
+        else files("willitjit").joinpath("data/top25.toml").read_text()
     )
     raw = tomllib.loads(registry)
     packages = [

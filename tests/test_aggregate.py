@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from jit_package_compat.aggregate import build_compatibility_results, find_run_files
-from jit_package_compat.models import Package
+from willitjit.aggregate import build_compatibility_results, find_run_files
+from willitjit.models import Package
 
 
 def package() -> Package:

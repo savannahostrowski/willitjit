@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from jit_package_compat.registry import load_registry
+from willitjit.registry import load_registry
 
 
 class RegistryTests(unittest.TestCase):

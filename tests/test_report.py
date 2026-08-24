@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from jit_package_compat.models import CommandResult, PackageResult
-from jit_package_compat.report import write_reports
+from willitjit.models import CommandResult, PackageResult
+from willitjit.report import write_reports
 
 
 class ReportTests(unittest.TestCase):
