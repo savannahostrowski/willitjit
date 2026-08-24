@@ -85,7 +85,7 @@ export function AboutPage() {
             <a href="https://github.com/hugovk/top-pypi-packages" target="_blank" rel="noreferrer">
               Top PyPI Packages list
             </a>.
-            There are 25 packages in the registry. The weekly survey currently runs the top 20.
+            There are 50 packages in the registry, and the weekly survey runs all 50.
           </p>
         </section>
         <section>

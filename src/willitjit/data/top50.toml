@@ -351,3 +351,338 @@ test = ["-m", "pytest"]
 timeout_seconds = 1200
 note = "Uses the same test dependency group and plugin isolation as upstream CI."
 environment = { PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1" }
+
+[[packages]]
+rank = 26
+name = "pydantic-core"
+downloads = 1007754482
+repository = "https://github.com/pydantic/pydantic-core.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "testing"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Uses the upstream testing dependency group and disables parallel execution so crashes remain attributable."
+
+[[packages]]
+rank = 27
+name = "grpcio-status"
+downloads = 951128296
+repository = "https://github.com/grpc/grpc.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "grpcio", "protobuf", "googleapis-common-protos"],
+  ["-m", "pip", "install", "--no-deps", "-e", "src/python/grpcio_status"],
+]
+test = ["-m", "unittest", "tests.status._grpc_status_test", "tests_aio.status.grpc_status_test"]
+test_cwd = "src/python/grpcio_tests"
+timeout_seconds = 900
+note = "Runs the upstream synchronous and asyncio grpcio-status suites from the gRPC monorepo."
+
+[[packages]]
+rank = 28
+name = "attrs"
+downloads = 924894579
+repository = "https://github.com/python-attrs/attrs.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 29
+name = "s3transfer"
+downloads = 924268948
+repository = "https://github.com/boto/s3transfer.git"
+ref = "HEAD"
+install = [["scripts/ci/install"]]
+test = ["scripts/ci/run-tests"]
+timeout_seconds = 1800
+note = "Uses the repository's CI install and test scripts, including its normal and serial-executor unit and functional runs."
+isolate_home = true
+
+[[packages]]
+rank = 30
+name = "h11"
+downloads = 894878618
+repository = "https://github.com/python-hyper/h11.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "test-requirements.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "h11"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 31
+name = "fsspec"
+downloads = 878523962
+repository = "https://github.com/fsspec/filesystem_spec.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[test]"]]
+test = ["-m", "pytest", "-v"]
+timeout_seconds = 1800
+note = "Uses the cross-platform upstream test extra rather than the optional full dependency matrix."
+
+[[packages]]
+rank = 32
+name = "annotated-types"
+downloads = 871281123
+repository = "https://github.com/annotated-types/annotated-types.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/testing.in"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 33
+name = "protobuf"
+downloads = 868343626
+repository = "https://github.com/protocolbuffers/protobuf.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-r", "python/requirements.txt"]]
+test = [
+  "-m",
+  "unittest",
+  "google.protobuf.internal.runtime_version_test",
+  "google.protobuf.internal.text_encoding_test",
+  "google.protobuf.internal.wire_format_test",
+]
+test_cwd = "python"
+timeout_seconds = 600
+environment = { PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION = "python" }
+note = "Runs upstream pure-Python core tests that do not require Bazel-generated fixtures from the protobuf monorepo."
+
+[[packages]]
+rank = 34
+name = "markupsafe"
+downloads = 797118023
+repository = "https://github.com/pallets/markupsafe.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 35
+name = "httpx"
+downloads = 796983818
+repository = "https://github.com/encode/httpx.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-r", "requirements.txt"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1800
+
+[[packages]]
+rank = 36
+name = "httpcore"
+downloads = 783609098
+repository = "https://github.com/encode/httpcore.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-r", "requirements.txt"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 37
+name = "typing-inspection"
+downloads = 782958676
+repository = "https://github.com/pydantic/typing-inspection.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 38
+name = "pandas"
+downloads = 769110377
+repository = "https://github.com/pandas-dev/pandas.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", ".[test]"],
+]
+test = ["-m", "pytest", "-m", "not slow and not network and not clipboard and not single_cpu", "pandas", "-p", "no:xdist"]
+timeout_seconds = 3600
+note = "Runs the upstream core suite while excluding its slow, network, clipboard, and single-CPU lanes."
+
+[[packages]]
+rank = 39
+name = "platformdirs"
+downloads = 763006168
+repository = "https://github.com/tox-dev/platformdirs.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 40
+name = "pathspec"
+downloads = 742847330
+repository = "https://github.com/cpburnz/python-pathspec.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", "."]]
+test = ["-m", "unittest", "discover", "-t", ".", "-s", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 41
+name = "python-dotenv"
+downloads = 740099887
+repository = "https://github.com/theskumar/python-dotenv.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements.txt"],
+  ["-m", "pip", "install", "-e", ".[cli]"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 42
+name = "jinja2"
+downloads = 718583427
+repository = "https://github.com/pallets/jinja.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 43
+name = "filelock"
+downloads = 717124668
+repository = "https://github.com/tox-dev/py-filelock.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 44
+name = "pyjwt"
+downloads = 715697201
+repository = "https://github.com/jpadilla/pyjwt.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", ".[crypto]"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+note = "Runs the upstream suite with the optional cryptography support enabled."
+
+[[packages]]
+rank = 45
+name = "s3fs"
+downloads = 704379780
+repository = "https://github.com/fsspec/s3fs.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "git+https://github.com/fsspec/filesystem_spec"],
+  ["-m", "pip", "install", "--upgrade", "--force-reinstall", "aiobotocore<4.0.0"],
+  ["-m", "pip", "install", "-r", "test_requirements.txt"],
+  ["-m", "pip", "install", "--no-deps", "-e", "."],
+]
+test = ["-m", "pytest", "-vv", "-s", "s3fs"]
+timeout_seconds = 1800
+environment = { AWS_ACCESS_KEY_ID = "foobar_key", AWS_SECRET_ACCESS_KEY = "foobar_secret", AWS_DEFAULT_REGION = "us-east-1" }
+note = "Matches upstream's Python 3.14 dependency and test lane with dummy AWS credentials."
+isolate_home = true
+
+[[packages]]
+rank = 46
+name = "litellm"
+downloads = 682782233
+repository = "https://github.com/BerriAI/litellm.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "dev"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests/test_litellm/litellm_core_utils", "-p", "no:xdist"]
+timeout_seconds = 2400
+note = "Runs the upstream core-utilities unit shard and excludes proxy, end-to-end, and integration lanes."
+isolate_home = true
+
+[[packages]]
+rank = 47
+name = "jmespath"
+downloads = 652344301
+repository = "https://github.com/jmespath/jmespath.py.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600
+
+[[packages]]
+rank = 48
+name = "tqdm"
+downloads = 648606617
+repository = "https://github.com/tqdm/tqdm.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", ".meta/requirements-test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "-k", "not perf", "tests"]
+timeout_seconds = 1200
+note = "Runs the upstream test suite without its separate performance tests."
+
+[[packages]]
+rank = 49
+name = "aiohttp"
+downloads = 643629740
+repository = "https://github.com/aio-libs/aiohttp.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test.in", "-c", "requirements/test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "-m", "not dev_mode and not autobahn", "-p", "no:xdist"]
+timeout_seconds = 2400
+environment = { AIOHTTP_NO_EXTENSIONS = "1" }
+note = "Uses the upstream pure-Python lane and excludes its separate dev-mode and Autobahn lanes."
+
+[[packages]]
+rank = 50
+name = "yarl"
+downloads = 621403276
+repository = "https://github.com/aio-libs/yarl.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1200
+environment = { YARL_NO_EXTENSIONS = "1" }
+note = "Uses the upstream pure-Python lane so the JIT exercises Python code."

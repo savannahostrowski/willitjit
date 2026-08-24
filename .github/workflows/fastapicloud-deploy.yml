@@ -55,8 +55,21 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ github.event.workflow_run.id || inputs.source_run_id }}
 
+      - name: Download latest compatibility results
+        if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.source_run_id == '')
+        uses: dawidd6/action-download-artifact@57aa996fc1713cc1579039614f4645a7f4841fd4 # v23
+        with:
+          workflow: weekly-compatibility.yml
+          workflow_search: true
+          workflow_conclusion: completed
+          branch: main
+          name: compatibility-results
+          path: survey-results
+          check_artifacts: true
+          search_artifacts: true
+          github_token: ${{ github.token }}
+
       - name: Use new compatibility results
-        if: github.event_name == 'workflow_run' || inputs.source_run_id != ''
         run: cp survey-results/compatibility-results.json frontend/public/data/results.json
 
       - name: Build frontend

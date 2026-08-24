@@ -27,13 +27,13 @@ class SelectionTests(unittest.TestCase):
         self.assertEqual([item.rank for item in selected], [2, 4])
 
     def test_all_shards_cover_each_package_once(self) -> None:
-        registry = packages(25)
+        registry = packages(50)
         selected = [
             item.rank
-            for shard in range(5)
-            for item in _select(registry, [], 25, 5, shard)
+            for shard in range(10)
+            for item in _select(registry, [], 50, 10, shard)
         ]
-        self.assertEqual(sorted(selected), list(range(1, 26)))
+        self.assertEqual(sorted(selected), list(range(1, 51)))
 
     def test_rejects_invalid_shard(self) -> None:
         with self.assertRaisesRegex(ValueError, "shard index"):

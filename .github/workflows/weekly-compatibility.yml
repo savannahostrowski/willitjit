@@ -20,8 +20,8 @@ concurrency:
 
 env:
   CPYTHON_VERSION: 3.14.6
-  TOP_N: "20"
-  SHARD_COUNT: "4"
+  TOP_N: "50"
+  SHARD_COUNT: "10"
 
 jobs:
   survey:
@@ -33,7 +33,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [linux, macos, windows]
-        shard_index: [0, 1, 2, 3]
+        shard_index: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         include:
           - os: linux
             runner: ubuntu-26.04
@@ -87,9 +87,9 @@ jobs:
           git config --global core.autocrlf false
           git config --global core.eol lf
 
-      # Match pyca/cryptography's Windows CI setup. Rank 11 is in shard 2.
+      # Match pyca/cryptography's Windows CI setup. Rank 11 is in shard 0.
       - name: Download OpenSSL for Cryptography on Windows
-        if: matrix.os == 'windows' && matrix.shard_index == 2
+        if: matrix.os == 'windows' && matrix.shard_index == 0
         uses: dawidd6/action-download-artifact@57aa996fc1713cc1579039614f4645a7f4841fd4 # v23
         with:
           repo: pyca/infra
@@ -101,7 +101,7 @@ jobs:
           github_token: ${{ github.token }}
 
       - name: Configure OpenSSL for Cryptography on Windows
-        if: matrix.os == 'windows' && matrix.shard_index == 2
+        if: matrix.os == 'windows' && matrix.shard_index == 0
         shell: bash
         run: echo "OPENSSL_DIR=C:/openssl-win64" >> "$GITHUB_ENV"
 
