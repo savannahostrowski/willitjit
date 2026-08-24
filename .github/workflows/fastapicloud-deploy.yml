@@ -10,6 +10,11 @@ on:
     workflows: ["Weekly Will It JIT? compatibility"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: Survey workflow run ID whose merged results should be deployed
+        required: false
+        type: string
 
 permissions:
   actions: read
@@ -22,7 +27,6 @@ concurrency:
 jobs:
   deploy:
     name: Build and deploy
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
 
     steps:
@@ -42,17 +46,17 @@ jobs:
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
 
       - name: Download new compatibility results
-        if: github.event_name == 'workflow_run'
+        if: github.event_name == 'workflow_run' || inputs.source_run_id != ''
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: compatibility-results
           path: survey-results
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          run-id: ${{ github.event.workflow_run.id }}
+          run-id: ${{ github.event.workflow_run.id || inputs.source_run_id }}
 
       - name: Use new compatibility results
-        if: github.event_name == 'workflow_run'
+        if: github.event_name == 'workflow_run' || inputs.source_run_id != ''
         run: cp survey-results/compatibility-results.json frontend/public/data/results.json
 
       - name: Build frontend
