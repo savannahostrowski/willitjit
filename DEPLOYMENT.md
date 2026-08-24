@@ -1,10 +1,12 @@
-# Deployment status
+# Deployment
 
-Will It JIT? is not deployed. The repository has no FastAPI Cloud app ID,
-deployment secrets, or deployment workflow.
+The manual `Deploy to FastAPI Cloud` workflow builds the frontend, copies it
+into `api/static`, and runs `fastapi deploy` from the API directory.
 
-`./build_app.sh` assembles the production-shaped app locally by building the
-Vite frontend and copying it into `api/static` for FastAPI to serve.
+Configure these repository secrets before running it:
 
-Publishing compatibility results and deploying the assembled app require a
-separate design and explicit approval. CI currently uploads artifacts only.
+- `FASTAPI_CLOUD_TOKEN`
+- `FASTAPI_CLOUD_APP_ID`
+
+The workflow never runs on push. Publishing fresh compatibility results remains
+separate, so a deployment contains the JSON already checked into `frontend/public/data`.

@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  CPYTHON_VERSION: 3.15.0rc1
+  CPYTHON_VERSION: 3.14.6
   TOP_N: "20"
   SHARD_COUNT: "4"
 
@@ -56,27 +56,13 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
 
-      - name: Install JIT CPython on Linux
-        if: runner.os == 'Linux'
+      - name: Install JIT CPython
         shell: bash
         run: |
           uv python install "$CPYTHON_VERSION"
           python_path="$(uv python find --managed-python "$CPYTHON_VERSION")"
           echo "TARGET_PYTHON=$python_path" >> "$GITHUB_ENV"
           "$python_path" --version
-
-      - name: Install JIT CPython on macOS and Windows
-        if: runner.os != 'Linux'
-        id: target-python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.15.0-rc.1"
-
-      - name: Select JIT CPython on macOS and Windows
-        if: runner.os != 'Linux'
-        shell: bash
-        run: |
-          echo 'TARGET_PYTHON=${{ steps.target-python.outputs.python-path }}' >> "$GITHUB_ENV"
 
       - name: Install survey
         run: uv sync --locked --python 3.11

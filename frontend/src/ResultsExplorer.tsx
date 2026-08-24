@@ -88,7 +88,7 @@ function PlatformEvidence({
 export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
   const compatible = snapshot.summary.packages.compatible ?? 0;
   const pending = snapshot.run.completedObservations === 0;
-  const cpythonVersion = snapshot.run.github?.cpythonVersion ?? "3.15.0rc1";
+  const cpythonVersion = snapshot.run.github?.cpythonVersion ?? "3.14.6";
   const cpythonLabel = cpythonVersion.replace(".0rc", " RC").toUpperCase();
 
   return (
