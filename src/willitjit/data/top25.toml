@@ -180,12 +180,12 @@ downloads = 1280274438
 repository = "https://github.com/pytest-dev/pluggy.git"
 ref = "HEAD"
 install = [
-  ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "testing"],
+  ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "testing"]
 timeout_seconds = 600
-note = "The shallow checkout may produce a synthetic setuptools-scm development version."
+note = "Installs test dependencies before the checkout so pytest cannot replace it with the released Pluggy package."
 
 [[packages]]
 rank = 14

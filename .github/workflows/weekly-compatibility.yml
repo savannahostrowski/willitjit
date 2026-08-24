@@ -80,6 +80,13 @@ jobs:
           "TARGET_PYTHON=${{ steps.windows-python.outputs.python-path }}" >> $env:GITHUB_ENV
           & "${{ steps.windows-python.outputs.python-path }}" --version
 
+      - name: Preserve LF test fixtures on Windows
+        if: matrix.os == 'windows'
+        shell: bash
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
       # Match pyca/cryptography's Windows CI setup. Rank 11 is in shard 2.
       - name: Download OpenSSL for Cryptography on Windows
         if: matrix.os == 'windows' && matrix.shard_index == 2

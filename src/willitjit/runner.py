@@ -241,6 +241,10 @@ def condition_clone_command(
     return [*command, str(source), str(destination)]
 
 
+def set_origin_command(repository: Path, upstream: str) -> list[str]:
+    return ["git", "-C", str(repository), "remote", "set-url", "origin", upstream]
+
+
 def prepend_environment_path(
     environment: dict[str, str], variable: str, directory: Path
 ) -> None:
@@ -323,11 +327,27 @@ class SurveyRunner:
                 )
 
             result = run_logged(
+                set_origin_command(repository, package.repository),
+                cwd=condition_dir,
+                env=base_env,
+                timeout_seconds=30,
+                log_path=logs / condition / "02-origin.log",
+            )
+            setup_results.append(result)
+            if result.returncode != 0 or result.timed_out:
+                return self._setup_error(
+                    package,
+                    setup_results,
+                    f"{condition} repository origin setup failed",
+                    revision,
+                )
+
+            result = run_logged(
                 [str(self.python), "-m", "venv", str(venv)],
                 cwd=repository,
                 env=base_env,
                 timeout_seconds=180,
-                log_path=logs / condition / "02-venv.log",
+                log_path=logs / condition / "03-venv.log",
             )
             setup_results.append(result)
             if result.returncode != 0 or result.timed_out:
@@ -341,7 +361,7 @@ class SurveyRunner:
             environment = self._condition_environment(
                 package, condition_dir, venv, base_env, jit_enabled
             )
-            for index, arguments in enumerate(package.install, start=3):
+            for index, arguments in enumerate(package.install, start=4):
                 result = run_logged(
                     installation_command(venv_python(venv), arguments),
                     cwd=repository,

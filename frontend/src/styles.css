@@ -73,7 +73,6 @@ h1 { margin: 0; max-width: 820px; font-size: clamp(52px, 7vw, 82px); line-height
 .checklist-heading { display: grid; grid-template-columns: 1fr 180px; gap: 64px; align-items: center; margin-bottom: 36px; }
 .checklist-heading h1 { font-size: clamp(52px, 6vw, 72px); }
 .checklist-heading > div:first-child > p { max-width: 740px; margin: 18px 0 0; color: var(--muted); font-size: 15px; line-height: 1.65; }
-.checklist-heading > div:first-child > p a { color: var(--green); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .compatibility-summary {
   display: grid;
   gap: 6px;
@@ -124,31 +123,34 @@ h1 { margin: 0; max-width: 820px; font-size: clamp(52px, 7vw, 82px); line-height
 .expand { display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid transparent; border-radius: 50%; font: 18px var(--font-mono); transition: transform .15s ease, border-color .15s ease, background .15s ease; }
 .checklist-item > summary:hover .expand { border-color: color-mix(in srgb, var(--status) 30%, var(--line)); background: rgba(255,255,255,.3); }
 .checklist-item[open] .expand { transform: rotate(45deg); }
-.package-evidence { padding: 18px 18px 22px 74px; background: var(--surface); }
-.platform-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-.platform-card { min-width: 0; padding: 16px; border: 1px solid var(--line); background: transparent; }
-.platform-card > header { display: grid; gap: 8px; }
-.platform-card > header > span { font: 700 12px var(--font-mono); }
-.platform-card > header b { display: flex; gap: 7px; align-items: center; color: var(--muted); font-size: 10px; font-weight: 600; }
-.platform-card > header i { display: grid; place-items: center; width: 17px; height: 17px; border-radius: 3px; color: white; background: var(--muted); font: normal 700 10px var(--font-mono); }
-.platform-card.compatible > header i { background: var(--green); }
-.platform-card.baseline-blocked > header i { background: var(--amber); }
-.platform-card.needs-triage > header i { background: var(--red); }
-.platform-card.infrastructure-failure > header i { background: var(--violet); }
-.platform-card > p { min-height: 48px; margin: 13px 0; color: var(--muted); font-size: 11px; line-height: 1.45; }
-.platform-card dl { margin: 0; border-top: 1px solid var(--line); }
-.platform-card dl > div { display: grid; grid-template-columns: 1fr auto; gap: 5px 10px; padding: 11px 0; border-bottom: 1px solid var(--line); }
-.platform-card dt, .platform-card dd { font: 650 9px var(--font-mono); text-transform: uppercase; }
-.platform-card dt { color: var(--muted); }
-.platform-card dd { margin: 0; }
-.platform-card small, .platform-card dl code { grid-column: 1 / -1; overflow-wrap: anywhere; }
-.platform-card small { color: var(--muted); font-size: 10px; line-height: 1.45; }
+.package-evidence { padding: 0 18px 20px 74px; background: var(--surface); }
+.evidence-table-wrap { overflow-x: auto; border-top: 1px solid var(--line); }
+.evidence-table { width: 100%; min-width: 690px; border-collapse: collapse; table-layout: fixed; }
+.evidence-table th, .evidence-table td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.evidence-table thead th { color: var(--muted); font: 700 9px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+.evidence-table thead th:first-child { width: 23%; }
+.evidence-table thead th:last-child { width: 15%; }
+.evidence-result > th { display: grid; gap: 7px; }
+.evidence-result > th > span { font: 700 12px var(--font-mono); }
+.evidence-result > th > small { display: flex; gap: 6px; align-items: center; color: var(--muted); font-size: 10px; font-weight: 600; }
+.evidence-result > th i { display: grid; flex: 0 0 auto; place-items: center; width: 17px; height: 17px; border-radius: 3px; color: white; background: var(--muted); font: normal 700 10px var(--font-mono); }
+.evidence-result.compatible > th i { background: var(--green); }
+.evidence-result.baseline-blocked > th i { background: var(--amber); }
+.evidence-result.needs-triage > th i { background: var(--red); }
+.evidence-result.infrastructure-failure > th i { background: var(--violet); }
+.evidence-result td > strong { display: block; font: 700 10px var(--font-mono); text-transform: uppercase; }
+.evidence-result td > small { display: block; margin-top: 6px; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .runner-time { display: block; margin-top: 2px; color: var(--ink); font-family: var(--font-mono); font-size: 9px; }
-.platform-card dl code { padding: 7px; border-left: 2px solid var(--red); color: #71332d; background: rgba(174,61,52,.07); font: 9px/1.45 var(--font-mono); }
-:root[data-theme="dark"] .platform-card dl code { color: #f1aaa4; background: rgba(239,145,136,.08); }
-.platform-card > footer { width: auto; margin: 13px 0 0; padding: 0; display: grid; gap: 9px; }
-.platform-card > footer code { overflow-x: auto; font: 9px var(--font-mono); white-space: nowrap; }
-.platform-card > footer a { color: var(--green); font: 650 9px var(--font-mono); text-transform: uppercase; }
+.evidence-result td:last-child a { color: var(--green); font: 650 9px var(--font-mono); text-transform: uppercase; }
+.evidence-issue td { padding-top: 0; }
+.evidence-issue p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+.evidence-issue div { margin-top: 9px; }
+.evidence-issue div > span { display: block; margin-bottom: 4px; color: var(--red); font: 700 9px var(--font-mono); letter-spacing: .04em; text-transform: uppercase; }
+.evidence-issue code { display: block; padding: 8px 10px; border-left: 2px solid var(--red); color: #71332d; background: rgba(174,61,52,.07); font: 9px/1.5 var(--font-mono); overflow-wrap: anywhere; white-space: pre-wrap; }
+:root[data-theme="dark"] .evidence-issue code { color: #f1aaa4; background: rgba(239,145,136,.08); }
+.evidence-commands { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 14px; padding: 14px; border-bottom: 1px solid var(--line); }
+.evidence-commands > span { color: var(--muted); font: 700 9px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
+.evidence-commands code { overflow-x: auto; font: 9px var(--font-mono); white-space: nowrap; }
 .history-section { flex: 1 0 auto; width: 100%; border-top: 1px solid var(--line); color: var(--ink); background: var(--section); display: grid; grid-template-columns: minmax(300px, .72fr) 1.28fr; }
 .history-copy { padding: 48px 48px 48px max(24px, calc((100vw - 1120px) / 2)); border-right: 1px solid var(--line); }
 .history-copy h2 { margin: 0; font-size: clamp(34px, 3.8vw, 48px); line-height: 1; letter-spacing: -.05em; }
@@ -182,8 +184,6 @@ h1 { margin: 0; max-width: 820px; font-size: clamp(52px, 7vw, 82px); line-height
 
 @media (max-width: 1040px) {
   .checklist-item > summary { grid-template-columns: 38px minmax(170px, .8fr) minmax(280px, 1.2fr) 28px; }
-  .platform-grid { grid-template-columns: 1fr; }
-  .platform-card > p { min-height: 0; }
 }
 
 @media (max-width: 820px) {
@@ -215,6 +215,19 @@ h1 { margin: 0; max-width: 820px; font-size: clamp(52px, 7vw, 82px); line-height
   .platform-checks > span { min-width: 0; gap: 5px; padding-inline: 5px; font-size: 9px; }
   .platform-checks > span > b { width: 16px; height: 16px; }
   .package-evidence { padding: 14px 12px 18px; }
+  .evidence-table-wrap { overflow: visible; }
+  .evidence-table { min-width: 0; }
+  .evidence-table thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+  .evidence-table, .evidence-table tbody { display: block; }
+  .evidence-result { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+  .evidence-result > th, .evidence-result > td { display: block; border-bottom: 0; }
+  .evidence-result > th { grid-column: 1 / -1; padding-bottom: 8px; }
+  .evidence-result > td { padding-top: 8px; }
+  .evidence-result > td::before { content: attr(data-label); display: block; margin-bottom: 6px; color: var(--muted); font: 700 9px var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+  .evidence-result > td:last-child { grid-column: 1 / -1; padding-top: 0; }
+  .evidence-issue { display: block; }
+  .evidence-issue td { display: block; }
+  .evidence-commands { grid-template-columns: 1fr; }
   .about-page > header { padding-bottom: 36px; }
   .about-page > header > p:last-child { font-size: 15px; }
   .about-sections section { grid-template-columns: 1fr; gap: 10px; padding: 24px 0; }

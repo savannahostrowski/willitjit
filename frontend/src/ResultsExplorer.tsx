@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+
 import type { Condition, Observation, Snapshot, Status } from "./types";
 
 const statusMarks: Record<Status, string> = {
@@ -9,9 +11,9 @@ const statusMarks: Record<Status, string> = {
 };
 
 const statusLabels: Record<Status, string> = {
-  compatible: "Compatible everywhere tested",
+  compatible: "JIT compatible",
   "needs-triage": "Needs JIT triage",
-  "baseline-blocked": "Blocked by baseline",
+  "baseline-blocked": "Baseline failed",
   "infrastructure-failure": "Setup failed",
   "not-tested": "Not completed",
 };
@@ -30,58 +32,48 @@ function elapsedLabel(seconds: number) {
   return `${minutes}m ${Math.round(seconds % 60)}s`;
 }
 
-function ConditionSummary({ condition }: { condition: NonNullable<Condition> }) {
+function ConditionResult({ condition, label }: { condition: Condition; label: string }) {
   return (
-    <small>
-      {condition.suiteSummary}
-      <span className="runner-time">Runner time: {elapsedLabel(condition.elapsedSeconds)}</span>
-    </small>
+    <td data-label={label}>
+      <strong>{conditionLabel(condition)}</strong>
+      {condition
+        ? (
+          <small>
+            {condition.suiteSummary}
+            <span className="runner-time">Runner time: {elapsedLabel(condition.elapsedSeconds)}</span>
+          </small>
+        )
+        : <small>No result captured.</small>}
+    </td>
   );
 }
 
-function PlatformEvidence({
-  name,
-  observation,
-  repository,
-}: {
-  name: string;
-  observation: Observation;
-  repository: string;
-}) {
+function FailureEvidence({ observation }: { observation: Observation }) {
+  const failures = [
+    ["JIT off", observation.baseline?.failureExcerpt],
+    ["JIT on", observation.jit?.failureExcerpt],
+  ].filter((entry): entry is [string, string] => Boolean(entry[1]));
+
+  if (
+    observation.status === "compatible"
+    || observation.status === "not-tested"
+    || (failures.length === 0 && !observation.explanation)
+  ) {
+    return null;
+  }
+
   return (
-    <article className={`platform-card ${observation.status}`}>
-      <header>
-        <span>{name}</span>
-        <b><i>{statusMarks[observation.status]}</i>{observation.label}</b>
-      </header>
-      {observation.status !== "compatible" && <p>{observation.explanation}</p>}
-      <dl>
-        <div>
-          <dt>JIT off</dt>
-          <dd>{conditionLabel(observation.baseline)}</dd>
-          {observation.baseline
-            ? <ConditionSummary condition={observation.baseline} />
-            : <small>No result captured.</small>}
-          {observation.baseline?.failureExcerpt && <code>{observation.baseline.failureExcerpt}</code>}
-        </div>
-        <div>
-          <dt>JIT on</dt>
-          <dd>{conditionLabel(observation.jit)}</dd>
-          {observation.jit
-            ? <ConditionSummary condition={observation.jit} />
-            : <small>No result captured.</small>}
-          {observation.jit?.failureExcerpt && <code>{observation.jit.failureExcerpt}</code>}
-        </div>
-      </dl>
-      <footer>
-        {observation.command && <code>{observation.command}</code>}
-        {observation.revision && (
-          <a href={`${repository}/commit/${observation.revision}`} target="_blank" rel="noreferrer">
-            revision {observation.revision.slice(0, 9)} ↗
-          </a>
-        )}
-      </footer>
-    </article>
+    <tr className="evidence-issue">
+      <td colSpan={4}>
+        <p>{observation.explanation}</p>
+        {failures.map(([label, excerpt]) => (
+          <div key={label}>
+            <span>{label} excerpt</span>
+            <code>{excerpt}</code>
+          </div>
+        ))}
+      </td>
+    </tr>
   );
 }
 
@@ -96,10 +88,7 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
       <div className="checklist-heading">
         <div>
           <h1>Will It JIT?</h1>
-          <p>
-            Packages are ranked by the <a href={snapshot.dataset.source}>Top PyPI Packages</a> dataset.
-            Compatible means every reported platform passed the package&apos;s upstream suite with the JIT both off and on.
-          </p>
+          <p>Testing CPython JIT compatibility across the top PyPI packages.</p>
         </div>
         <div
           className="compatibility-summary"
@@ -117,8 +106,17 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
       </div>
 
       <div className="checklist" aria-label="Package compatibility results">
-        {snapshot.packages.map((item) => (
-          <details className={`checklist-item ${item.overallStatus}`} key={item.name}>
+        {snapshot.packages.map((item) => {
+          const observations = snapshot.run.expectedPlatforms.map((platform) => ({
+            name: platform,
+            observation: item.platforms[platform],
+          }));
+          const commands = [...new Set(
+            observations.flatMap(({ observation }) => observation.command ? [observation.command] : []),
+          )];
+
+          return (
+            <details className={`checklist-item ${item.overallStatus}`} key={item.name}>
             <summary>
               <span className="check-mark" aria-hidden="true">{statusMarks[item.overallStatus]}</span>
               <span className="package-title">
@@ -140,19 +138,60 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
               <span className="expand" aria-hidden="true">+</span>
             </summary>
             <div className="package-evidence" role="region" aria-label={`${item.name} run evidence`}>
-              <div className="platform-grid">
-                {snapshot.run.expectedPlatforms.map((platform) => (
-                  <PlatformEvidence
-                    key={platform}
-                    name={platform}
-                    observation={item.platforms[platform]}
-                    repository={item.repository}
-                  />
-                ))}
+              <div className="evidence-table-wrap">
+                <table className="evidence-table">
+                  <caption className="sr-only">{item.name} results by platform</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Platform</th>
+                      <th scope="col">JIT off</th>
+                      <th scope="col">JIT on</th>
+                      <th scope="col">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {observations.map(({ name, observation }) => (
+                      <Fragment key={name}>
+                        <tr className={`evidence-result ${observation.status}`}>
+                          <th scope="row">
+                            <span>{name}</span>
+                            <small>
+                              <i aria-hidden="true">{statusMarks[observation.status]}</i>
+                              {observation.label}
+                            </small>
+                          </th>
+                          <ConditionResult condition={observation.baseline} label="JIT off" />
+                          <ConditionResult condition={observation.jit} label="JIT on" />
+                          <td data-label="Source">
+                            {observation.revision
+                              ? (
+                                <a
+                                  href={`${item.repository}/commit/${observation.revision}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {observation.revision.slice(0, 9)} ↗
+                                </a>
+                              )
+                              : <small>Not available</small>}
+                          </td>
+                        </tr>
+                        <FailureEvidence observation={observation} />
+                      </Fragment>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+              {commands.length > 0 && (
+                <div className="evidence-commands">
+                  <span>{commands.length === 1 ? "Test command" : "Test commands"}</span>
+                  {commands.map((command) => <code key={command}>{command}</code>)}
+                </div>
+              )}
             </div>
-          </details>
-        ))}
+            </details>
+          );
+        })}
       </div>
     </section>
   );

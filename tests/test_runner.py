@@ -233,7 +233,7 @@ class FailEarlyTests(unittest.TestCase):
     ) -> None:
         passed = result(0)
         failed = result(1)
-        run_logged_mock.side_effect = [passed, passed, passed, passed, failed]
+        run_logged_mock.side_effect = [passed, passed, passed, passed, passed, failed]
         subprocess_mock.return_value.stdout = "abcdef123456\n"
         package = Package(
             1,
@@ -253,7 +253,16 @@ class FailEarlyTests(unittest.TestCase):
         self.assertEqual(outcome.classification, "baseline-failure")
         self.assertIsNotNone(outcome.baseline)
         self.assertIsNone(outcome.jit)
-        self.assertEqual(run_logged_mock.call_count, 5)
+        self.assertEqual(run_logged_mock.call_count, 6)
+        self.assertEqual(
+            run_logged_mock.call_args_list[2].args[0][-4:],
+            [
+                "remote",
+                "set-url",
+                "origin",
+                "https://github.com/example/example.git",
+            ],
+        )
 
 
 if __name__ == "__main__":
