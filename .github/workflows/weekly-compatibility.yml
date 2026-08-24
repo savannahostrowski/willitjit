@@ -56,13 +56,29 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
 
-      - name: Install JIT CPython
+      - name: Install JIT CPython from uv
+        if: matrix.os != 'windows'
         shell: bash
         run: |
           uv python install "$CPYTHON_VERSION"
           python_path="$(uv python find --managed-python "$CPYTHON_VERSION")"
           echo "TARGET_PYTHON=$python_path" >> "$GITHUB_ENV"
           "$python_path" --version
+
+      - name: Install official JIT CPython on Windows
+        if: matrix.os == 'windows'
+        id: windows-python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.CPYTHON_VERSION }}
+          architecture: x64
+
+      - name: Select official JIT CPython on Windows
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          "TARGET_PYTHON=${{ steps.windows-python.outputs.python-path }}" >> $env:GITHUB_ENV
+          & "${{ steps.windows-python.outputs.python-path }}" --version
 
       - name: Install survey
         run: uv sync --locked --python 3.11
