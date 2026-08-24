@@ -16,6 +16,7 @@ from willitjit.runner import (
     condition_clone_command,
     installation_command,
     run_logged,
+    untrusted_environment,
     validate_jit_python,
 )
 
@@ -150,6 +151,42 @@ class StreamingOutputTests(unittest.TestCase):
 
                 self.assertEqual(command_result.returncode, 0)
                 self.assertIn("\N{REPLACEMENT CHARACTER}", log.read_text())
+
+    def test_escapes_github_workflow_commands_in_streamed_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            log = Path(temporary) / "test.log"
+            output = io.StringIO()
+            with redirect_stdout(output):
+                run_logged(
+                    [sys.executable, "-c", "print('::error::not a command')"],
+                    cwd=Path(temporary),
+                    env=os.environ.copy(),
+                    timeout_seconds=30,
+                    log_path=log,
+                    stream_output=True,
+                )
+
+            self.assertIn("\n ::error::not a command", f"\n{output.getvalue()}")
+            self.assertIn("\n::error::not a command", log.read_text())
+
+
+class UntrustedEnvironmentTests(unittest.TestCase):
+    def test_removes_credentials_and_github_control_values(self) -> None:
+        environment = untrusted_environment(
+            {
+                "PATH": "/usr/bin",
+                "GITHUB_ACTIONS": "true",
+                "GITHUB_ENV": "/tmp/github-env",
+                "ACTIONS_RUNTIME_TOKEN": "runtime-token",
+                "OPENAI_API_KEY": "api-key",
+                "SSH_AUTH_SOCK": "/tmp/agent",
+            }
+        )
+
+        self.assertEqual(
+            environment,
+            {"PATH": "/usr/bin", "GITHUB_ACTIONS": "true"},
+        )
 
 
 class ConditionEnvironmentTests(unittest.TestCase):

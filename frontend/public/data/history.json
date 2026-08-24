@@ -1,6 +1,0 @@
-{
-  "schemaVersion": 1,
-  "pythonSeries": "3.14",
-  "definition": "For CPython 3.14, a package counts as compatible only when every platform in that snapshot passes its upstream suite with both JIT settings.",
-  "points": []
-}

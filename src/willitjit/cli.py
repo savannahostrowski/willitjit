@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .aggregate import find_run_files, write_compatibility_results
+from .history import write_history
 from .models import Classification, Package
 from .registry import load_registry
 from .report import write_reports
@@ -36,6 +37,13 @@ def parser() -> argparse.ArgumentParser:
         default=[],
         help="expected platform label; repeat for each platform",
     )
+
+    history = commands.add_parser(
+        "history", help="append a completed snapshot to compatibility history"
+    )
+    history.add_argument("--snapshot", type=Path, required=True)
+    history.add_argument("--previous", type=Path)
+    history.add_argument("--output", type=Path, required=True)
 
     check = commands.add_parser("check-python", help="verify a JIT-enabled CPython")
     check.add_argument("--python", type=Path, required=True)
@@ -103,6 +111,26 @@ def _run_exit_code(
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
+
+    if args.command == "history":
+        try:
+            write_history(
+                snapshot_path=args.snapshot,
+                previous_path=args.previous,
+                output=args.output,
+            )
+        except (
+            OSError,
+            ValueError,
+            KeyError,
+            IndexError,
+            json.JSONDecodeError,
+        ) as error:
+            print(f"Could not update history: {error}", file=sys.stderr)
+            return 1
+        print(f"Compatibility history: {args.output.resolve()}")
+        return 0
+
     dataset, packages = load_registry(args.registry)
 
     if args.command == "list":

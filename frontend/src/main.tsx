@@ -6,6 +6,11 @@ import { AboutPage, SiteFooter, SiteHeader, type Theme } from "./SiteChrome";
 import type { CompatibilityHistory, Snapshot } from "./types";
 import "./styles.css";
 
+const DATA_ROOT = (
+  import.meta.env.VITE_DATA_URL
+  ?? "https://savannahostrowski.github.io/willitjit"
+).replace(/\/$/, "");
+
 async function fetchJson<T>(url: string): Promise<T> {
   const response = await fetch(url);
   if (!response.ok) {
@@ -21,8 +26,8 @@ function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      fetchJson<Snapshot>("/data/results.json"),
-      fetchJson<CompatibilityHistory>("/data/history.json"),
+      fetchJson<Snapshot>(`${DATA_ROOT}/results.json`),
+      fetchJson<CompatibilityHistory>(`${DATA_ROOT}/history.json`),
     ])
       .then(([nextSnapshot, nextHistory]) => {
         setSnapshot(nextSnapshot);

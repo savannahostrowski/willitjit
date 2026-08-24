@@ -219,11 +219,15 @@ def _condition(value: dict[str, Any] | None, run_dir: Path) -> dict[str, Any] | 
 
 
 def _log_path(value: str, run_dir: Path) -> Path:
-    log = Path(value)
-    if log.is_absolute():
-        return log
     # Windows reports use backslashes, but artifacts are merged on Linux.
-    return run_dir.joinpath(*PureWindowsPath(value).parts)
+    windows_log = PureWindowsPath(value)
+    if Path(value).is_absolute() or windows_log.is_absolute():
+        raise ValueError("absolute log path is not allowed")
+    log = run_dir.joinpath(*windows_log.parts).resolve()
+    root = run_dir.resolve()
+    if log != root and root not in log.parents:
+        raise ValueError("log path escapes run directory")
+    return log
 
 
 def _suite_summary(log: Path) -> str:

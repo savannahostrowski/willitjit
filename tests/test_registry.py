@@ -72,6 +72,8 @@ class RegistryTests(unittest.TestCase):
             ("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python"),
             protobuf.environment,
         )
+        aiohttp = next(package for package in packages if package.name == "aiohttp")
+        self.assertTrue(aiohttp.recursive_submodules)
 
 
 if __name__ == "__main__":

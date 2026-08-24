@@ -76,9 +76,11 @@ jobs:
       - name: Select official JIT CPython on Windows
         if: matrix.os == 'windows'
         shell: pwsh
+        env:
+          PYTHON_PATH: ${{ steps.windows-python.outputs.python-path }}
         run: |
-          "TARGET_PYTHON=${{ steps.windows-python.outputs.python-path }}" >> $env:GITHUB_ENV
-          & "${{ steps.windows-python.outputs.python-path }}" --version
+          "TARGET_PYTHON=$env:PYTHON_PATH" >> $env:GITHUB_ENV
+          & $env:PYTHON_PATH --version
 
       - name: Preserve LF test fixtures on Windows
         if: matrix.os == 'windows'
@@ -122,12 +124,13 @@ jobs:
         shell: bash
         env:
           SURVEY_RUN_ID: github-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.os }}-${{ matrix.shard_index }}
+          SHARD_INDEX: ${{ matrix.shard_index }}
         run: |
           uv run willitjit run \
             --python "$TARGET_PYTHON" \
             --limit "$TOP_N" \
             --shard-count "$SHARD_COUNT" \
-            --shard-index "${{ matrix.shard_index }}" \
+            --shard-index "$SHARD_INDEX" \
             --run-id "$SURVEY_RUN_ID" \
             --allow-findings \
             --stream-test-output
@@ -149,8 +152,9 @@ jobs:
     if: always()
     needs: survey
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
-      actions: read
+      actions: read # Download artifacts from this or a selected prior run.
       contents: read
     steps:
       - name: Check out survey
@@ -182,6 +186,22 @@ jobs:
             --expected-platform macOS \
             --expected-platform Windows
 
+      - name: Build public data feed
+        shell: bash
+        run: |
+          history_args=()
+          if curl --fail --silent --show-error --location \
+            https://savannahostrowski.github.io/willitjit/history.json \
+            --output previous-history.json; then
+            history_args=(--previous previous-history.json)
+          fi
+          mkdir published-data
+          cp compatibility-results.json published-data/results.json
+          uv run willitjit history \
+            --snapshot compatibility-results.json \
+            "${history_args[@]}" \
+            --output published-data/history.json
+
       - name: Upload compatibility JSON
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -189,3 +209,27 @@ jobs:
           path: compatibility-results.json
           if-no-files-found: error
           retention-days: 90
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload public data feed
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: published-data
+
+  publish:
+    name: Publish public data feed
+    needs: merge
+    permissions:
+      pages: write # Publish only the prepared JSON Pages artifact.
+      id-token: write # Authenticate the Pages deployment.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Deploy public data feed
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

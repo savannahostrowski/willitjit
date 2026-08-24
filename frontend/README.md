@@ -8,6 +8,5 @@ npm run dev
 npm run build
 ```
 
-The runner merges platform artifacts into `public/data/results.json`; history
-lives in `public/data/history.json`. The browser reads both files directly, so
-there is no runtime database dependency.
+The browser reads `results.json` and `history.json` from the public GitHub Pages
+data feed. Set `VITE_DATA_URL` to use a different feed while developing.

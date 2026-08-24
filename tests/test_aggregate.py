@@ -135,6 +135,32 @@ class AggregateTests(unittest.TestCase):
         condition = merged["packages"][0]["platforms"]["Windows"]["baseline"]
         self.assertEqual(condition["suiteSummary"], "3 passed in 0.02s")
 
+    def test_rejects_log_paths_outside_the_artifact(self) -> None:
+        for unsafe_path in ("/etc/passwd", r"C:\\Windows\\win.ini", "../secret"):
+            with (
+                self.subTest(unsafe_path=unsafe_path),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                run_file = Path(temporary) / "run.json"
+                payload = run_payload("Linux", "baseline-failure")
+                payload["results"][0]["baseline"]["log"] = unsafe_path
+                payload["results"][0]["jit"] = None
+                run_file.write_text(json.dumps(payload))
+
+                with self.assertRaisesRegex(
+                    ValueError, "log path (is not allowed|escapes run directory)"
+                ):
+                    build_compatibility_results(
+                        run_files=[run_file],
+                        dataset={
+                            "source": "source",
+                            "last_update": "today",
+                            "window": "30 days",
+                        },
+                        packages=[package()],
+                        expected_platforms=("Linux",),
+                    )
+
     def test_describes_conftest_import_failure_as_collection_failure(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

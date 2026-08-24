@@ -491,9 +491,13 @@ name = "httpcore"
 downloads = 783609098
 repository = "https://github.com/encode/httpcore.git"
 ref = "HEAD"
-install = [["-m", "pip", "install", "-r", "requirements.txt"]]
+install = [
+  ["-m", "pip", "install", "-e", ".[asyncio,http2,socks,trio]"],
+  ["-m", "pip", "install", "pytest", "pytest-trio"],
+]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1200
+note = "Installs the runtime extras and test runners without unrelated documentation, profiling, and benchmark dependencies."
 
 [[packages]]
 rank = 37
@@ -624,10 +628,19 @@ ref = "HEAD"
 install = [
   ["-m", "pip", "install", "--group", "dev"],
   ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "orjson>=3.11.6,<4.0", "websockets>=15.0.1,<16.0"],
 ]
-test = ["-m", "pytest", "tests/test_litellm/litellm_core_utils", "-p", "no:xdist"]
+test = [
+  "-m",
+  "pytest",
+  "tests/test_litellm/litellm_core_utils",
+  "--ignore=tests/test_litellm/litellm_core_utils/test_cli_token_utils.py",
+  "--ignore=tests/test_litellm/litellm_core_utils/test_private_json.py",
+  "-p",
+  "no:xdist",
+]
 timeout_seconds = 2400
-note = "Runs the upstream core-utilities unit shard and excludes proxy, end-to-end, and integration lanes."
+note = "Runs the upstream core-utilities unit shard, excluding two POSIX-only permission files plus proxy, end-to-end, and integration lanes."
 isolate_home = true
 
 [[packages]]
@@ -671,6 +684,7 @@ test = ["-m", "pytest", "-m", "not dev_mode and not autobahn", "-p", "no:xdist"]
 timeout_seconds = 2400
 environment = { AIOHTTP_NO_EXTENSIONS = "1" }
 note = "Uses the upstream pure-Python lane and excludes its separate dev-mode and Autobahn lanes."
+recursive_submodules = true
 
 [[packages]]
 rank = 50

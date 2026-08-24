@@ -8,7 +8,7 @@ import subprocess
 import sys
 import threading
 import time
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +41,49 @@ print(json.dumps({
     "openssl_version": openssl_version,
 }))
 """
+
+SENSITIVE_ENVIRONMENT_NAMES = frozenset(
+    {
+        "AWS_CONFIG_FILE",
+        "AWS_SHARED_CREDENTIALS_FILE",
+        "AZURE_CONFIG_DIR",
+        "DOCKER_CONFIG",
+        "GIT_ASKPASS",
+        "GOOGLE_APPLICATION_CREDENTIALS",
+        "KUBECONFIG",
+        "NETRC",
+        "NPM_CONFIG_USERCONFIG",
+        "PIP_CONFIG_FILE",
+        "SSH_ASKPASS",
+        "SSH_AUTH_SOCK",
+        "UV_CONFIG_FILE",
+    }
+)
+SENSITIVE_ENVIRONMENT_MARKERS = (
+    "API_KEY",
+    "CREDENTIAL",
+    "PASSWORD",
+    "PASSWD",
+    "PRIVATE_KEY",
+    "SECRET",
+    "TOKEN",
+)
+
+
+def untrusted_environment(source: Mapping[str, str]) -> dict[str, str]:
+    environment = {}
+    for key, value in source.items():
+        upper = key.upper()
+        if upper.startswith("ACTIONS_"):
+            continue
+        if upper.startswith("GITHUB_") and upper != "GITHUB_ACTIONS":
+            continue
+        if upper in SENSITIVE_ENVIRONMENT_NAMES:
+            continue
+        if any(marker in upper for marker in SENSITIVE_ENVIRONMENT_MARKERS):
+            continue
+        environment[key] = value
+    return environment
 
 
 def probe_python(python: Path, jit_enabled: bool) -> dict[str, Any]:
@@ -180,7 +223,9 @@ def _run_logged_streaming(
             for line in iter(process.stdout.readline, ""):
                 log.write(line)
                 log.flush()
-                print(line, end="", flush=True)
+                # GitHub treats lines beginning with "::" as workflow commands.
+                console_line = f" {line}" if line.startswith("::") else line
+                print(console_line, end="", flush=True)
 
         output_thread = threading.Thread(target=copy_output, daemon=True)
         output_thread.start()
@@ -275,7 +320,7 @@ class SurveyRunner:
         logs = package_dir / "logs"
         package_dir.mkdir(parents=True, exist_ok=False)
         setup_results: list[CommandResult] = []
-        base_env = os.environ.copy()
+        base_env = untrusted_environment(os.environ)
         base_env.update({"PYTHONNOUSERSITE": "1", "PYTHONFAULTHANDLER": "1"})
 
         clone = ["git", "clone", "--depth", "1", "--filter=blob:none"]
