@@ -28,6 +28,8 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          download-from-astral-mirror: false
 
       - name: Select releases outside the cooldown
         run: uv run --locked python scripts/update_adapter_releases.py --write
