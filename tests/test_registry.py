@@ -233,6 +233,13 @@ class RegistryTests(unittest.TestCase):
         )
         self.assertIn("test", virtualenv.install[0])
         self.assertIn("virtualenv=={release_version}", virtualenv.install[-1])
+        grpcio = next(package for package in packages if package.name == "grpcio")
+        self.assertIn("--no-deps", grpcio.install[-1])
+        self.assertIn("--ignore=tests/unit/test_all_modules_installed.py", grpcio.test)
+        referencing = next(
+            package for package in packages if package.name == "referencing"
+        )
+        self.assertIn("test-requirements.txt", referencing.install[0])
         for package_name in ("setuptools", "importlib-metadata", "zipp"):
             package = next(
                 package for package in packages if package.name == package_name
