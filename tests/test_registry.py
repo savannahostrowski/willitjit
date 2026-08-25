@@ -231,6 +231,7 @@ class RegistryTests(unittest.TestCase):
         virtualenv = next(
             package for package in packages if package.name == "virtualenv"
         )
+        self.assertIn("test", virtualenv.install[0])
         self.assertIn("virtualenv=={release_version}", virtualenv.install[-1])
         for package_name in ("setuptools", "importlib-metadata", "zipp"):
             package = next(

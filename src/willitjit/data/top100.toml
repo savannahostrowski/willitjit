@@ -1195,12 +1195,13 @@ ref = "21.7.4"
 release_version = "21.7.4"
 release_date = "2026-08-10T22:54:31.515567Z"
 install = [
-  ["-m", "pip", "install", "-r", "test-requirements.txt"],
+  ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "virtualenv=={release_version}"],
 ]
 test = ["-m", "pytest", "tests", "-m", "not slow", "-p", "no:xdist"]
 timeout_seconds = 2400
 isolate_home = true
+note = "Uses the pinned release wheel with the test dependency group declared by the matching checkout."
 
 [[packages]]
 rank = 77
