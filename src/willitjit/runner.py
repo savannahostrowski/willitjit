@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import platform
 import shlex
 import shutil
 import subprocess
@@ -278,12 +279,44 @@ def installation_command(python: Path, arguments: tuple[str, ...]) -> list[str]:
 
 
 def condition_clone_command(
-    source: Path, destination: Path, *, recursive_submodules: bool
+    source: Path,
+    destination: Path,
+    *,
+    recursive_submodules: bool,
+    sparse_paths: tuple[str, ...] = (),
 ) -> list[str]:
+    if sparse_paths:
+        return [
+            "git",
+            "-C",
+            str(source),
+            "worktree",
+            "add",
+            "--detach",
+            str(destination),
+            "HEAD",
+        ]
     command = ["git", "clone", "--local"]
     if recursive_submodules:
         command += ["--recurse-submodules", "--shallow-submodules"]
     return [*command, str(source), str(destination)]
+
+
+def source_clone_command(package: Package, destination: Path) -> list[str]:
+    command = ["git", "clone", "--depth", "1", "--filter=blob:none"]
+    if package.sparse_paths:
+        command.append("--sparse")
+    if package.ref != "HEAD":
+        command += ["--branch", package.ref]
+    return [*command, package.repository, str(destination)]
+
+
+def sparse_checkout_command(repository: Path, paths: tuple[str, ...]) -> list[str]:
+    return ["git", "-C", str(repository), "sparse-checkout", "set", *paths]
+
+
+def fetch_tags_command(repository: Path) -> list[str]:
+    return ["git", "-C", str(repository), "fetch", "--force", "--tags", "--depth", "1"]
 
 
 def set_origin_command(repository: Path, upstream: str) -> list[str]:
@@ -314,7 +347,26 @@ class SurveyRunner:
         self.run_dir = run_dir.resolve()
         self.stream_test_output = stream_test_output
 
+    def cleanup_package_workspaces(self, package_name: str) -> None:
+        package_dir = (self.run_dir / package_name).resolve()
+        if package_dir.parent != self.run_dir:
+            raise ValueError(f"unsafe package workspace: {package_name}")
+        for directory in ("baseline", "jit", "source"):
+            shutil.rmtree(package_dir / directory, ignore_errors=True)
+
     def run_package(self, package: Package) -> PackageResult:
+        skip_reason = dict(package.skip_platforms).get(platform.system())
+        if skip_reason:
+            return PackageResult(
+                package=package.name,
+                rank=package.rank,
+                revision=None,
+                classification="not-tested",
+                setup=(),
+                baseline=None,
+                jit=None,
+                error=skip_reason,
+            )
         package_dir = self.run_dir / package.name
         source_repository = package_dir / "source"
         logs = package_dir / "logs"
@@ -323,12 +375,8 @@ class SurveyRunner:
         base_env = untrusted_environment(os.environ)
         base_env.update({"PYTHONNOUSERSITE": "1", "PYTHONFAULTHANDLER": "1"})
 
-        clone = ["git", "clone", "--depth", "1", "--filter=blob:none"]
-        if package.ref != "HEAD":
-            clone += ["--branch", package.ref]
-        clone += [package.repository, str(source_repository)]
         result = run_logged(
-            clone,
+            source_clone_command(package, source_repository),
             cwd=package_dir,
             env=base_env,
             timeout_seconds=300,
@@ -337,6 +385,32 @@ class SurveyRunner:
         setup_results.append(result)
         if result.returncode != 0 or result.timed_out:
             return self._setup_error(package, setup_results, "repository clone failed")
+
+        if package.fetch_tags:
+            result = run_logged(
+                fetch_tags_command(source_repository),
+                cwd=package_dir,
+                env=base_env,
+                timeout_seconds=300,
+                log_path=logs / "01-source-tags.log",
+            )
+            setup_results.append(result)
+            if result.returncode != 0 or result.timed_out:
+                return self._setup_error(package, setup_results, "tag fetch failed")
+
+        if package.sparse_paths:
+            result = run_logged(
+                sparse_checkout_command(source_repository, package.sparse_paths),
+                cwd=package_dir,
+                env=base_env,
+                timeout_seconds=300,
+                log_path=logs / "02-source-sparse-checkout.log",
+            )
+            setup_results.append(result)
+            if result.returncode != 0 or result.timed_out:
+                return self._setup_error(
+                    package, setup_results, "source sparse checkout failed"
+                )
 
         revision = subprocess.run(
             ["git", "-C", str(source_repository), "rev-parse", "HEAD"],
@@ -356,6 +430,7 @@ class SurveyRunner:
                     source_repository,
                     repository,
                     recursive_submodules=package.recursive_submodules,
+                    sparse_paths=package.sparse_paths,
                 ),
                 cwd=condition_dir,
                 env=base_env,
@@ -370,6 +445,23 @@ class SurveyRunner:
                     f"{condition} repository clone failed",
                     revision,
                 )
+
+            if package.sparse_paths:
+                result = run_logged(
+                    sparse_checkout_command(repository, package.sparse_paths),
+                    cwd=condition_dir,
+                    env=base_env,
+                    timeout_seconds=300,
+                    log_path=logs / condition / "02-sparse-checkout.log",
+                )
+                setup_results.append(result)
+                if result.returncode != 0 or result.timed_out:
+                    return self._setup_error(
+                        package,
+                        setup_results,
+                        f"{condition} sparse checkout failed",
+                        revision,
+                    )
 
             result = run_logged(
                 set_origin_command(repository, package.repository),

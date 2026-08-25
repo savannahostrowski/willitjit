@@ -14,8 +14,11 @@ from willitjit.runner import (
     SurveyRunner,
     classify_jit,
     condition_clone_command,
+    fetch_tags_command,
     installation_command,
     run_logged,
+    source_clone_command,
+    sparse_checkout_command,
     untrusted_environment,
     validate_jit_python,
 )
@@ -104,6 +107,78 @@ class SetupCommandTests(unittest.TestCase):
                 "--shallow-submodules",
                 "source",
                 "destination",
+            ],
+        )
+
+    def test_sparse_checkout_is_applied_to_source_and_condition_clones(self) -> None:
+        package = Package(
+            1,
+            "example",
+            1,
+            "https://github.com/example/monorepo.git",
+            "HEAD",
+            (("-m", "pip", "install", "."),),
+            ("-m", "pytest"),
+            sparse_paths=("packages/example",),
+        )
+        self.assertEqual(
+            source_clone_command(package, Path("source")),
+            [
+                "git",
+                "clone",
+                "--depth",
+                "1",
+                "--filter=blob:none",
+                "--sparse",
+                "https://github.com/example/monorepo.git",
+                "source",
+            ],
+        )
+        self.assertEqual(
+            condition_clone_command(
+                Path("source"),
+                Path("destination"),
+                recursive_submodules=False,
+                sparse_paths=("packages/example",),
+            ),
+            [
+                "git",
+                "-C",
+                "source",
+                "worktree",
+                "add",
+                "--detach",
+                "destination",
+                "HEAD",
+            ],
+        )
+        self.assertEqual(
+            sparse_checkout_command(
+                Path("destination"), ("packages/example", "shared")
+            ),
+            [
+                "git",
+                "-C",
+                "destination",
+                "sparse-checkout",
+                "set",
+                "packages/example",
+                "shared",
+            ],
+        )
+
+    def test_fetch_tags_is_shallow(self) -> None:
+        self.assertEqual(
+            fetch_tags_command(Path("source")),
+            [
+                "git",
+                "-C",
+                "source",
+                "fetch",
+                "--force",
+                "--tags",
+                "--depth",
+                "1",
             ],
         )
 
@@ -263,6 +338,26 @@ class ConditionEnvironmentTests(unittest.TestCase):
 
 
 class FailEarlyTests(unittest.TestCase):
+    @patch("willitjit.runner.platform.system", return_value="Linux")
+    def test_platform_skip_is_reported_without_running_commands(self, _system) -> None:
+        package = Package(
+            1,
+            "example",
+            1,
+            "https://github.com/example/example.git",
+            "HEAD",
+            (("-m", "pip", "install", "."),),
+            ("-m", "pytest"),
+            skip_platforms=(("Linux", "Selected Python omits test.support."),),
+        )
+        outcome = SurveyRunner(Path("/tmp/python"), Path("/tmp/run")).run_package(
+            package
+        )
+
+        self.assertEqual(outcome.classification, "not-tested")
+        self.assertEqual(outcome.error, "Selected Python omits test.support.")
+        self.assertEqual(outcome.setup, ())
+
     @patch("willitjit.runner.subprocess.run")
     @patch("willitjit.runner.run_logged")
     def test_baseline_failure_skips_jit_condition(
@@ -300,6 +395,31 @@ class FailEarlyTests(unittest.TestCase):
                 "https://github.com/example/example.git",
             ],
         )
+
+
+class CleanupTests(unittest.TestCase):
+    def test_removes_workspaces_but_keeps_logs(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            run_dir = Path(directory)
+            package_dir = run_dir / "example"
+            for name in ("baseline", "jit", "source", "logs"):
+                path = package_dir / name
+                path.mkdir(parents=True)
+                (path / "evidence.txt").write_text(name)
+            runner = SurveyRunner(Path(sys.executable), run_dir)
+
+            runner.cleanup_package_workspaces("example")
+
+            self.assertFalse((package_dir / "baseline").exists())
+            self.assertFalse((package_dir / "jit").exists())
+            self.assertFalse((package_dir / "source").exists())
+            self.assertTrue((package_dir / "logs" / "evidence.txt").exists())
+
+    def test_rejects_workspace_escape(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            runner = SurveyRunner(Path(sys.executable), Path(directory))
+            with self.assertRaisesRegex(ValueError, "unsafe package workspace"):
+                runner.cleanup_package_workspaces("..")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import io
 import unittest
+from contextlib import redirect_stdout
+from unittest.mock import patch
 
-from willitjit.cli import _run_exit_code, _select
+from willitjit.cli import _run_exit_code, _select, main
 from willitjit.models import Package
 
 
@@ -46,7 +49,9 @@ class RunExitCodeTests(unittest.TestCase):
             (["observed-compatible"], False, 0),
             (["baseline-failure"], True, 0),
             (["suspected-jit-regression"], True, 0),
+            (["not-tested"], True, 0),
             (["observed-compatible", "setup-error"], True, 1),
+            (["not-tested"], False, 1),
             (["observed-compatible", "baseline-failure"], False, 1),
         )
         for classifications, allow_findings, expected in cases:
@@ -61,6 +66,38 @@ class RunExitCodeTests(unittest.TestCase):
                     ),
                     expected,
                 )
+
+
+class PlanTests(unittest.TestCase):
+    def test_exposes_adapter_checkout_and_execution_details(self) -> None:
+        output = io.StringIO()
+        with (
+            patch("willitjit.cli.platform.system", return_value="Darwin"),
+            redirect_stdout(output),
+        ):
+            exit_code = main(
+                [
+                    "plan",
+                    "--package",
+                    "attrs",
+                    "--package",
+                    "google-auth",
+                    "--package",
+                    "importlib-metadata",
+                    "--package",
+                    "scipy",
+                ]
+            )
+
+        rendered = output.getvalue()
+        self.assertEqual(exit_code, 0)
+        self.assertIn("checkout: fetch tags", rendered)
+        self.assertIn("sparse checkout: packages/google-auth", rendered)
+        self.assertIn("checkout: initialize recursive submodules", rendered)
+        self.assertIn("not tested: The uv-managed CPython build omits", rendered)
+        self.assertIn("test twice (.): python -m pytest tests", rendered)
+        self.assertIn("timeout:", rendered)
+        self.assertIn("release:", rendered)
 
 
 if __name__ == "__main__":

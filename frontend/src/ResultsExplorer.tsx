@@ -15,7 +15,7 @@ const statusLabels: Record<Status, string> = {
   "needs-triage": "Needs JIT triage",
   "baseline-blocked": "Baseline failed",
   "infrastructure-failure": "Setup failed",
-  "not-tested": "Not completed",
+  "not-tested": "Not tested",
 };
 
 type StatusFilter = Status | "all";
@@ -26,7 +26,7 @@ const filters: { value: StatusFilter; label: string }[] = [
   { value: "needs-triage", label: "Needs triage" },
   { value: "baseline-blocked", label: "Baseline failed" },
   { value: "infrastructure-failure", label: "Setup failed" },
-  { value: "not-tested", label: "Not completed" },
+  { value: "not-tested", label: "Not tested" },
 ];
 
 const compactNumber = new Intl.NumberFormat("en-US", {

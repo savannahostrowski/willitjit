@@ -1,0 +1,59 @@
+name: Update adapter releases
+
+on:
+  schedule:
+    - cron: "23 10 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: update-willitjit-adapter-releases
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out survey
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+
+      - name: Select releases outside the cooldown
+        run: uv run --locked python scripts/update_adapter_releases.py --write
+
+      - name: Validate registry
+        run: uv run --locked python -m unittest tests.test_registry tests.test_cli
+
+      - name: Open update pull request
+        shell: bash
+        # Repository setting required: Actions > General >
+        # Allow GitHub Actions to create and approve pull requests.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then
+            echo "No eligible adapter releases."
+            exit 0
+          fi
+
+          branch="automation/adapter-releases-${GITHUB_RUN_ID}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add src/willitjit/data/top100.toml
+          git commit -m "chore: update adapter releases"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "HEAD:refs/heads/$branch"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "chore: update adapter releases" \
+            --body "Pins each adapter to the newest PyPI release that completed the 14-day cooldown."

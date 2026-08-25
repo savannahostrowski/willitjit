@@ -13,6 +13,7 @@ license-files = ["LICENSE"]
 
 [dependency-groups]
 dev = [
+    "packaging>=25.0",
     "prek>=0.4.14",
 ]
 

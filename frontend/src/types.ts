@@ -28,6 +28,9 @@ export type PackageResult = {
   name: string;
   downloads: number;
   repository: string;
+  releaseVersion?: string;
+  releaseDate?: string;
+  sourceRef?: string;
   overallStatus: Status;
   platforms: Record<string, Observation>;
 };
@@ -39,7 +42,7 @@ export type Snapshot = {
     completedObservations: number;
     github?: { cpythonVersion?: string };
   };
-  dataset: { source: string };
+  dataset: { source: string; releaseCutoff?: string };
   summary: {
     packages: Partial<Record<Status, number>>;
   };

@@ -8,6 +8,7 @@ Classification: TypeAlias = Literal[
     "suspected-jit-regression",
     "baseline-failure",
     "setup-error",
+    "not-tested",
 ]
 
 
@@ -27,6 +28,12 @@ class Package:
     isolate_home: bool = False
     recursive_submodules: bool = False
     embedded_python: bool = False
+    fetch_tags: bool = False
+    sparse_paths: tuple[str, ...] = ()
+    skip_platforms: tuple[tuple[str, str], ...] = ()
+    focused_test: tuple[str, ...] = ()
+    release_version: str = ""
+    release_date: str = ""
 
 
 @dataclass(frozen=True)

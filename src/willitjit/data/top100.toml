@@ -4,21 +4,24 @@ last_update = "2026-08-01 06:34:08"
 window = "30 days"
 selection = "first 100 packages with official GitHub repositories"
 
+release_cutoff = "2026-08-11T16:53:55Z"
+
 [[packages]]
 rank = 1
 name = "boto3"
 downloads = 3717556977
 repository = "https://github.com/boto/boto3.git"
-ref = "HEAD"
+ref = "1.43.68"
+release_version = "1.43.68"
+release_date = "2026-08-10T19:22:05.592139Z"
 install = [
-  ["-m", "pip", "install", "git+https://github.com/boto/botocore.git@develop", "git+https://github.com/boto/jmespath.git@develop", "git+https://github.com/boto/s3transfer.git@develop"],
   ["-m", "pip", "install", "-r", "requirements-dev-lock.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "unit", "functional"]
 test_cwd = "tests"
 timeout_seconds = 1800
-note = "Installs the three develop dependencies non-editably because uv rejects editable Git URLs in requirements.txt; integration tests are excluded."
+note = "Uses the release's locked development requirements; integration tests are excluded."
 isolate_home = true
 
 [[packages]]
@@ -26,7 +29,9 @@ rank = 2
 name = "packaging"
 downloads = 2198449167
 repository = "https://github.com/pypa/packaging.git"
-ref = "HEAD"
+ref = "26.3"
+release_version = "26.3"
+release_date = "2026-08-04T18:15:27.159957Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "test"],
@@ -39,7 +44,9 @@ rank = 3
 name = "typing-extensions"
 downloads = 1904238788
 repository = "https://github.com/python/typing_extensions.git"
-ref = "HEAD"
+ref = "4.16.0"
+release_version = "4.16.0"
+release_date = "2026-07-02T08:40:04.659120Z"
 install = [["-m", "pip", "install", "-e", "."]]
 test = ["-m", "unittest", "discover"]
 test_cwd = "src"
@@ -51,7 +58,9 @@ rank = 4
 name = "certifi"
 downloads = 1861401883
 repository = "https://github.com/certifi/python-certifi.git"
-ref = "HEAD"
+ref = "2026.07.22"
+release_version = "2026.7.22"
+release_date = "2026-07-22T03:35:11.276376Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest"],
@@ -65,7 +74,9 @@ rank = 5
 name = "urllib3"
 downloads = 1843477278
 repository = "https://github.com/urllib3/urllib3.git"
-ref = "HEAD"
+ref = "2.7.0"
+release_version = "2.7.0"
+release_date = "2026-05-07T16:13:17.151740Z"
 install = [
   ["-m", "pip", "install", "-e", ".[socks,brotli,zstd,h2]"],
   ["-m", "pip", "install", "--group", "test"],
@@ -80,7 +91,9 @@ rank = 6
 name = "idna"
 downloads = 1760742555
 repository = "https://github.com/kjd/idna.git"
-ref = "HEAD"
+ref = "v3.18"
+release_version = "3.18"
+release_date = "2026-06-02T14:34:06.319954Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest>=8.3.2", "hypothesis>=6.141.1"],
@@ -93,7 +106,9 @@ rank = 7
 name = "requests"
 downloads = 1756048205
 repository = "https://github.com/psf/requests.git"
-ref = "HEAD"
+ref = "v2.34.2"
+release_version = "2.34.2"
+release_date = "2026-05-14T19:25:26.443000Z"
 install = [
   ["-m", "pip", "install", "-e", ".[socks]"],
   ["-m", "pip", "install", "--group", "test"],
@@ -106,7 +121,9 @@ rank = 8
 name = "charset-normalizer"
 downloads = 1674555757
 repository = "https://github.com/jawah/charset_normalizer.git"
-ref = "HEAD"
+ref = "3.4.9"
+release_version = "3.4.9"
+release_date = "2026-07-07T14:32:36.236156Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "dev"],
@@ -121,11 +138,14 @@ rank = 9
 name = "setuptools"
 downloads = 1563563625
 repository = "https://github.com/pypa/setuptools.git"
-ref = "HEAD"
+ref = "v84.0.0"
+release_version = "84.0.0"
+release_date = "2026-08-08T18:27:56.719708Z"
 install = [["-m", "pip", "install", "-e", ".[test,check,cover,enabler,type,core]"]]
 test = ["-m", "pytest"]
 timeout_seconds = 2400
-note = "The full default suite is retained; integration is a separate tox environment."
+skip_platforms = { Linux = "The uv-managed CPython build omits test.support, which this upstream suite requires.", Darwin = "The uv-managed CPython build omits test.support, which this upstream suite requires." }
+note = "The full default suite runs where the selected CPython distribution includes test.support; integration is a separate tox environment."
 environment = { CFLAGS = "-Wno-error=deprecated-declarations" }
 
 [[packages]]
@@ -133,15 +153,18 @@ rank = 10
 name = "botocore"
 downloads = 1497531138
 repository = "https://github.com/boto/botocore.git"
-ref = "HEAD"
+ref = "1.43.68"
+release_version = "1.43.68"
+release_date = "2026-08-10T19:21:58.157799Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements-dev-lock.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "unit", "functional"]
+focused_test = ["-m", "pytest", "functional/csm/test_monitoring.py"]
 test_cwd = "tests"
 timeout_seconds = 2400
-note = "Matches the repository CI dependencies and unit/functional selection; integration tests are excluded."
+note = "Matches the repository CI dependencies and unit/functional selection; integration tests are excluded. The focused command reproduces the Windows JIT crash observed in functional/csm/test_monitoring.py."
 isolate_home = true
 
 [[packages]]
@@ -149,7 +172,9 @@ rank = 11
 name = "cryptography"
 downloads = 1479413072
 repository = "https://github.com/pyca/cryptography.git"
-ref = "HEAD"
+ref = "50.0.0"
+release_version = "50.0.0"
+release_date = "2026-07-31T14:23:33.331759Z"
 install = [
   ["-m", "pip", "install", "-e", "./vectors"],
   ["-m", "pip", "install", "-e", "."],
@@ -164,7 +189,9 @@ rank = 12
 name = "cffi"
 downloads = 1303772314
 repository = "https://github.com/python-cffi/cffi.git"
-ref = "HEAD"
+ref = "v2.1.1"
+release_version = "2.1.1"
+release_date = "2026-08-03T21:19:15.602573Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest", "setuptools", "meson-python", "ninja"],
@@ -179,7 +206,9 @@ rank = 13
 name = "pluggy"
 downloads = 1280274438
 repository = "https://github.com/pytest-dev/pluggy.git"
-ref = "HEAD"
+ref = "1.6.0"
+release_version = "1.6.0"
+release_date = "2025-05-15T12:30:06.134003Z"
 install = [
   ["-m", "pip", "install", "--group", "testing"],
   ["-m", "pip", "install", "-e", "."],
@@ -193,7 +222,9 @@ rank = 14
 name = "pygments"
 downloads = 1270057742
 repository = "https://github.com/pygments/pygments.git"
-ref = "HEAD"
+ref = "2.20.0"
+release_version = "2.20.0"
+release_date = "2026-03-29T13:29:30.038266Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest~=8.2", "pytest-randomly", "pytest-cov", "wcag-contrast-ratio"],
@@ -206,7 +237,9 @@ rank = 15
 name = "pyyaml"
 downloads = 1194612572
 repository = "https://github.com/yaml/pyyaml.git"
-ref = "HEAD"
+ref = "6.0.3"
+release_version = "6.0.3"
+release_date = "2025-09-25T21:31:46.040932Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest"],
@@ -220,7 +253,9 @@ rank = 16
 name = "python-dateutil"
 downloads = 1188011910
 repository = "https://github.com/dateutil/dateutil.git"
-ref = "HEAD"
+ref = "2.9.0.post0"
+release_version = "2.9.0.post0"
+release_date = "2024-03-01T18:36:18.570437Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "-r", "requirements-dev.txt"],
@@ -233,7 +268,9 @@ rank = 17
 name = "six"
 downloads = 1177269151
 repository = "https://github.com/benjaminp/six.git"
-ref = "HEAD"
+ref = "1.17.0"
+release_version = "1.17.0"
+release_date = "2024-12-04T17:35:26.475808Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest"],
@@ -246,7 +283,9 @@ rank = 18
 name = "aiobotocore"
 downloads = 1164834706
 repository = "https://github.com/aio-libs/aiobotocore.git"
-ref = "HEAD"
+ref = "3.9.0"
+release_version = "3.9.0"
+release_date = "2026-08-01T11:54:06.128433Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "test"],
@@ -261,15 +300,17 @@ rank = 19
 name = "numpy"
 downloads = 1143792865
 repository = "https://github.com/numpy/numpy.git"
-ref = "HEAD"
+ref = "v2.5.2"
+release_version = "2.5.2"
+release_date = "2026-08-09T13:44:51.702331Z"
 install = [
   ["-m", "pip", "install", "meson-python", "meson", "cython", "ninja"],
   ["-m", "pip", "install", "-e", ".", "--no-build-isolation"],
   ["-m", "pip", "install", "-r", "requirements/test_requirements.txt"],
 ]
-test = ["-m", "pytest", "--pyargs", "numpy", "-p", "no:xdist", "--durations=10"]
+test = ["-m", "pytest", "--pyargs", "numpy", "-m", "not slow", "-p", "no:xdist", "--durations=10"]
 timeout_seconds = 2400
-note = "A heavyweight native-extension lane; recursive submodules match NumPy's upstream CI checkout."
+note = "A heavyweight native-extension lane; recursive submodules match NumPy's upstream CI checkout. Tests marked slow are excluded because upstream includes multi-gigabyte memory and disk tests in that group."
 recursive_submodules = true
 
 [[packages]]
@@ -277,7 +318,9 @@ rank = 20
 name = "pycparser"
 downloads = 1107200067
 repository = "https://github.com/eliben/pycparser.git"
-ref = "HEAD"
+ref = "release_v3.00"
+release_version = "3.0"
+release_date = "2026-01-21T14:26:50.693739Z"
 install = [["-m", "pip", "install", "."]]
 test = ["-m", "unittest", "discover", "-s", "tests"]
 timeout_seconds = 600
@@ -287,7 +330,9 @@ rank = 21
 name = "pydantic"
 downloads = 1105778495
 repository = "https://github.com/pydantic/pydantic.git"
-ref = "HEAD"
+ref = "v2.13.4"
+release_version = "2.13.4"
+release_date = "2026-05-06T13:43:02.641507Z"
 install = [
   ["-m", "pip", "install", "-e", "./pydantic-core"],
   ["-m", "pip", "install", "-e", ".[email,timezone]"],
@@ -302,7 +347,9 @@ rank = 22
 name = "pytest"
 downloads = 1091772181
 repository = "https://github.com/pytest-dev/pytest.git"
-ref = "HEAD"
+ref = "9.1.1"
+release_version = "9.1.1"
+release_date = "2026-06-19T10:58:31.347074Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "dev"],
@@ -316,7 +363,9 @@ rank = 23
 name = "click"
 downloads = 1089240135
 repository = "https://github.com/pallets/click.git"
-ref = "HEAD"
+ref = "8.4.2"
+release_version = "8.4.2"
+release_date = "2026-06-24T17:45:13.730054Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "tests"],
@@ -329,7 +378,9 @@ rank = 24
 name = "iniconfig"
 downloads = 1033526081
 repository = "https://github.com/pytest-dev/iniconfig.git"
-ref = "HEAD"
+ref = "v2.3.0"
+release_version = "2.3.0"
+release_date = "2025-10-18T21:55:41.639305Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "dev"],
@@ -343,7 +394,9 @@ rank = 25
 name = "anyio"
 downloads = 1032777959
 repository = "https://github.com/agronholm/anyio.git"
-ref = "HEAD"
+ref = "4.14.2"
+release_version = "4.14.2"
+release_date = "2026-07-12T20:29:05.763870Z"
 install = [
   ["-m", "pip", "install", "-e", ".[trio]"],
   ["-m", "pip", "install", "--group", "test"],
@@ -357,22 +410,28 @@ environment = { PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1" }
 rank = 26
 name = "pydantic-core"
 downloads = 1007754482
-repository = "https://github.com/pydantic/pydantic-core.git"
-ref = "HEAD"
+repository = "https://github.com/pydantic/pydantic.git"
+ref = "core-v2.48.0"
+release_version = "2.48.0"
+release_date = "2026-08-06T14:21:51.964864Z"
 install = [
-  ["-m", "pip", "install", "--group", "testing"],
-  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "pydantic-core/pyproject.toml:testing-extra"],
+  ["-m", "pip", "install", "-e", "./pydantic-core"],
 ]
 test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+test_cwd = "pydantic-core"
 timeout_seconds = 1800
-note = "Uses the upstream testing dependency group and disables parallel execution so crashes remain attributable."
+note = "Uses the pydantic-core package in the current Pydantic monorepo and disables parallel execution so crashes remain attributable."
+sparse_paths = ["pydantic-core"]
 
 [[packages]]
 rank = 27
 name = "grpcio-status"
 downloads = 951128296
 repository = "https://github.com/grpc/grpc.git"
-ref = "HEAD"
+ref = "v1.83.0"
+release_version = "1.83.0"
+release_date = "2026-07-23T15:23:49.044717Z"
 install = [
   ["-m", "pip", "install", "grpcio", "protobuf", "googleapis-common-protos"],
   ["-m", "pip", "install", "--no-deps", "-e", "src/python/grpcio_status"],
@@ -387,20 +446,28 @@ rank = 28
 name = "attrs"
 downloads = 924894579
 repository = "https://github.com/python-attrs/attrs.git"
-ref = "HEAD"
+ref = "26.1.0"
+release_version = "26.1.0"
+release_date = "2026-03-19T14:22:23.645947Z"
 install = [
   ["-m", "pip", "install", "--group", "tests"],
   ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 1200
+# attrs derives its version from Git tags and tests that generated version.
+# https://github.com/python-attrs/attrs/blob/main/tests/test_packaging.py
+fetch_tags = true
+note = "Fetches release tags so hatch-vcs generates the same calendar version that the upstream packaging tests expect."
 
 [[packages]]
 rank = 29
 name = "s3transfer"
 downloads = 924268948
 repository = "https://github.com/boto/s3transfer.git"
-ref = "HEAD"
+ref = "0.19.2"
+release_version = "0.19.2"
+release_date = "2026-07-22T19:30:43.251801Z"
 install = [["scripts/ci/install"]]
 test = ["scripts/ci/run-tests"]
 timeout_seconds = 1800
@@ -412,7 +479,9 @@ rank = 30
 name = "h11"
 downloads = 894878618
 repository = "https://github.com/python-hyper/h11.git"
-ref = "HEAD"
+ref = "v0.16.0"
+release_version = "0.16.0"
+release_date = "2025-04-24T03:35:24.344199Z"
 install = [
   ["-m", "pip", "install", "-r", "test-requirements.txt"],
   ["-m", "pip", "install", "-e", "."],
@@ -425,7 +494,9 @@ rank = 31
 name = "fsspec"
 downloads = 878523962
 repository = "https://github.com/fsspec/filesystem_spec.git"
-ref = "HEAD"
+ref = "2026.7.0"
+release_version = "2026.7.0"
+release_date = "2026-07-28T16:34:49.538692Z"
 install = [["-m", "pip", "install", "-e", ".[test]"]]
 test = ["-m", "pytest", "-v"]
 timeout_seconds = 1800
@@ -436,7 +507,9 @@ rank = 32
 name = "annotated-types"
 downloads = 871281123
 repository = "https://github.com/annotated-types/annotated-types.git"
-ref = "HEAD"
+ref = "v0.8.0"
+release_version = "0.8.0"
+release_date = "2026-07-23T20:16:12.938651Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements/testing.in"],
   ["-m", "pip", "install", "-e", "."],
@@ -449,7 +522,9 @@ rank = 33
 name = "protobuf"
 downloads = 868343626
 repository = "https://github.com/protocolbuffers/protobuf.git"
-ref = "HEAD"
+ref = "v35.1"
+release_version = "7.35.1"
+release_date = "2026-06-11T21:55:31.719008Z"
 install = [["-m", "pip", "install", "-r", "python/requirements.txt"]]
 test = [
   "-m",
@@ -468,7 +543,9 @@ rank = 34
 name = "markupsafe"
 downloads = 797118023
 repository = "https://github.com/pallets/markupsafe.git"
-ref = "HEAD"
+ref = "3.0.3"
+release_version = "3.0.3"
+release_date = "2025-09-27T18:36:05.558229Z"
 install = [
   ["-m", "pip", "install", "--group", "tests"],
   ["-m", "pip", "install", "-e", "."],
@@ -481,7 +558,9 @@ rank = 35
 name = "httpx"
 downloads = 796983818
 repository = "https://github.com/encode/httpx.git"
-ref = "HEAD"
+ref = "0.28.1"
+release_version = "0.28.1"
+release_date = "2024-12-06T15:37:21.509172Z"
 install = [["-m", "pip", "install", "-r", "requirements.txt"]]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1800
@@ -491,7 +570,9 @@ rank = 36
 name = "httpcore"
 downloads = 783609098
 repository = "https://github.com/encode/httpcore.git"
-ref = "HEAD"
+ref = "1.0.9"
+release_version = "1.0.9"
+release_date = "2025-04-24T22:06:20.566605Z"
 install = [
   ["-m", "pip", "install", "-e", ".[asyncio,http2,socks,trio]"],
   ["-m", "pip", "install", "pytest", "pytest-trio"],
@@ -505,7 +586,9 @@ rank = 37
 name = "typing-inspection"
 downloads = 782958676
 repository = "https://github.com/pydantic/typing-inspection.git"
-ref = "HEAD"
+ref = "v0.4.3"
+release_version = "0.4.3"
+release_date = "2026-08-10T09:39:16.693990Z"
 install = [
   ["-m", "pip", "install", "--group", "tests"],
   ["-m", "pip", "install", "-e", "."],
@@ -518,20 +601,25 @@ rank = 38
 name = "pandas"
 downloads = 769110377
 repository = "https://github.com/pandas-dev/pandas.git"
-ref = "HEAD"
+ref = "v3.0.5"
+release_version = "3.0.5"
+release_date = "2026-07-22T22:17:48.274862Z"
 install = [
-  ["-m", "pip", "install", "-e", ".[test]"],
+  ["-m", "pip", "install", "meson-python>=0.19.0,<1", "meson>=1.2.3,<2", "wheel", "Cython>3.1.0,<4", "numpy>=2.3.3", "versioneer[toml]"],
+  ["-m", "pip", "install", "-e", ".[test]", "--no-build-isolation"],
 ]
 test = ["-m", "pytest", "-m", "not slow and not network and not clipboard and not single_cpu", "pandas", "-p", "no:xdist"]
 timeout_seconds = 3600
-note = "Runs the upstream core suite while excluding its slow, network, clipboard, and single-CPU lanes."
+note = "Uses pandas' declared build requirements in the persistent test environment, then runs the upstream core suite without slow, network, clipboard, or single-CPU lanes."
 
 [[packages]]
 rank = 39
 name = "platformdirs"
 downloads = 763006168
 repository = "https://github.com/tox-dev/platformdirs.git"
-ref = "HEAD"
+ref = "4.11.2"
+release_version = "4.11.2"
+release_date = "2026-08-10T15:48:04.855867Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
@@ -544,7 +632,9 @@ rank = 40
 name = "pathspec"
 downloads = 742847330
 repository = "https://github.com/cpburnz/python-pathspec.git"
-ref = "HEAD"
+ref = "v1.1.1"
+release_version = "1.1.1"
+release_date = "2026-04-27T01:46:07.060850Z"
 install = [["-m", "pip", "install", "-e", "."]]
 test = ["-m", "unittest", "discover", "-t", ".", "-s", "tests"]
 timeout_seconds = 600
@@ -554,7 +644,9 @@ rank = 41
 name = "python-dotenv"
 downloads = 740099887
 repository = "https://github.com/theskumar/python-dotenv.git"
-ref = "HEAD"
+ref = "v1.2.2"
+release_version = "1.2.2"
+release_date = "2026-03-01T16:00:25.090725Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements.txt"],
   ["-m", "pip", "install", "-e", ".[cli]"],
@@ -567,7 +659,9 @@ rank = 42
 name = "jinja2"
 downloads = 718583427
 repository = "https://github.com/pallets/jinja.git"
-ref = "HEAD"
+ref = "3.1.6"
+release_version = "3.1.6"
+release_date = "2025-03-05T20:05:00.369721Z"
 install = [
   ["-m", "pip", "install", "--group", "tests"],
   ["-m", "pip", "install", "-e", "."],
@@ -580,7 +674,9 @@ rank = 43
 name = "filelock"
 downloads = 717124668
 repository = "https://github.com/tox-dev/py-filelock.git"
-ref = "HEAD"
+ref = "3.32.2"
+release_version = "3.32.2"
+release_date = "2026-07-29T22:46:03.520503Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
@@ -593,7 +689,9 @@ rank = 44
 name = "pyjwt"
 downloads = 715697201
 repository = "https://github.com/jpadilla/pyjwt.git"
-ref = "HEAD"
+ref = "2.13.0"
+release_version = "2.13.0"
+release_date = "2026-05-21T19:54:35.362086Z"
 install = [
   ["-m", "pip", "install", "--group", "tests"],
   ["-m", "pip", "install", "-e", ".[crypto]"],
@@ -607,10 +705,11 @@ rank = 45
 name = "s3fs"
 downloads = 704379780
 repository = "https://github.com/fsspec/s3fs.git"
-ref = "HEAD"
+ref = "2026.7.0"
+release_version = "2026.7.0"
+release_date = "2026-07-28T17:14:09.497041Z"
 install = [
-  ["-m", "pip", "install", "git+https://github.com/fsspec/filesystem_spec"],
-  ["-m", "pip", "install", "--upgrade", "--force-reinstall", "aiobotocore<4.0.0"],
+  ["-m", "pip", "install", "-r", "requirements.txt"],
   ["-m", "pip", "install", "-r", "test_requirements.txt"],
   ["-m", "pip", "install", "--no-deps", "-e", "."],
 ]
@@ -625,7 +724,9 @@ rank = 46
 name = "litellm"
 downloads = 682782233
 repository = "https://github.com/BerriAI/litellm.git"
-ref = "HEAD"
+ref = "v1.96.0"
+release_version = "1.96.0"
+release_date = "2026-08-09T01:35:19.155629Z"
 install = [
   ["-m", "pip", "install", "--group", "dev"],
   ["-m", "pip", "install", "-e", "."],
@@ -649,7 +750,9 @@ rank = 47
 name = "jmespath"
 downloads = 652344301
 repository = "https://github.com/jmespath/jmespath.py.git"
-ref = "HEAD"
+ref = "1.1.0"
+release_version = "1.1.0"
+release_date = "2026-01-22T16:35:24.919874Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements.txt"],
   ["-m", "pip", "install", "-e", "."],
@@ -662,7 +765,9 @@ rank = 48
 name = "tqdm"
 downloads = 648606617
 repository = "https://github.com/tqdm/tqdm.git"
-ref = "HEAD"
+ref = "v4.70.0"
+release_version = "4.70.0"
+release_date = "2026-07-27T11:33:13.167874Z"
 install = [
   ["-m", "pip", "install", "-r", ".meta/requirements-test.txt"],
   ["-m", "pip", "install", "-e", "."],
@@ -676,7 +781,9 @@ rank = 49
 name = "aiohttp"
 downloads = 643629740
 repository = "https://github.com/aio-libs/aiohttp.git"
-ref = "HEAD"
+ref = "v3.14.3"
+release_version = "3.14.3"
+release_date = "2026-07-23T01:52:08.217234Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements/test.in", "-c", "requirements/test.txt"],
   ["-m", "pip", "install", "-e", "."],
@@ -692,22 +799,26 @@ rank = 50
 name = "yarl"
 downloads = 621403276
 repository = "https://github.com/aio-libs/yarl.git"
-ref = "HEAD"
+ref = "v1.24.5"
+release_version = "1.24.5"
+release_date = "2026-07-20T02:04:21.695642Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements/test.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
-test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+test = ["-m", "pytest", "tests", "-p", "no:cov", "-p", "no:xdist", "-o", "addopts="]
 timeout_seconds = 1200
 environment = { YARL_NO_EXTENSIONS = "1" }
-note = "Uses the upstream pure-Python lane so the JIT exercises Python code."
+note = "Uses the upstream pure-Python lane and clears pytest addopts so the suite does not require the repository's xdist CI lane."
 
 [[packages]]
 rank = 51
 name = "pip"
 downloads = 617503549
 repository = "https://github.com/pypa/pip.git"
-ref = "HEAD"
+ref = "26.2.1"
+release_version = "26.2.1"
+release_date = "2026-08-04T22:51:12.472093Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
@@ -722,7 +833,9 @@ rank = 52
 name = "rich"
 downloads = 613852561
 repository = "https://github.com/Textualize/rich.git"
-ref = "HEAD"
+ref = "v15.0.0"
+release_version = "15.0.0"
+release_date = "2026-04-12T08:24:00.750018Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest", "pytest-cov", "attrs"],
@@ -735,7 +848,9 @@ rank = 53
 name = "markdown-it-py"
 downloads = 613779408
 repository = "https://github.com/executablebooks/markdown-it-py.git"
-ref = "HEAD"
+ref = "v4.2.0"
+release_version = "4.2.0"
+release_date = "2026-05-07T12:08:27.182789Z"
 install = [["-m", "pip", "install", "-e", ".[testing]"]]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
@@ -745,7 +860,9 @@ rank = 54
 name = "rpds-py"
 downloads = 613601443
 repository = "https://github.com/crate-py/rpds.git"
-ref = "HEAD"
+ref = "v2026.6.3"
+release_version = "2026.6.3"
+release_date = "2026-06-30T07:14:54.821184Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
@@ -758,7 +875,9 @@ rank = 55
 name = "uvicorn"
 downloads = 609510360
 repository = "https://github.com/Kludex/uvicorn.git"
-ref = "HEAD"
+ref = "0.52.1"
+release_version = "0.52.1"
+release_date = "2026-08-01T18:19:29.294787Z"
 install = [
   ["-m", "pip", "install", "--group", "dev"],
   ["-m", "pip", "install", "-e", ".[standard]"],
@@ -771,7 +890,9 @@ rank = 56
 name = "starlette"
 downloads = 605601182
 repository = "https://github.com/Kludex/starlette.git"
-ref = "HEAD"
+ref = "1.6.0"
+release_version = "1.6.0"
+release_date = "2026-08-08T18:27:56.196765Z"
 install = [
   ["-m", "pip", "install", "--group", "dev"],
   ["-m", "pip", "install", "-e", "."],
@@ -784,7 +905,9 @@ rank = 57
 name = "jsonschema"
 downloads = 596925041
 repository = "https://github.com/python-jsonschema/jsonschema.git"
-ref = "HEAD"
+ref = "v4.26.0"
+release_version = "4.26.0"
+release_date = "2026-01-07T13:41:05.306692Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", ".[format]"],
@@ -797,7 +920,9 @@ rank = 58
 name = "wheel"
 downloads = 595760140
 repository = "https://github.com/pypa/wheel.git"
-ref = "HEAD"
+ref = "0.47.0"
+release_version = "0.47.0"
+release_date = "2026-04-22T15:51:26.296257Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
@@ -810,22 +935,27 @@ rank = 59
 name = "multidict"
 downloads = 594005645
 repository = "https://github.com/aio-libs/multidict.git"
-ref = "HEAD"
+ref = "v6.7.1"
+release_version = "6.7.1"
+release_date = "2026-01-26T02:42:59.784906Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements/pytest.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
-test = ["-m", "pytest", "-m", "not leaks", "--no-cov", "tests", "-p", "no:xdist"]
+test = ["-m", "pytest", "-m", "not leaks", "--no-cov", "--no-c-extensions", "tests", "-p", "no:xdist"]
 timeout_seconds = 1800
 environment = { MULTIDICT_NO_EXTENSIONS = "1" }
-note = "Uses the upstream non-leak pure-Python lane so the JIT exercises Python code."
+note = "Uses the upstream non-leak pure-Python build and test lane so the JIT exercises Python code."
 
 [[packages]]
 rank = 60
 name = "google-auth"
 downloads = 590070847
 repository = "https://github.com/googleapis/google-cloud-python.git"
-ref = "HEAD"
+ref = "google-auth-v2.56.3"
+release_version = "2.56.3"
+release_date = "2026-08-06T06:22:51.788856Z"
+sparse_paths = ["packages/google-auth"]
 install = [["-m", "pip", "install", "-e", "./packages/google-auth[testing]"]]
 test = ["-m", "pytest", "packages/google-auth/tests", "packages/google-auth/tests_async", "-p", "no:xdist"]
 timeout_seconds = 1800
@@ -836,7 +966,9 @@ rank = 61
 name = "propcache"
 downloads = 587094457
 repository = "https://github.com/aio-libs/propcache.git"
-ref = "HEAD"
+ref = "v0.5.2"
+release_version = "0.5.2"
+release_date = "2026-05-08T20:59:15.597140Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements/test.txt"],
   ["-m", "pip", "install", "-e", "."],
@@ -851,7 +983,9 @@ rank = 62
 name = "pyasn1"
 downloads = 570897622
 repository = "https://github.com/pyasn1/pyasn1.git"
-ref = "HEAD"
+ref = "v0.6.4"
+release_version = "0.6.4"
+release_date = "2026-07-09T01:12:32.920042Z"
 install = [["-m", "pip", "install", "-e", "."]]
 test = ["-W", "error", "-m", "unittest", "discover", "-s", "tests"]
 timeout_seconds = 900
@@ -861,7 +995,9 @@ rank = 63
 name = "fastapi"
 downloads = 568552369
 repository = "https://github.com/fastapi/fastapi.git"
-ref = "HEAD"
+ref = "0.141.1"
+release_version = "0.141.1"
+release_date = "2026-07-29T17:18:04.364385Z"
 install = [
   ["-m", "pip", "install", "--group", "tests"],
   ["-m", "pip", "install", "-e", ".[standard]"],
@@ -874,7 +1010,9 @@ rank = 64
 name = "aiohappyeyeballs"
 downloads = 560621750
 repository = "https://github.com/aio-libs/aiohappyeyeballs.git"
-ref = "HEAD"
+ref = "v2.7.1"
+release_version = "2.7.1"
+release_date = "2026-07-01T17:11:54.055058Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest", "pytest-cov", "pytest-asyncio"],
@@ -887,7 +1025,9 @@ rank = 65
 name = "frozenlist"
 downloads = 554242815
 repository = "https://github.com/aio-libs/frozenlist.git"
-ref = "HEAD"
+ref = "v1.8.0"
+release_version = "1.8.0"
+release_date = "2025-10-06T05:35:23.699793Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements/test.txt"],
   ["-m", "pip", "install", "-e", "."],
@@ -902,7 +1042,9 @@ rank = 66
 name = "pytz"
 downloads = 551686335
 repository = "https://github.com/stub42/pytz.git"
-ref = "HEAD"
+ref = "release_2026.3.post1"
+release_version = "2026.3.post1"
+release_date = "2026-07-25T15:12:05.782880Z"
 install = [["-m", "pip", "install", "pytest"]]
 test = ["-m", "pytest", "pytz/tests"]
 test_cwd = "src"
@@ -914,7 +1056,9 @@ rank = 67
 name = "mdurl"
 downloads = 548051038
 repository = "https://github.com/executablebooks/mdurl.git"
-ref = "HEAD"
+ref = "0.1.2"
+release_version = "0.1.2"
+release_date = "2022-08-14T12:40:09.779676Z"
 install = [
   ["-m", "pip", "install", "-r", "tests/requirements.txt"],
   ["-m", "pip", "install", "-e", "."],
@@ -927,53 +1071,73 @@ rank = 68
 name = "pillow"
 downloads = 547140713
 repository = "https://github.com/python-pillow/Pillow.git"
-ref = "HEAD"
-install = [["-m", "pip", "install", "-e", ".[tests]"]]
+ref = "12.3.0"
+release_version = "12.3.0"
+release_date = "2026-07-01T11:53:27.808291Z"
+# JPEG and zlib are required by default, but Pillow documents these build
+# switches for environments without the platform development libraries.
+# https://pillow.readthedocs.io/en/latest/installation/building-from-source.html#build-options
+install = [["-m", "pip", "install", "-e", ".[tests]", "-C", "jpeg=disable", "-C", "zlib=disable"]]
 test = ["-m", "pytest", "Tests", "-p", "no:xdist"]
 timeout_seconds = 2400
+note = "Runs Pillow's upstream suite with JPEG and zlib support disabled consistently on every platform; feature-specific tests report their normal skips."
 
 [[packages]]
 rank = 69
 name = "referencing"
 downloads = 545376376
 repository = "https://github.com/python-jsonschema/referencing.git"
-ref = "HEAD"
+ref = "v0.37.0"
+release_version = "0.37.0"
+release_date = "2025-10-13T15:30:47.625937Z"
 install = [
   ["-m", "pip", "install", "--group", "dev"],
   ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "referencing/tests"]
 timeout_seconds = 900
+recursive_submodules = true
+note = "Initializes the repository's referencing-suite submodule before running the upstream package tests."
 
 [[packages]]
 rank = 70
 name = "importlib-metadata"
 downloads = 544435691
 repository = "https://github.com/python/importlib_metadata.git"
-ref = "HEAD"
+ref = "v9.0.0"
+release_version = "9.0.0"
+release_date = "2026-03-20T06:42:55.665400Z"
 install = [["-m", "pip", "install", "-e", ".[test]"]]
-test = ["-m", "pytest", "tests"]
+test = ["-m", "pytest", "tests", "-p", "no:xdist", "-o", "addopts="]
 timeout_seconds = 1200
+fetch_tags = true
+skip_platforms = { Linux = "The uv-managed CPython build omits test.support, which this upstream suite requires.", Darwin = "The uv-managed CPython build omits test.support, which this upstream suite requires." }
+note = "Fetches tags for setuptools-scm. The full upstream suite runs only where the selected CPython distribution includes test.support."
 
 [[packages]]
 rank = 71
 name = "websockets"
 downloads = 543199444
 repository = "https://github.com/python-websockets/websockets.git"
-ref = "HEAD"
+ref = "17.0.1"
+release_version = "17.0.1"
+release_date = "2026-07-31T11:29:04.803128Z"
 install = [
   ["-m", "pip", "install", "-r", "tests/requirements.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
-test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+test = ["-W", "ignore::pytest.PytestUnraisableExceptionWarning", "-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 1800
+note = "Ignores only pytest's CPython 3.14 scandir finalization warning; package warnings retain the upstream configuration."
 
 [[packages]]
 rank = 72
 name = "opentelemetry-semantic-conventions"
 downloads = 542941923
 repository = "https://github.com/open-telemetry/opentelemetry-python.git"
-ref = "HEAD"
+ref = "v1.44.0"
+release_version = "0.65b0"
+release_date = "2026-07-16T15:25:30.688910Z"
 install = [["-m", "pip", "install", "-r", "opentelemetry-semantic-conventions/test-requirements.txt"]]
 test = ["-m", "pytest", "opentelemetry-semantic-conventions/tests"]
 timeout_seconds = 1200
@@ -984,7 +1148,9 @@ rank = 73
 name = "trove-classifiers"
 downloads = 540435669
 repository = "https://github.com/pypa/trove-classifiers.git"
-ref = "HEAD"
+ref = "2026.6.1.19"
+release_version = "2026.6.1.19"
+release_date = "2026-06-01T19:41:33.434069Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements/dev.txt"],
   ["-m", "pip", "install", "-e", "."],
@@ -997,12 +1163,14 @@ rank = 74
 name = "jsonschema-specifications"
 downloads = 540286306
 repository = "https://github.com/python-jsonschema/jsonschema-specifications.git"
-ref = "HEAD"
+ref = "v2025.9.1"
+release_version = "2025.9.1"
+release_date = "2025-09-08T01:34:57.871954Z"
 install = [
   ["-m", "pip", "install", "pytest"],
   ["-m", "pip", "install", "-e", "."],
 ]
-test = ["-W", "error", "-m", "pytest", "tests"]
+test = ["-W", "error", "-m", "pytest", "jsonschema_specifications/tests"]
 timeout_seconds = 900
 
 [[packages]]
@@ -1010,7 +1178,9 @@ rank = 75
 name = "aiosignal"
 downloads = 537226203
 repository = "https://github.com/aio-libs/aiosignal.git"
-ref = "HEAD"
+ref = "v1.4.0"
+release_version = "1.4.0"
+release_date = "2025-07-03T22:54:42.156277Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements/wheel.txt"],
   ["-m", "pip", "install", "-e", "."],
@@ -1023,7 +1193,9 @@ rank = 76
 name = "virtualenv"
 downloads = 532873318
 repository = "https://github.com/pypa/virtualenv.git"
-ref = "HEAD"
+ref = "21.7.4"
+release_version = "21.7.4"
+release_date = "2026-08-10T22:54:31.515567Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
@@ -1037,7 +1209,9 @@ rank = 77
 name = "zipp"
 downloads = 531220461
 repository = "https://github.com/jaraco/zipp.git"
-ref = "HEAD"
+ref = "v4.1.0"
+release_version = "4.1.0"
+release_date = "2026-05-18T20:08:57.045692Z"
 install = [["-m", "pip", "install", "-e", ".[test]"]]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
@@ -1047,7 +1221,9 @@ rank = 78
 name = "opentelemetry-sdk"
 downloads = 521829274
 repository = "https://github.com/open-telemetry/opentelemetry-python.git"
-ref = "HEAD"
+ref = "v1.44.0"
+release_version = "1.44.0"
+release_date = "2026-07-16T15:25:29.534271Z"
 install = [["-m", "pip", "install", "-r", "opentelemetry-sdk/test-requirements.txt"]]
 test = ["-m", "pytest", "opentelemetry-sdk/tests"]
 timeout_seconds = 1200
@@ -1058,7 +1234,10 @@ rank = 79
 name = "googleapis-common-protos"
 downloads = 513693594
 repository = "https://github.com/googleapis/google-cloud-python.git"
-ref = "HEAD"
+ref = "googleapis-common-protos-v1.75.1"
+release_version = "1.75.1"
+release_date = "2026-08-06T06:23:46.696416Z"
+sparse_paths = ["packages/googleapis-common-protos"]
 install = [
   ["-m", "pip", "install", "pytest", "pytest-asyncio", "mock", "asyncmock"],
   ["-m", "pip", "install", "-e", "./packages/googleapis-common-protos"],
@@ -1073,7 +1252,9 @@ rank = 80
 name = "tzdata"
 downloads = 504527593
 repository = "https://github.com/python/tzdata.git"
-ref = "HEAD"
+ref = "2026.3"
+release_version = "2026.3"
+release_date = "2026-07-10T08:50:36.460750Z"
 install = [
   ["-m", "pip", "install", "pytest"],
   ["-m", "pip", "install", "-e", "."],
@@ -1086,7 +1267,9 @@ rank = 81
 name = "wrapt"
 downloads = 495611441
 repository = "https://github.com/GrahamDumpleton/wrapt.git"
-ref = "HEAD"
+ref = "2.3.0"
+release_version = "2.3.0"
+release_date = "2026-07-28T06:04:04.858030Z"
 install = [["-m", "pip", "install", "-e", ".[dev]"]]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1200
@@ -1096,7 +1279,9 @@ rank = 82
 name = "sniffio"
 downloads = 487249508
 repository = "https://github.com/python-trio/sniffio.git"
-ref = "HEAD"
+ref = "v1.3.1"
+release_version = "1.3.1"
+release_date = "2024-02-25T23:20:01.196159Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
@@ -1109,7 +1294,9 @@ rank = 83
 name = "hatchling"
 downloads = 484194815
 repository = "https://github.com/pypa/hatch.git"
-ref = "HEAD"
+ref = "hatchling-v1.32.0"
+release_version = "1.32.0"
+release_date = "2026-08-11T05:03:42.644966Z"
 install = [
   ["-m", "pip", "install", "pytest", "pytest-mock", "filelock", "flit-core", "trustme", "editables"],
   ["-m", "pip", "install", "-e", "./backend"],
@@ -1123,7 +1310,10 @@ rank = 84
 name = "google-api-core"
 downloads = 482456775
 repository = "https://github.com/googleapis/google-cloud-python.git"
-ref = "HEAD"
+ref = "google-api-core-v2.34.0"
+release_version = "2.34.0"
+release_date = "2026-08-06T06:22:47.502487Z"
+sparse_paths = ["packages/google-api-core"]
 install = [
   ["-m", "pip", "install", "pytest", "pytest-mock"],
   ["-m", "pip", "install", "-e", "./packages/google-api-core[grpc]"],
@@ -1137,7 +1327,9 @@ rank = 85
 name = "greenlet"
 downloads = 476388596
 repository = "https://github.com/python-greenlet/greenlet.git"
-ref = "HEAD"
+ref = "3.5.5"
+release_version = "3.5.5"
+release_date = "2026-08-10T13:25:17.987262Z"
 install = [["-m", "pip", "install", "-e", ".[test]"]]
 test = ["-m", "unittest", "discover", "-v", "greenlet.tests"]
 timeout_seconds = 1200
@@ -1147,7 +1339,9 @@ rank = 86
 name = "opentelemetry-api"
 downloads = 463796331
 repository = "https://github.com/open-telemetry/opentelemetry-python.git"
-ref = "HEAD"
+ref = "v1.44.0"
+release_version = "1.44.0"
+release_date = "2026-07-16T15:25:11.657202Z"
 install = [["-m", "pip", "install", "-r", "opentelemetry-api/test-requirements.txt"]]
 test = ["-m", "pytest", "opentelemetry-api/tests"]
 timeout_seconds = 1200
@@ -1158,7 +1352,9 @@ rank = 87
 name = "pyasn1-modules"
 downloads = 462465610
 repository = "https://github.com/pyasn1/pyasn1-modules.git"
-ref = "HEAD"
+ref = "v0.4.2"
+release_version = "0.4.2"
+release_date = "2025-03-28T02:41:19.028683Z"
 install = [["-m", "pip", "install", "-e", "."]]
 test = ["-m", "unittest", "discover", "-s", "tests"]
 timeout_seconds = 900
@@ -1168,7 +1364,9 @@ rank = 88
 name = "annotated-doc"
 downloads = 456245916
 repository = "https://github.com/fastapi/annotated-doc.git"
-ref = "HEAD"
+ref = "0.0.5"
+release_version = "0.0.5"
+release_date = "2026-07-28T13:50:57.239109Z"
 install = [
   ["-m", "pip", "install", "--group", "tests"],
   ["-m", "pip", "install", "-e", "."],
@@ -1181,7 +1379,9 @@ rank = 89
 name = "pydantic-settings"
 downloads = 453025118
 repository = "https://github.com/pydantic/pydantic-settings.git"
-ref = "HEAD"
+ref = "v2.15.0"
+release_version = "2.15.0"
+release_date = "2026-08-07T09:24:55.839145Z"
 install = [
   ["-m", "pip", "install", "--group", "testing"],
   ["-m", "pip", "install", "-e", ".[yaml,toml]"],
@@ -1194,7 +1394,9 @@ rank = 90
 name = "scipy"
 downloads = 448963567
 repository = "https://github.com/scipy/scipy.git"
-ref = "HEAD"
+ref = "v1.18.0"
+release_version = "1.18.0"
+release_date = "2026-06-19T14:59:45.203789Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
@@ -1203,6 +1405,7 @@ test = ["-m", "pytest", "--pyargs", "scipy", "-p", "no:xdist"]
 test_cwd = "tools"
 timeout_seconds = 3600
 note = "Builds SciPy from the checkout and runs the installed package's upstream suite."
+recursive_submodules = true
 
 [[packages]]
 rank = 91
@@ -1210,6 +1413,8 @@ name = "grpcio"
 downloads = 446417323
 repository = "https://github.com/grpc/grpc.git"
 ref = "v1.83.0"
+release_version = "1.83.0"
+release_date = "2026-07-23T15:18:53.099939Z"
 install = [
   ["-m", "pip", "install", "grpcio==1.83.0", "grpcio-tools==1.83.0"],
   ["-m", "pip", "install", "--no-build-isolation", "-e", "./src/python/grpcio_tests"],
@@ -1224,7 +1429,9 @@ rank = 92
 name = "textual"
 downloads = 443589157
 repository = "https://github.com/Textualize/textual.git"
-ref = "HEAD"
+ref = "v8.2.8"
+release_version = "8.2.8"
+release_date = "2026-06-30T06:51:24.495173Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest", "pytest-asyncio", "pytest-textual-snapshot"],
@@ -1237,7 +1444,9 @@ rank = 93
 name = "huggingface-hub"
 downloads = 442399796
 repository = "https://github.com/huggingface/huggingface_hub.git"
-ref = "HEAD"
+ref = "v1.27.0"
+release_version = "1.27.0"
+release_date = "2026-08-07T12:48:02.905935Z"
 install = [["-m", "pip", "install", "-e", ".[testing]"]]
 test = ["-m", "pytest", "tests", "-m", "not production and not inference and not xet and not git_lfs", "-p", "no:xdist"]
 timeout_seconds = 2400
@@ -1249,7 +1458,9 @@ rank = 94
 name = "regex"
 downloads = 437721689
 repository = "https://github.com/mrabarnett/mrab-regex.git"
-ref = "HEAD"
+ref = "2026.7.19"
+release_version = "2026.7.19"
+release_date = "2026-07-19T00:16:13.602530Z"
 install = [["-m", "pip", "install", "-e", "."]]
 test = ["-m", "unittest", "regex.tests.test_regex"]
 timeout_seconds = 1800
@@ -1260,6 +1471,8 @@ name = "pyarrow"
 downloads = 432924469
 repository = "https://github.com/apache/arrow.git"
 ref = "apache-arrow-25.0.1"
+release_version = "25.0.1"
+release_date = "2026-08-10T12:36:33.857237Z"
 install = [["-m", "pip", "install", "pyarrow==25.0.1", "pytest", "hypothesis", "cffi", "pytz", "pandas"]]
 test = ["-m", "pytest", "--import-mode=importlib", "python/pyarrow/tests", "-p", "no:xdist"]
 timeout_seconds = 3600
@@ -1270,7 +1483,9 @@ rank = 97
 name = "colorama"
 downloads = 431035221
 repository = "https://github.com/tartley/colorama.git"
-ref = "HEAD"
+ref = "0.4.6"
+release_version = "0.4.6"
+release_date = "2022-10-25T02:36:20.889702Z"
 install = [["-m", "pip", "install", "-e", "."]]
 test = ["-m", "unittest", "discover", "-s", "colorama/tests", "-p", "*_test.py"]
 timeout_seconds = 900
@@ -1280,7 +1495,9 @@ rank = 98
 name = "tenacity"
 downloads = 429288446
 repository = "https://github.com/jd/tenacity.git"
-ref = "HEAD"
+ref = "9.1.4"
+release_version = "9.1.4"
+release_date = "2026-02-07T10:45:32.240169Z"
 install = [["-m", "pip", "install", "-e", ".[test]"]]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1200
@@ -1290,7 +1507,9 @@ rank = 99
 name = "soupsieve"
 downloads = 428611663
 repository = "https://github.com/facelessuser/soupsieve.git"
-ref = "HEAD"
+ref = "2.9.2"
+release_version = "2.9.2"
+release_date = "2026-08-07T00:57:23.524076Z"
 install = [
   ["-m", "pip", "install", "pytest", "pytest-cov", "beautifulsoup4"],
   ["-m", "pip", "install", "-e", "."],
@@ -1303,23 +1522,26 @@ rank = 100
 name = "sqlalchemy"
 downloads = 422737345
 repository = "https://github.com/sqlalchemy/sqlalchemy.git"
-ref = "HEAD"
+ref = "rel_2_0_51"
+release_version = "2.0.51"
+release_date = "2026-06-15T15:41:20.012455Z"
 install = [
-  ["-m", "pip", "install", "--group", "tests"],
-  ["-m", "pip", "install", "--group", "tests-greenlet"],
+  ["-m", "pip", "install", "pytest>=7,<10", "pytest-xdist"],
   ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "-c", "pyproject.toml", "--nomemory", "--notimingintensive", "--nomypy", "test", "-p", "no:xdist"]
 timeout_seconds = 2400
 environment = { DISABLE_SQLALCHEMY_CEXT = "1" }
-note = "Runs the upstream non-memory, non-timing, non-mypy suite in pure Python mode."
+note = "Installs SQLAlchemy's documented core pytest dependencies directly because uv rejects upstream's intentional legacy duplicate extra names, then runs the non-memory, non-timing, non-mypy suite in pure Python mode."
 
 [[packages]]
 rank = 101
 name = "distro"
 downloads = 417850387
 repository = "https://github.com/python-distro/distro.git"
-ref = "HEAD"
+ref = "v1.9.0"
+release_version = "1.9.0"
+release_date = "2023-12-24T09:54:30.421191Z"
 install = [
   ["-m", "pip", "install", "pytest", "pytest-cov"],
   ["-m", "pip", "install", "-e", "."],

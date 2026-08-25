@@ -5,6 +5,7 @@ import json
 import os
 import platform
 import sys
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -67,6 +68,11 @@ def parser() -> argparse.ArgumentParser:
         "--stream-test-output",
         action="store_true",
         help="print package test-suite output while retaining complete logs",
+    )
+    run.add_argument(
+        "--focused",
+        action="store_true",
+        help="run each selected adapter's focused reproduction command",
     )
     return root
 
@@ -184,15 +190,30 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "plan":
         for package in selected:
             print(f"{package.rank}. {package.name}")
+            print(f"   repository: {package.repository}")
+            print(f"   revision: {package.ref}")
             print(
-                f"   clone: git clone --depth 1 --filter=blob:none {package.repository}"
+                f"   release: {package.release_version} "
+                f"(published {package.release_date})"
             )
+            skip_reason = dict(package.skip_platforms).get(platform.system())
+            if skip_reason:
+                print(f"   not tested: {skip_reason}")
+            if package.sparse_paths:
+                print(f"   sparse checkout: {', '.join(package.sparse_paths)}")
+            if package.fetch_tags:
+                print("   checkout: fetch tags")
+            if package.recursive_submodules:
+                print("   checkout: initialize recursive submodules")
             for command in package.install:
                 print(f"   setup: python {format_command(command)}")
             print(
                 f"   test twice ({package.test_cwd}): "
                 f"python {format_command(package.test)}"
             )
+            if package.focused_test:
+                print(f"   focused test: python {format_command(package.focused_test)}")
+            print(f"   timeout: {package.timeout_seconds} seconds per command")
             for key, value in package.environment:
                 print(f"   environment: {key}={value}")
             if package.isolate_home:
@@ -204,6 +225,15 @@ def main(argv: list[str] | None = None) -> int:
     if not selected:
         print("No packages selected.", file=sys.stderr)
         return 2
+    if args.focused:
+        missing = [package.name for package in selected if not package.focused_test]
+        if missing:
+            print(
+                f"no focused test configured for: {', '.join(missing)}",
+                file=sys.stderr,
+            )
+            return 2
+        selected = [replace(package, test=package.focused_test) for package in selected]
     try:
         probe = validate_jit_python(args.python)
     except (OSError, RuntimeError) as error:
@@ -252,7 +282,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     for package in selected:
         print(f"[{package.rank}/{len(packages)}] {package.name}", flush=True)
-        result = runner.run_package(package)
+        try:
+            result = runner.run_package(package)
+        finally:
+            runner.cleanup_package_workspaces(package.name)
         results.append(result)
         write_reports(
             run_dir,

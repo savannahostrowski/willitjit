@@ -66,6 +66,34 @@ def run_payload(platform_name: str, classification: str) -> dict:
 
 
 class AggregateTests(unittest.TestCase):
+    def test_explicit_not_tested_result_is_a_completed_observation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_file = Path(temporary) / "run.json"
+            payload = run_payload("Linux", "not-tested")
+            payload["results"][0]["baseline"] = None
+            payload["results"][0]["jit"] = None
+            payload["results"][0]["error"] = "Selected Python omits test.support."
+            run_file.write_text(json.dumps(payload))
+
+            merged = build_compatibility_results(
+                run_files=[run_file],
+                dataset={
+                    "source": "source",
+                    "last_update": "today",
+                    "window": "30 days",
+                },
+                packages=[package()],
+                expected_platforms=("Linux",),
+            )
+
+        observation = merged["packages"][0]["platforms"]["Linux"]
+        self.assertTrue(merged["run"]["complete"])
+        self.assertEqual(merged["run"]["completedObservations"], 1)
+        self.assertEqual(observation["status"], "not-tested")
+        self.assertEqual(
+            observation["explanation"], "Selected Python omits test.support."
+        )
+
     def test_merges_platforms_and_exposes_missing_observations(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

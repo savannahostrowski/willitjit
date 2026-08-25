@@ -1,0 +1,82 @@
+name: Reproduce botocore Windows JIT crash
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: botocore-windows-jit-reproduction
+  cancel-in-progress: false
+
+env:
+  CPYTHON_VERSION: 3.14.6
+
+jobs:
+  reproduce:
+    name: Paired focused reproduction
+    runs-on: windows-2025
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out survey
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Install host Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7.6.0
+
+      - name: Install official JIT CPython
+        id: target-python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.CPYTHON_VERSION }}
+          architecture: x64
+
+      - name: Configure checkout behavior
+        shell: bash
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+          git config --global core.longpaths true
+
+      - name: Install survey
+        run: uv sync --locked --python 3.11
+
+      - name: Verify JIT toggle
+        shell: bash
+        env:
+          TARGET_PYTHON: ${{ steps.target-python.outputs.python-path }}
+        run: uv run willitjit check-python --python "$TARGET_PYTHON"
+
+      - name: Run focused paired suite
+        shell: bash
+        env:
+          TARGET_PYTHON: ${{ steps.target-python.outputs.python-path }}
+          SURVEY_RUN_ID: botocore-${{ github.run_id }}-${{ github.run_attempt }}
+        run: |
+          uv run willitjit run \
+            --python "$TARGET_PYTHON" \
+            --package botocore \
+            --focused \
+            --run-id "$SURVEY_RUN_ID" \
+            --stream-test-output
+
+      - name: Upload reproduction evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: botocore-windows-reproduction
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            runs/*/run.json
+            runs/*/SUMMARY.md
+            runs/*/*/logs/**/*.log

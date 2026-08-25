@@ -26,6 +26,7 @@ PUBLIC_CLASSIFICATIONS: dict[Classification, tuple[PublicStatus, str]] = {
     ),
     "baseline-failure": ("baseline-blocked", "Baseline suite is already failing"),
     "setup-error": ("infrastructure-failure", "Setup or infrastructure failure"),
+    "not-tested": ("not-tested", "Not tested on this platform"),
 }
 
 
@@ -73,12 +74,15 @@ def build_compatibility_results(
     public_packages = []
     observation_counts: Counter[str] = Counter()
     overall_counts: Counter[str] = Counter()
+    completed = 0
     for package in packages:
         platforms = {}
         for platform_name in expected_platforms:
             observation = observations.get((platform_name, package.name))
             if observation is None:
                 observation = _not_tested()
+            else:
+                completed += 1
             platforms[platform_name] = observation
             observation_counts[observation["status"]] += 1
         overall = _overall_status(platforms.values())
@@ -89,13 +93,15 @@ def build_compatibility_results(
                 "name": package.name,
                 "downloads": package.downloads,
                 "repository": package.repository.removesuffix(".git").removesuffix("/"),
+                "releaseVersion": package.release_version,
+                "releaseDate": package.release_date,
+                "sourceRef": package.ref,
                 "overallStatus": overall,
                 "platforms": platforms,
             }
         )
 
     expected = len(packages) * len(expected_platforms)
-    completed = expected - observation_counts["not-tested"]
     return {
         "schemaVersion": 2,
         "generatedAt": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
@@ -113,6 +119,7 @@ def build_compatibility_results(
             "source": dataset["source"],
             "updated": dataset["last_update"],
             "window": dataset["window"],
+            "releaseCutoff": dataset.get("release_cutoff"),
         },
         "methodology": {
             "name": "Paired isolated upstream test-suite run",
@@ -188,6 +195,8 @@ def _observation(result: dict[str, Any], run_dir: Path) -> dict[str, Any]:
             "The suite failed with the JIT off, so this run cannot evaluate JIT compatibility."
         ),
         "infrastructure-failure": result.get("error") or "Setup failed.",
+        "not-tested": result.get("error")
+        or "This adapter is not available on this platform.",
     }[status]
     command_source = result.get("baseline") or result.get("jit")
     command = None
