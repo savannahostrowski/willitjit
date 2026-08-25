@@ -85,7 +85,7 @@ class PlanTests(unittest.TestCase):
                     "--package",
                     "importlib-metadata",
                     "--package",
-                    "scipy",
+                    "referencing",
                 ]
             )
 
@@ -94,7 +94,7 @@ class PlanTests(unittest.TestCase):
         self.assertIn("checkout: fetch tags", rendered)
         self.assertIn("sparse checkout: packages/google-auth", rendered)
         self.assertIn("checkout: initialize recursive submodules", rendered)
-        self.assertIn("not tested: The uv-managed CPython build omits", rendered)
+        self.assertIn("not tested: The Actions CPython build omits", rendered)
         self.assertIn("test twice (.): python -m pytest tests", rendered)
         self.assertIn("timeout:", rendered)
         self.assertIn("release:", rendered)

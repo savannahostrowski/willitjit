@@ -16,6 +16,7 @@ from willitjit.runner import (
     condition_clone_command,
     fetch_tags_command,
     installation_command,
+    release_install_arguments,
     run_logged,
     source_clone_command,
     sparse_checkout_command,
@@ -63,6 +64,23 @@ class ClassificationTests(unittest.TestCase):
 
 
 class SetupCommandTests(unittest.TestCase):
+    def test_expands_the_pinned_release_version_in_install_commands(self) -> None:
+        package = Package(
+            1,
+            "example",
+            1,
+            "https://github.com/example/example.git",
+            "v1.2.3",
+            (("-m", "pip", "install", "example=={release_version}"),),
+            ("-m", "pytest"),
+            release_version="1.2.3",
+        )
+
+        self.assertEqual(
+            release_install_arguments(package, package.install[0]),
+            ("-m", "pip", "install", "example==1.2.3"),
+        )
+
     @patch("willitjit.runner.shutil.which", return_value="/opt/bin/uv")
     def test_uv_installs_into_target_interpreter(self, _which) -> None:
         command = installation_command(

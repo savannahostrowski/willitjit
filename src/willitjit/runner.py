@@ -278,6 +278,15 @@ def installation_command(python: Path, arguments: tuple[str, ...]) -> list[str]:
     return [str(python), *arguments]
 
 
+def release_install_arguments(
+    package: Package, arguments: tuple[str, ...]
+) -> tuple[str, ...]:
+    return tuple(
+        argument.replace("{release_version}", package.release_version)
+        for argument in arguments
+    )
+
+
 def condition_clone_command(
     source: Path,
     destination: Path,
@@ -499,6 +508,7 @@ class SurveyRunner:
                 package, condition_dir, venv, base_env, jit_enabled
             )
             for index, arguments in enumerate(package.install, start=4):
+                arguments = release_install_arguments(package, arguments)
                 result = run_logged(
                     installation_command(venv_python(venv), arguments),
                     cwd=repository,

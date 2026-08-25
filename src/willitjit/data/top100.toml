@@ -79,7 +79,7 @@ release_version = "2.7.0"
 release_date = "2026-05-07T16:13:17.151740Z"
 install = [
   ["-m", "pip", "install", "-e", ".[socks,brotli,zstd,h2]"],
-  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "--group", "dev-base"],
   ["-m", "pip", "install", "cryptography>=44.0.2", "idna>=3.10", "pyopenssl>=25.0.0", "trustme>=1.2.1"],
 ]
 test = ["-m", "pytest", "test"]
@@ -144,7 +144,7 @@ release_date = "2026-08-08T18:27:56.719708Z"
 install = [["-m", "pip", "install", "-e", ".[test,check,cover,enabler,type,core]"]]
 test = ["-m", "pytest"]
 timeout_seconds = 2400
-skip_platforms = { Linux = "The uv-managed CPython build omits test.support, which this upstream suite requires.", Darwin = "The uv-managed CPython build omits test.support, which this upstream suite requires." }
+skip_platforms = { Linux = "The Actions CPython build omits test.support, which this upstream suite requires.", Darwin = "The Actions CPython build omits test.support, which this upstream suite requires.", Windows = "The Actions CPython build omits test.support, which this upstream suite requires." }
 note = "The full default suite runs where the selected CPython distribution includes test.support; integration is a separate tox environment."
 environment = { CFLAGS = "-Wno-error=deprecated-declarations" }
 
@@ -193,7 +193,7 @@ ref = "v2.1.1"
 release_version = "2.1.1"
 release_date = "2026-08-03T21:19:15.602573Z"
 install = [
-  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "cffi=={release_version}"],
   ["-m", "pip", "install", "pytest", "setuptools", "meson-python", "ninja"],
 ]
 test = ["-m", "pytest", "src/c", "testing"]
@@ -210,12 +210,11 @@ ref = "1.6.0"
 release_version = "1.6.0"
 release_date = "2025-05-15T12:30:06.134003Z"
 install = [
-  ["-m", "pip", "install", "--group", "testing"],
-  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "-e", ".[testing]"],
 ]
 test = ["-m", "pytest", "testing"]
 timeout_seconds = 600
-note = "Installs test dependencies before the checkout so pytest cannot replace it with the released Pluggy package."
+note = "Installs the pinned checkout with its upstream testing extra."
 
 [[packages]]
 rank = 14
@@ -257,8 +256,9 @@ ref = "2.9.0.post0"
 release_version = "2.9.0.post0"
 release_date = "2024-03-01T18:36:18.570437Z"
 install = [
-  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "python-dateutil=={release_version}"],
   ["-m", "pip", "install", "-r", "requirements-dev.txt"],
+  ["-m", "pip", "install", "pytest==9.0.2"],
 ]
 test = ["-m", "pytest", "tests", "docs"]
 timeout_seconds = 900
@@ -289,10 +289,11 @@ release_date = "2026-08-01T11:54:06.128433Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "botocore==1.43.56"],
 ]
 test = ["-m", "pytest", "-m", "not localonly", "tests", "-p", "no:xdist"]
 timeout_seconds = 1800
-note = "Local-service tests are excluded; dependency support for the development CPython may baseline-block this package."
+note = "Uses the release lockfile's botocore version and excludes tests requiring local services."
 isolate_home = true
 
 [[packages]]
@@ -309,6 +310,7 @@ install = [
   ["-m", "pip", "install", "-r", "requirements/test_requirements.txt"],
 ]
 test = ["-m", "pytest", "--pyargs", "numpy", "-m", "not slow", "-p", "no:xdist", "--durations=10"]
+test_cwd = "tools"
 timeout_seconds = 2400
 note = "A heavyweight native-extension lane; recursive submodules match NumPy's upstream CI checkout. Tests marked slow are excluded because upstream includes multi-gigabyte memory and disk tests in that group."
 recursive_submodules = true
@@ -337,6 +339,7 @@ install = [
   ["-m", "pip", "install", "-e", "./pydantic-core"],
   ["-m", "pip", "install", "-e", ".[email,timezone]"],
   ["-m", "pip", "install", "--group", "dev", "--group", "testing-extra"],
+  ["-m", "pip", "install", "hypothesis"],
 ]
 test = ["-m", "pytest", "tests", "-p", "no:xdist", "--durations=10"]
 timeout_seconds = 1800
@@ -351,8 +354,7 @@ ref = "9.1.1"
 release_version = "9.1.1"
 release_date = "2026-06-19T10:58:31.347074Z"
 install = [
-  ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "--group", "dev"],
+  ["-m", "pip", "install", "-e", ".[dev]"],
 ]
 test = ["-m", "pytest", "testing"]
 timeout_seconds = 2400
@@ -369,6 +371,7 @@ release_date = "2026-06-24T17:45:13.730054Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "pytest==9.0.2"],
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 600
@@ -416,12 +419,12 @@ release_version = "2.48.0"
 release_date = "2026-08-06T14:21:51.964864Z"
 install = [
   ["-m", "pip", "install", "--group", "pydantic-core/pyproject.toml:testing-extra"],
-  ["-m", "pip", "install", "-e", "./pydantic-core"],
+  ["-m", "pip", "install", "pydantic_core=={release_version}", "pydantic"],
 ]
 test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 test_cwd = "pydantic-core"
 timeout_seconds = 1800
-note = "Uses the pydantic-core package in the current Pydantic monorepo and disables parallel execution so crashes remain attributable."
+note = "Runs the monorepo's upstream suite against the matching pydantic-core release wheel and disables parallel execution so crashes remain attributable."
 sparse_paths = ["pydantic-core"]
 
 [[packages]]
@@ -433,7 +436,7 @@ ref = "v1.83.0"
 release_version = "1.83.0"
 release_date = "2026-07-23T15:23:49.044717Z"
 install = [
-  ["-m", "pip", "install", "grpcio", "protobuf", "googleapis-common-protos"],
+  ["-m", "pip", "install", "coverage", "grpcio", "protobuf", "googleapis-common-protos"],
   ["-m", "pip", "install", "--no-deps", "-e", "src/python/grpcio_status"],
 ]
 test = ["-m", "unittest", "tests.status._grpc_status_test", "tests_aio.status.grpc_status_test"]
@@ -455,10 +458,7 @@ install = [
 ]
 test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 1200
-# attrs derives its version from Git tags and tests that generated version.
-# https://github.com/python-attrs/attrs/blob/main/tests/test_packaging.py
-fetch_tags = true
-note = "Fetches release tags so hatch-vcs generates the same calendar version that the upstream packaging tests expect."
+note = "The pinned tag is present in the shallow checkout so hatch-vcs generates the release version expected by the upstream packaging tests."
 
 [[packages]]
 rank = 29
@@ -575,7 +575,7 @@ release_version = "1.0.9"
 release_date = "2025-04-24T22:06:20.566605Z"
 install = [
   ["-m", "pip", "install", "-e", ".[asyncio,http2,socks,trio]"],
-  ["-m", "pip", "install", "pytest", "pytest-trio"],
+  ["-m", "pip", "install", "pytest==8.2.2", "pytest-httpbin==2.0.0", "pytest-trio==0.8.0", "werkzeug<3.1"],
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1200
@@ -607,6 +607,7 @@ release_date = "2026-07-22T22:17:48.274862Z"
 install = [
   ["-m", "pip", "install", "meson-python>=0.19.0,<1", "meson>=1.2.3,<2", "wheel", "Cython>3.1.0,<4", "numpy>=2.3.3", "versioneer[toml]"],
   ["-m", "pip", "install", "-e", ".[test]", "--no-build-isolation"],
+  ["-m", "pip", "install", "tzdata"],
 ]
 test = ["-m", "pytest", "-m", "not slow and not network and not clipboard and not single_cpu", "pandas", "-p", "no:xdist"]
 timeout_seconds = 3600
@@ -663,7 +664,7 @@ ref = "3.1.6"
 release_version = "3.1.6"
 release_date = "2025-03-05T20:05:00.369721Z"
 install = [
-  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-r", "requirements/tests.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "tests"]
@@ -730,7 +731,7 @@ release_date = "2026-08-09T01:35:19.155629Z"
 install = [
   ["-m", "pip", "install", "--group", "dev"],
   ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "orjson>=3.11.6,<4.0", "websockets>=15.0.1,<16.0"],
+  ["-m", "pip", "install", "botocore", "orjson>=3.11.6,<4.0", "proto-plus", "pyjwt", "tzdata", "websockets>=15.0.1,<16.0"],
 ]
 test = [
   "-m",
@@ -838,7 +839,7 @@ release_version = "15.0.0"
 release_date = "2026-04-12T08:24:00.750018Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "pytest", "pytest-cov", "attrs"],
+  ["-m", "pip", "install", "pytest", "pytest-cov", "attrs", "pygments==2.19.2"],
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1200
@@ -851,7 +852,7 @@ repository = "https://github.com/executablebooks/markdown-it-py.git"
 ref = "v4.2.0"
 release_version = "4.2.0"
 release_date = "2026-05-07T12:08:27.182789Z"
-install = [["-m", "pip", "install", "-e", ".[testing]"]]
+install = [["-m", "pip", "install", "-e", ".[testing,linkify,plugins]"]]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
 
@@ -867,7 +868,7 @@ install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
 ]
-test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+test = ["-m", "pytest", "tests"]
 timeout_seconds = 1800
 
 [[packages]]
@@ -911,6 +912,7 @@ release_date = "2026-01-07T13:41:05.306692Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", ".[format]"],
+  ["-m", "pip", "install", "pytest"],
 ]
 test = ["-m", "pytest", "jsonschema/tests"]
 timeout_seconds = 1200
@@ -1002,7 +1004,7 @@ install = [
   ["-m", "pip", "install", "--group", "tests"],
   ["-m", "pip", "install", "-e", ".[standard]"],
 ]
-test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+test = ["-m", "pytest", "tests"]
 timeout_seconds = 2400
 
 [[packages]]
@@ -1045,11 +1047,10 @@ repository = "https://github.com/stub42/pytz.git"
 ref = "release_2026.3.post1"
 release_version = "2026.3.post1"
 release_date = "2026-07-25T15:12:05.782880Z"
-install = [["-m", "pip", "install", "pytest"]]
-test = ["-m", "pytest", "pytz/tests"]
-test_cwd = "src"
+install = [["-m", "pip", "install", "pytz=={release_version}", "pytest"]]
+test = ["-m", "pytest", "src/pytz/tests"]
 timeout_seconds = 900
-note = "Runs the source suite directly because the upstream checkout does not contain root packaging metadata."
+note = "Runs the pinned release wheel against the upstream GitHub test suite because the checkout omits generated timezone data."
 
 [[packages]]
 rank = 67
@@ -1074,13 +1075,10 @@ repository = "https://github.com/python-pillow/Pillow.git"
 ref = "12.3.0"
 release_version = "12.3.0"
 release_date = "2026-07-01T11:53:27.808291Z"
-# JPEG and zlib are required by default, but Pillow documents these build
-# switches for environments without the platform development libraries.
-# https://pillow.readthedocs.io/en/latest/installation/building-from-source.html#build-options
-install = [["-m", "pip", "install", "-e", ".[tests]", "-C", "jpeg=disable", "-C", "zlib=disable"]]
+install = [["-m", "pip", "install", "Pillow[tests]=={release_version}"]]
 test = ["-m", "pytest", "Tests", "-p", "no:xdist"]
 timeout_seconds = 2400
-note = "Runs Pillow's upstream suite with JPEG and zlib support disabled consistently on every platform; feature-specific tests report their normal skips."
+note = "Runs the checkout's upstream suite against the matching Pillow release wheel with its required JPEG and zlib support."
 
 [[packages]]
 rank = 69
@@ -1111,7 +1109,7 @@ install = [["-m", "pip", "install", "-e", ".[test]"]]
 test = ["-m", "pytest", "tests", "-p", "no:xdist", "-o", "addopts="]
 timeout_seconds = 1200
 fetch_tags = true
-skip_platforms = { Linux = "The uv-managed CPython build omits test.support, which this upstream suite requires.", Darwin = "The uv-managed CPython build omits test.support, which this upstream suite requires." }
+skip_platforms = { Linux = "The Actions CPython build omits test.support, which this upstream suite requires.", Darwin = "The Actions CPython build omits test.support, which this upstream suite requires.", Windows = "The Actions CPython build omits test.support, which this upstream suite requires." }
 note = "Fetches tags for setuptools-scm. The full upstream suite runs only where the selected CPython distribution includes test.support."
 
 [[packages]]
@@ -1197,8 +1195,8 @@ ref = "21.7.4"
 release_version = "21.7.4"
 release_date = "2026-08-10T22:54:31.515567Z"
 install = [
-  ["-m", "pip", "install", "--group", "test"],
-  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "-r", "test-requirements.txt"],
+  ["-m", "pip", "install", "virtualenv=={release_version}"],
 ]
 test = ["-m", "pytest", "tests", "-m", "not slow", "-p", "no:xdist"]
 timeout_seconds = 2400
@@ -1215,6 +1213,7 @@ release_date = "2026-05-18T20:08:57.045692Z"
 install = [["-m", "pip", "install", "-e", ".[test]"]]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
+skip_platforms = { Linux = "The Actions CPython build omits test.support, which this upstream suite requires.", Darwin = "The Actions CPython build omits test.support, which this upstream suite requires.", Windows = "The Actions CPython build omits test.support, which this upstream suite requires." }
 
 [[packages]]
 rank = 78
@@ -1283,7 +1282,7 @@ ref = "v1.3.1"
 release_version = "1.3.1"
 release_date = "2024-02-25T23:20:01.196159Z"
 install = [
-  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-r", "test-requirements.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "sniffio/_tests"]
@@ -1301,7 +1300,7 @@ install = [
   ["-m", "pip", "install", "pytest", "pytest-mock", "filelock", "flit-core", "trustme", "editables"],
   ["-m", "pip", "install", "-e", "./backend"],
 ]
-test = ["-m", "pytest", "backend/tests", "-p", "no:xdist"]
+test = ["-m", "pytest", "tests/backend", "-p", "no:xdist"]
 timeout_seconds = 1800
 note = "Runs Hatchling's backend suite from the upstream Hatch monorepo."
 
@@ -1315,7 +1314,7 @@ release_version = "2.34.0"
 release_date = "2026-08-06T06:22:47.502487Z"
 sparse_paths = ["packages/google-api-core"]
 install = [
-  ["-m", "pip", "install", "pytest", "pytest-mock"],
+  ["-m", "pip", "install", "pytest", "pytest-asyncio", "pytest-mock"],
   ["-m", "pip", "install", "-e", "./packages/google-api-core[grpc]"],
 ]
 test = ["-m", "pytest", "packages/google-api-core/tests", "-p", "no:xdist"]
@@ -1398,14 +1397,13 @@ ref = "v1.18.0"
 release_version = "1.18.0"
 release_date = "2026-06-19T14:59:45.203789Z"
 install = [
-  ["-m", "pip", "install", "--group", "test"],
-  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "-r", "requirements/test.txt"],
+  ["-m", "pip", "install", "scipy=={release_version}"],
 ]
 test = ["-m", "pytest", "--pyargs", "scipy", "-p", "no:xdist"]
 test_cwd = "tools"
 timeout_seconds = 3600
-note = "Builds SciPy from the checkout and runs the installed package's upstream suite."
-recursive_submodules = true
+note = "Runs the pinned SciPy wheel's bundled upstream suite from outside the source tree."
 
 [[packages]]
 rank = 91
@@ -1434,9 +1432,9 @@ release_version = "8.2.8"
 release_date = "2026-06-30T06:51:24.495173Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "pytest", "pytest-asyncio", "pytest-textual-snapshot"],
+  ["-m", "pip", "install", "pytest", "pytest-asyncio", "pytest-textual-snapshot", "pytest-xdist"],
 ]
-test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+test = ["-m", "pytest", "tests"]
 timeout_seconds = 2400
 
 [[packages]]
@@ -1486,8 +1484,8 @@ repository = "https://github.com/tartley/colorama.git"
 ref = "0.4.6"
 release_version = "0.4.6"
 release_date = "2022-10-25T02:36:20.889702Z"
-install = [["-m", "pip", "install", "-e", "."]]
-test = ["-m", "unittest", "discover", "-s", "colorama/tests", "-p", "*_test.py"]
+install = [["-m", "pip", "install", "-e", ".", "pytest"]]
+test = ["-m", "pytest", "colorama/tests"]
 timeout_seconds = 900
 
 [[packages]]

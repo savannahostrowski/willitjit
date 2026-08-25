@@ -14,7 +14,12 @@ from .history import write_history
 from .models import Classification, Package
 from .registry import load_registry
 from .report import write_reports
-from .runner import SurveyRunner, format_command, validate_jit_python
+from .runner import (
+    SurveyRunner,
+    format_command,
+    release_install_arguments,
+    validate_jit_python,
+)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -206,6 +211,7 @@ def main(argv: list[str] | None = None) -> int:
             if package.recursive_submodules:
                 print("   checkout: initialize recursive submodules")
             for command in package.install:
+                command = release_install_arguments(package, command)
                 print(f"   setup: python {format_command(command)}")
             print(
                 f"   test twice ({package.test_cwd}): "

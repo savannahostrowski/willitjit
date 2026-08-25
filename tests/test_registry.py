@@ -181,13 +181,24 @@ class RegistryTests(unittest.TestCase):
         aiohttp = next(package for package in packages if package.name == "aiohttp")
         self.assertTrue(aiohttp.recursive_submodules)
         scipy = next(package for package in packages if package.name == "scipy")
-        self.assertTrue(scipy.recursive_submodules)
+        self.assertFalse(scipy.recursive_submodules)
+        self.assertIn("scipy=={release_version}", scipy.install[-1])
         referencing = next(
             package for package in packages if package.name == "referencing"
         )
         self.assertTrue(referencing.recursive_submodules)
         attrs = next(package for package in packages if package.name == "attrs")
-        self.assertTrue(attrs.fetch_tags)
+        self.assertFalse(attrs.fetch_tags)
+        urllib3 = next(package for package in packages if package.name == "urllib3")
+        self.assertIn("dev-base", urllib3.install[1])
+        pytest = next(package for package in packages if package.name == "pytest")
+        self.assertIn(".[dev]", pytest.install[0])
+        jinja2 = next(package for package in packages if package.name == "jinja2")
+        self.assertIn("requirements/tests.txt", jinja2.install[0])
+        pluggy = next(package for package in packages if package.name == "pluggy")
+        self.assertIn(".[testing]", pluggy.install[0])
+        sniffio = next(package for package in packages if package.name == "sniffio")
+        self.assertIn("test-requirements.txt", sniffio.install[0])
         google_auth = next(
             package for package in packages if package.name == "google-auth"
         )
@@ -205,8 +216,30 @@ class RegistryTests(unittest.TestCase):
         )
         pillow = next(package for package in packages if package.name == "pillow")
         self.assertFalse(pillow.skip_platforms)
-        self.assertIn("jpeg=disable", pillow.install[0])
-        self.assertIn("zlib=disable", pillow.install[0])
+        self.assertEqual(
+            pillow.install,
+            (("-m", "pip", "install", "Pillow[tests]=={release_version}"),),
+        )
+        aiobotocore = next(
+            package for package in packages if package.name == "aiobotocore"
+        )
+        self.assertIn("botocore==1.43.56", aiobotocore.install[-1])
+        pandas = next(package for package in packages if package.name == "pandas")
+        self.assertIn("tzdata", pandas.install[-1])
+        h11 = next(package for package in packages if package.name == "h11")
+        self.assertIn("-e", h11.install[-1])
+        virtualenv = next(
+            package for package in packages if package.name == "virtualenv"
+        )
+        self.assertIn("virtualenv=={release_version}", virtualenv.install[-1])
+        for package_name in ("setuptools", "importlib-metadata", "zipp"):
+            package = next(
+                package for package in packages if package.name == package_name
+            )
+            self.assertEqual(
+                {platform for platform, _reason in package.skip_platforms},
+                {"Linux", "Darwin", "Windows"},
+            )
         botocore = next(package for package in packages if package.name == "botocore")
         self.assertEqual(
             botocore.focused_test,
