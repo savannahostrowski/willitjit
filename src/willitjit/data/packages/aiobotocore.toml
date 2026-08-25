@@ -1,0 +1,17 @@
+[package]
+rank = 18
+name = "aiobotocore"
+downloads = 1164834706
+repository = "https://github.com/aio-libs/aiobotocore.git"
+ref = "3.9.0"
+release_version = "3.9.0"
+release_date = "2026-08-01T11:54:06.128433Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "botocore==1.43.56"],
+]
+test = ["-m", "pytest", "-m", "not localonly", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Uses the release lockfile's botocore version and excludes tests requiring local services."
+isolate_home = true

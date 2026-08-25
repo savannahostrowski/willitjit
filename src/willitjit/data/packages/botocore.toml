@@ -1,0 +1,18 @@
+[package]
+rank = 10
+name = "botocore"
+downloads = 1497531138
+repository = "https://github.com/boto/botocore.git"
+ref = "1.43.68"
+release_version = "1.43.68"
+release_date = "2026-08-10T19:21:58.157799Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements-dev-lock.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "unit", "functional"]
+focused_test = ["-m", "pytest", "functional/csm/test_monitoring.py"]
+test_cwd = "tests"
+timeout_seconds = 2400
+note = "Matches the repository CI dependencies and unit/functional selection; integration tests are excluded. The focused command reproduces the Windows JIT crash observed in functional/csm/test_monitoring.py."
+isolate_home = true

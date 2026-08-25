@@ -1,0 +1,16 @@
+[package]
+rank = 25
+name = "anyio"
+downloads = 1032777959
+repository = "https://github.com/agronholm/anyio.git"
+ref = "4.14.2"
+release_version = "4.14.2"
+release_date = "2026-07-12T20:29:05.763870Z"
+install = [
+  ["-m", "pip", "install", "-e", ".[trio]"],
+  ["-m", "pip", "install", "--group", "test"],
+]
+test = ["-m", "pytest"]
+timeout_seconds = 1200
+note = "Uses the same test dependency group and plugin isolation as upstream CI."
+environment = { PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1" }

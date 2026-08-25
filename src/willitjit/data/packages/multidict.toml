@@ -1,0 +1,16 @@
+[package]
+rank = 59
+name = "multidict"
+downloads = 594005645
+repository = "https://github.com/aio-libs/multidict.git"
+ref = "v6.7.1"
+release_version = "6.7.1"
+release_date = "2026-01-26T02:42:59.784906Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/pytest.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "-m", "not leaks", "--no-cov", "--no-c-extensions", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+environment = { MULTIDICT_NO_EXTENSIONS = "1" }
+note = "Uses the upstream non-leak pure-Python build and test lane so the JIT exercises Python code."

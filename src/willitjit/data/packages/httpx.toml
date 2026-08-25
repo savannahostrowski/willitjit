@@ -1,0 +1,15 @@
+[package]
+rank = 35
+name = "httpx"
+downloads = 796983818
+repository = "https://github.com/encode/httpx.git"
+ref = "0.28.1"
+release_version = "0.28.1"
+release_date = "2024-12-06T15:37:21.509172Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements.txt"],
+  ["-m", "pip", "install", "pytest-timeout"],
+]
+test = ["-m", "pytest", "tests", "--timeout=60"]
+timeout_seconds = 1800
+note = "The release's upstream matrix stops at Python 3.12. A per-test timeout prevents its fixed-port server fixture from consuming the full package timeout when it cannot start on Python 3.14."

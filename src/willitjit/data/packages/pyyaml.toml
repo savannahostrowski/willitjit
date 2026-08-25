@@ -1,0 +1,15 @@
+[package]
+rank = 15
+name = "pyyaml"
+downloads = 1194612572
+repository = "https://github.com/yaml/pyyaml.git"
+ref = "6.0.3"
+release_version = "6.0.3"
+release_date = "2025-09-25T21:31:46.040932Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest"],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 900
+note = "The optional libyaml extension is used when platform build dependencies are available."

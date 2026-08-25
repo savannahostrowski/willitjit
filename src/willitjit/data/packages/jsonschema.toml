@@ -1,0 +1,15 @@
+[package]
+rank = 57
+name = "jsonschema"
+downloads = 596925041
+repository = "https://github.com/python-jsonschema/jsonschema.git"
+ref = "v4.26.0"
+release_version = "4.26.0"
+release_date = "2026-01-07T13:41:05.306692Z"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", ".[format]"],
+  ["-m", "pip", "install", "pytest"],
+]
+test = ["-m", "pytest", "jsonschema/tests"]
+timeout_seconds = 1200

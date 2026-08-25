@@ -1,0 +1,16 @@
+[package]
+rank = 92
+name = "textual"
+downloads = 443589157
+repository = "https://github.com/Textualize/textual.git"
+ref = "v8.2.8"
+release_version = "8.2.8"
+release_date = "2026-06-30T06:51:24.495173Z"
+install = [
+  ["-m", "pip", "install", "poetry==1.7.1"],
+  ["-m", "poetry", "install", "--no-interaction", "--extras", "syntax"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 2400
+environment = { POETRY_VIRTUALENVS_CREATE = "false" }
+note = "Uses the Poetry lock and install command from upstream's Python 3.14 CI."

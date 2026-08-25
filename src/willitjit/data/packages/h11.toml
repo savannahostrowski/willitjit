@@ -1,0 +1,14 @@
+[package]
+rank = 30
+name = "h11"
+downloads = 894878618
+repository = "https://github.com/python-hyper/h11.git"
+ref = "v0.16.0"
+release_version = "0.16.0"
+release_date = "2025-04-24T03:35:24.344199Z"
+install = [
+  ["-m", "pip", "install", "-r", "test-requirements.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "h11"]
+timeout_seconds = 600

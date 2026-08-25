@@ -1,0 +1,11 @@
+[package]
+rank = 97
+name = "colorama"
+downloads = 431035221
+repository = "https://github.com/tartley/colorama.git"
+ref = "0.4.6"
+release_version = "0.4.6"
+release_date = "2022-10-25T02:36:20.889702Z"
+install = [["-m", "pip", "install", "-e", ".", "pytest"]]
+test = ["-m", "pytest", "colorama/tests"]
+timeout_seconds = 900

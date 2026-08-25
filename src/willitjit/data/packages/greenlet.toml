@@ -1,0 +1,11 @@
+[package]
+rank = 85
+name = "greenlet"
+downloads = 476388596
+repository = "https://github.com/python-greenlet/greenlet.git"
+ref = "3.5.5"
+release_version = "3.5.5"
+release_date = "2026-08-10T13:25:17.987262Z"
+install = [["-m", "pip", "install", "-e", ".[test]"]]
+test = ["-m", "unittest", "discover", "-v", "greenlet.tests"]
+timeout_seconds = 1200

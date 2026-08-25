@@ -1,0 +1,25 @@
+[package]
+rank = 46
+name = "litellm"
+downloads = 682782233
+repository = "https://github.com/BerriAI/litellm.git"
+ref = "v1.96.0"
+release_version = "1.96.0"
+release_date = "2026-08-09T01:35:19.155629Z"
+install = [
+  ["-m", "pip", "install", "--group", "dev"],
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "botocore", "orjson>=3.11.6,<4.0", "proto-plus", "pyjwt", "tzdata", "websockets>=15.0.1,<16.0"],
+]
+test = [
+  "-m",
+  "pytest",
+  "tests/test_litellm/litellm_core_utils",
+  "--ignore=tests/test_litellm/litellm_core_utils/test_cli_token_utils.py",
+  "--ignore=tests/test_litellm/litellm_core_utils/test_private_json.py",
+  "-p",
+  "no:xdist",
+]
+timeout_seconds = 2400
+note = "Runs the upstream core-utilities unit shard, excluding two POSIX-only permission files plus proxy, end-to-end, and integration lanes."
+isolate_home = true

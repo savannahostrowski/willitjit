@@ -1,0 +1,16 @@
+[package]
+rank = 100
+name = "sqlalchemy"
+downloads = 422737345
+repository = "https://github.com/sqlalchemy/sqlalchemy.git"
+ref = "rel_2_0_51"
+release_version = "2.0.51"
+release_date = "2026-06-15T15:41:20.012455Z"
+install = [
+  ["-m", "pip", "install", "pytest>=7,<10", "pytest-xdist"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "-c", "pyproject.toml", "--nomemory", "--notimingintensive", "--nomypy", "test", "-p", "no:xdist"]
+timeout_seconds = 2400
+environment = { DISABLE_SQLALCHEMY_CEXT = "1" }
+note = "Installs SQLAlchemy's documented core pytest dependencies directly because uv rejects upstream's intentional legacy duplicate extra names, then runs the non-memory, non-timing, non-mypy suite in pure Python mode."

@@ -1,0 +1,14 @@
+[package]
+rank = 32
+name = "annotated-types"
+downloads = 871281123
+repository = "https://github.com/annotated-types/annotated-types.git"
+ref = "v0.8.0"
+release_version = "0.8.0"
+release_date = "2026-07-23T20:16:12.938651Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/testing.in"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600

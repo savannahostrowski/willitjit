@@ -1,0 +1,14 @@
+[package]
+rank = 99
+name = "soupsieve"
+downloads = 428611663
+repository = "https://github.com/facelessuser/soupsieve.git"
+ref = "2.9.2"
+release_version = "2.9.2"
+release_date = "2026-08-07T00:57:23.524076Z"
+install = [
+  ["-m", "pip", "install", "pytest", "pytest-cov", "beautifulsoup4"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200

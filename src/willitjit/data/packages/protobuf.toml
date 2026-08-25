@@ -1,0 +1,20 @@
+[package]
+rank = 33
+name = "protobuf"
+downloads = 868343626
+repository = "https://github.com/protocolbuffers/protobuf.git"
+ref = "v35.1"
+release_version = "7.35.1"
+release_date = "2026-06-11T21:55:31.719008Z"
+install = [["-m", "pip", "install", "-r", "python/requirements.txt"]]
+test = [
+  "-m",
+  "unittest",
+  "google.protobuf.internal.runtime_version_test",
+  "google.protobuf.internal.text_encoding_test",
+  "google.protobuf.internal.wire_format_test",
+]
+test_cwd = "python"
+timeout_seconds = 600
+environment = { PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION = "python" }
+note = "Runs upstream pure-Python core tests that do not require Bazel-generated fixtures from the protobuf monorepo."

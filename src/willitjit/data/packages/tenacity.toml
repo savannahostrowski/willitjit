@@ -1,0 +1,11 @@
+[package]
+rank = 98
+name = "tenacity"
+downloads = 429288446
+repository = "https://github.com/jd/tenacity.git"
+ref = "9.1.4"
+release_version = "9.1.4"
+release_date = "2026-02-07T10:45:32.240169Z"
+install = [["-m", "pip", "install", "-e", ".[test]"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200

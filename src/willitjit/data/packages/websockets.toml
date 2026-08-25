@@ -1,0 +1,14 @@
+[package]
+rank = 71
+name = "websockets"
+downloads = 543199444
+repository = "https://github.com/python-websockets/websockets.git"
+ref = "17.0.1"
+release_version = "17.0.1"
+release_date = "2026-07-31T11:29:04.803128Z"
+install = [
+  ["-m", "pip", "install", "-e", ".", "mitmproxy", "python-socks[asyncio]", "trio", "werkzeug"],
+]
+test = ["-W", "error::DeprecationWarning", "-W", "error::PendingDeprecationWarning", "-X", "context_aware_warnings=0", "-m", "unittest"]
+timeout_seconds = 1800
+note = "Matches upstream's Python 3.14 tox environment and unittest command."

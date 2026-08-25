@@ -1,0 +1,16 @@
+[package]
+rank = 50
+name = "yarl"
+downloads = 621403276
+repository = "https://github.com/aio-libs/yarl.git"
+ref = "v1.24.5"
+release_version = "1.24.5"
+release_date = "2026-07-20T02:04:21.695642Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:cov", "-p", "no:xdist", "-o", "addopts="]
+timeout_seconds = 1200
+environment = { YARL_NO_EXTENSIONS = "1" }
+note = "Uses the upstream pure-Python lane and clears pytest addopts so the suite does not require the repository's xdist CI lane."

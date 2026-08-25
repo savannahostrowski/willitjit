@@ -1,0 +1,13 @@
+[package]
+rank = 29
+name = "s3transfer"
+downloads = 924268948
+repository = "https://github.com/boto/s3transfer.git"
+ref = "0.19.2"
+release_version = "0.19.2"
+release_date = "2026-07-22T19:30:43.251801Z"
+install = [["scripts/ci/install"]]
+test = ["scripts/ci/run-tests"]
+timeout_seconds = 1800
+note = "Uses the repository's CI install and test scripts, including its normal and serial-executor unit and functional runs."
+isolate_home = true

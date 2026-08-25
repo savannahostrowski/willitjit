@@ -1,0 +1,15 @@
+[package]
+rank = 68
+name = "pillow"
+downloads = 547140713
+repository = "https://github.com/python-pillow/Pillow.git"
+ref = "12.3.0"
+release_version = "12.3.0"
+release_date = "2026-07-01T11:53:27.808291Z"
+fixture_repository = "https://github.com/python-pillow/test-images.git"
+fixture_ref = "7077675d2cda485d63de4aefe0fefbf6f655c5a0"
+fixture_destination = "Tests/images"
+install = [["-m", "pip", "install", "Pillow[tests]=={release_version}"]]
+test = ["-m", "pytest", "Tests", "-p", "no:xdist", "--deselect=Tests/test_image_access.py::TestEmbeddable::test_embeddable"]
+timeout_seconds = 2400
+note = "Runs the checkout's upstream suite against the matching Pillow release wheel and separately versioned upstream image fixtures. The Windows embedding test is deselected because it assumes a non-venv interpreter home, unlike the isolated survey environment."

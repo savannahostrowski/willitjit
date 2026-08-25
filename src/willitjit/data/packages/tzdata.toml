@@ -1,0 +1,14 @@
+[package]
+rank = 80
+name = "tzdata"
+downloads = 504527593
+repository = "https://github.com/python/tzdata.git"
+ref = "2026.3"
+release_version = "2026.3"
+release_date = "2026-07-10T08:50:36.460750Z"
+install = [
+  ["-m", "pip", "install", "pytest"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900

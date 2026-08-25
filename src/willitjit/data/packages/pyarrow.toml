@@ -1,0 +1,15 @@
+[package]
+rank = 95
+name = "pyarrow"
+downloads = 432924469
+repository = "https://github.com/apache/arrow.git"
+ref = "apache-arrow-25.0.1"
+release_version = "25.0.1"
+release_date = "2026-08-10T12:36:33.857237Z"
+install = [["-m", "pip", "install", "pyarrow==25.0.1", "pytest", "hypothesis", "cffi", "pytz", "pandas"]]
+test = ["-m", "pytest", "--pyargs", "pyarrow.tests", "-p", "no:xdist"]
+test_cwd = "cpp"
+timeout_seconds = 3600
+environment = { ARROW_TEST_DATA = "../testing/data", PARQUET_TEST_DATA = "submodules/parquet-testing/data" }
+note = "Runs the release wheel's bundled upstream suite with Arrow's pinned test-data submodules, from outside the source package so the checkout cannot shadow pyarrow."
+recursive_submodules = true

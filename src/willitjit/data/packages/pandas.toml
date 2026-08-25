@@ -1,0 +1,16 @@
+[package]
+rank = 38
+name = "pandas"
+downloads = 769110377
+repository = "https://github.com/pandas-dev/pandas.git"
+ref = "v3.0.5"
+release_version = "3.0.5"
+release_date = "2026-07-22T22:17:48.274862Z"
+install = [
+  ["-m", "pip", "install", "meson-python>=0.19.0,<1", "meson>=1.2.3,<2", "wheel", "Cython>3.1.0,<4", "numpy>=2.3.3", "versioneer[toml]"],
+  ["-m", "pip", "install", "-e", ".[test]", "--no-build-isolation"],
+  ["-m", "pip", "install", "tzdata"],
+]
+test = ["-m", "pytest", "-m", "not slow and not network and not clipboard and not single_cpu", "pandas", "-p", "no:xdist"]
+timeout_seconds = 3600
+note = "Uses pandas' declared build requirements in the persistent test environment, then runs the upstream core suite without slow, network, clipboard, or single-CPU lanes."

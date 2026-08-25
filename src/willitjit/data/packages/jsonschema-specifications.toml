@@ -1,0 +1,14 @@
+[package]
+rank = 74
+name = "jsonschema-specifications"
+downloads = 540286306
+repository = "https://github.com/python-jsonschema/jsonschema-specifications.git"
+ref = "v2025.9.1"
+release_version = "2025.9.1"
+release_date = "2025-09-08T01:34:57.871954Z"
+install = [
+  ["-m", "pip", "install", "pytest"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-W", "error", "-m", "pytest", "jsonschema_specifications/tests"]
+timeout_seconds = 900

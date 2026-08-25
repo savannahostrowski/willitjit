@@ -1,0 +1,14 @@
+[package]
+rank = 42
+name = "jinja2"
+downloads = 718583427
+repository = "https://github.com/pallets/jinja.git"
+ref = "3.1.6"
+release_version = "3.1.6"
+release_date = "2025-03-05T20:05:00.369721Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/tests.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900

@@ -1,0 +1,17 @@
+[package]
+rank = 79
+name = "googleapis-common-protos"
+downloads = 513693594
+repository = "https://github.com/googleapis/google-cloud-python.git"
+ref = "googleapis-common-protos-v1.75.1"
+release_version = "1.75.1"
+release_date = "2026-08-06T06:23:46.696416Z"
+sparse_paths = ["packages/googleapis-common-protos"]
+install = [
+  ["-m", "pip", "install", "pytest", "pytest-asyncio", "mock", "asyncmock"],
+  ["-m", "pip", "install", "-e", "./packages/googleapis-common-protos"],
+]
+test = ["-m", "pytest", "packages/googleapis-common-protos/tests/unit", "-p", "no:xdist"]
+timeout_seconds = 1200
+environment = { PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION = "python" }
+note = "Runs the package's unit suite from the upstream Google Cloud Python monorepo."

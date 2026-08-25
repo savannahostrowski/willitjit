@@ -1,0 +1,14 @@
+[package]
+rank = 2
+name = "packaging"
+downloads = 2198449167
+repository = "https://github.com/pypa/packaging.git"
+ref = "26.3"
+release_version = "26.3"
+release_date = "2026-08-04T18:15:27.159957Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "test"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200

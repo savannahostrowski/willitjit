@@ -1,0 +1,16 @@
+[package]
+rank = 90
+name = "scipy"
+downloads = 448963567
+repository = "https://github.com/scipy/scipy.git"
+ref = "v1.18.0"
+release_version = "1.18.0"
+release_date = "2026-06-19T14:59:45.203789Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test.txt"],
+  ["-m", "pip", "install", "scipy=={release_version}"],
+]
+test = ["-m", "pytest", "--pyargs", "scipy", "-p", "no:xdist"]
+test_cwd = "tools"
+timeout_seconds = 3600
+note = "Runs the pinned SciPy wheel's bundled upstream suite from outside the source tree."

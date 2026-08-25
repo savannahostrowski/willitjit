@@ -1,0 +1,15 @@
+[package]
+rank = 28
+name = "attrs"
+downloads = 924894579
+repository = "https://github.com/python-attrs/attrs.git"
+ref = "26.1.0"
+release_version = "26.1.0"
+release_date = "2026-03-19T14:22:23.645947Z"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1200
+note = "The pinned tag is present in the shallow checkout so hatch-vcs generates the release version expected by the upstream packaging tests."

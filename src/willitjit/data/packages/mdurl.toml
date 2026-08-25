@@ -1,0 +1,14 @@
+[package]
+rank = 67
+name = "mdurl"
+downloads = 548051038
+repository = "https://github.com/executablebooks/mdurl.git"
+ref = "0.1.2"
+release_version = "0.1.2"
+release_date = "2022-08-14T12:40:09.779676Z"
+install = [
+  ["-m", "pip", "install", "-r", "tests/requirements.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900

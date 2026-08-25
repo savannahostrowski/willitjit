@@ -1,0 +1,12 @@
+[package]
+rank = 22
+name = "pytest"
+downloads = 1091772181
+repository = "https://github.com/pytest-dev/pytest.git"
+ref = "9.1.1"
+release_version = "9.1.1"
+release_date = "2026-06-19T10:58:31.347074Z"
+install = [["-m", "pip", "install", "tox"]]
+test = ["-m", "tox", "run", "-e", "py314", "--", "testing"]
+timeout_seconds = 2400
+note = "Uses pytest's own Python 3.14 tox environment and wheel-build path."

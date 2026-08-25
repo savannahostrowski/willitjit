@@ -1,0 +1,14 @@
+[package]
+rank = 37
+name = "typing-inspection"
+downloads = 782958676
+repository = "https://github.com/pydantic/typing-inspection.git"
+ref = "v0.4.3"
+release_version = "0.4.3"
+release_date = "2026-08-10T09:39:16.693990Z"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600

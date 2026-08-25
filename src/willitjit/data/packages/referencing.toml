@@ -1,0 +1,16 @@
+[package]
+rank = 69
+name = "referencing"
+downloads = 545376376
+repository = "https://github.com/python-jsonschema/referencing.git"
+ref = "v0.37.0"
+release_version = "0.37.0"
+release_date = "2025-10-13T15:30:47.625937Z"
+install = [
+  ["-m", "pip", "install", "-r", "test-requirements.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "referencing/tests"]
+timeout_seconds = 900
+recursive_submodules = true
+note = "Uses the pinned test requirements from upstream's Nox session and initializes the referencing-suite submodule."

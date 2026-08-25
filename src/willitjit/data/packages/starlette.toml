@@ -1,0 +1,14 @@
+[package]
+rank = 56
+name = "starlette"
+downloads = 605601182
+repository = "https://github.com/Kludex/starlette.git"
+ref = "1.6.0"
+release_version = "1.6.0"
+release_date = "2026-08-08T18:27:56.196765Z"
+install = [
+  ["-m", "pip", "install", "--group", "dev"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800

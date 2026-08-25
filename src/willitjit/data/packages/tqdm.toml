@@ -1,0 +1,15 @@
+[package]
+rank = 48
+name = "tqdm"
+downloads = 648606617
+repository = "https://github.com/tqdm/tqdm.git"
+ref = "v4.70.0"
+release_version = "4.70.0"
+release_date = "2026-07-27T11:33:13.167874Z"
+install = [
+  ["-m", "pip", "install", "-r", ".meta/requirements-test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "-k", "not perf", "tests"]
+timeout_seconds = 1200
+note = "Runs the upstream test suite without its separate performance tests."

@@ -1,0 +1,11 @@
+[package]
+rank = 62
+name = "pyasn1"
+downloads = 570897622
+repository = "https://github.com/pyasn1/pyasn1.git"
+ref = "v0.6.4"
+release_version = "0.6.4"
+release_date = "2026-07-09T01:12:32.920042Z"
+install = [["-m", "pip", "install", "-e", "."]]
+test = ["-W", "error", "-m", "unittest", "discover", "-s", "tests"]
+timeout_seconds = 900

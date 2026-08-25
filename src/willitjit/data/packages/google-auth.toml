@@ -1,0 +1,13 @@
+[package]
+rank = 60
+name = "google-auth"
+downloads = 590070847
+repository = "https://github.com/googleapis/google-cloud-python.git"
+ref = "google-auth-v2.56.3"
+release_version = "2.56.3"
+release_date = "2026-08-06T06:22:51.788856Z"
+sparse_paths = ["packages/google-auth"]
+install = [["-m", "pip", "install", "-e", "./packages/google-auth[testing]"]]
+test = ["-m", "pytest", "packages/google-auth/tests", "packages/google-auth/tests_async", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Runs the google-auth package suites from the upstream Google Cloud Python monorepo."

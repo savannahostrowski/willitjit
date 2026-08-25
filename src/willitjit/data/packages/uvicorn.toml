@@ -1,0 +1,14 @@
+[package]
+rank = 55
+name = "uvicorn"
+downloads = 609510360
+repository = "https://github.com/Kludex/uvicorn.git"
+ref = "0.52.1"
+release_version = "0.52.1"
+release_date = "2026-08-01T18:19:29.294787Z"
+install = [
+  ["-m", "pip", "install", "--group", "dev"],
+  ["-m", "pip", "install", "-e", ".[standard]"],
+]
+test = ["-m", "pytest", "tests", "-o", "addopts=", "-p", "no:xdist"]
+timeout_seconds = 1800

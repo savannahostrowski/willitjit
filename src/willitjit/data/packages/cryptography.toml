@@ -1,0 +1,16 @@
+[package]
+rank = 11
+name = "cryptography"
+downloads = 1479413072
+repository = "https://github.com/pyca/cryptography.git"
+ref = "50.0.0"
+release_version = "50.0.0"
+release_date = "2026-07-31T14:23:33.331759Z"
+install = [
+  ["-m", "pip", "install", "-e", "./vectors"],
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "test"],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Uses the upstream test dependency group; pytest-xdist is disabled so crashes remain attributable."

@@ -1,0 +1,11 @@
+[package]
+rank = 87
+name = "pyasn1-modules"
+downloads = 462465610
+repository = "https://github.com/pyasn1/pyasn1-modules.git"
+ref = "v0.4.2"
+release_version = "0.4.2"
+release_date = "2025-03-28T02:41:19.028683Z"
+install = [["-m", "pip", "install", "-e", "."]]
+test = ["-m", "unittest", "discover", "-s", "tests"]
+timeout_seconds = 900

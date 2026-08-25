@@ -1,0 +1,14 @@
+[package]
+rank = 17
+name = "six"
+downloads = 1177269151
+repository = "https://github.com/benjaminp/six.git"
+ref = "1.17.0"
+release_version = "1.17.0"
+release_date = "2024-12-04T17:35:26.475808Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest"],
+]
+test = ["-m", "pytest", "-p", "no:xdist"]
+timeout_seconds = 300

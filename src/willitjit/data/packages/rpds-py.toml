@@ -1,0 +1,14 @@
+[package]
+rank = 54
+name = "rpds-py"
+downloads = 613601443
+repository = "https://github.com/crate-py/rpds.git"
+ref = "v2026.6.3"
+release_version = "2026.6.3"
+release_date = "2026-06-30T07:14:54.821184Z"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1800

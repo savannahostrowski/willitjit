@@ -1,0 +1,14 @@
+[package]
+rank = 6
+name = "idna"
+downloads = 1760742555
+repository = "https://github.com/kjd/idna.git"
+ref = "v3.18"
+release_version = "3.18"
+release_date = "2026-06-02T14:34:06.319954Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest>=8.3.2", "hypothesis>=6.141.1"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600

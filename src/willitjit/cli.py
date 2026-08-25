@@ -25,7 +25,7 @@ from .runner import (
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="willitjit")
     root.add_argument(
-        "--registry", type=Path, help="override the bundled TOML registry"
+        "--registry", type=Path, help="override the bundled registry directory"
     )
     commands = root.add_subparsers(dest="command", required=True)
 

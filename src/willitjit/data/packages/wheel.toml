@@ -1,0 +1,14 @@
+[package]
+rank = 58
+name = "wheel"
+downloads = 595760140
+repository = "https://github.com/pypa/wheel.git"
+ref = "0.47.0"
+release_version = "0.47.0"
+release_date = "2026-04-22T15:51:26.296257Z"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900

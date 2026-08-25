@@ -1,0 +1,13 @@
+[package]
+rank = 5
+name = "urllib3"
+downloads = 1843477278
+repository = "https://github.com/urllib3/urllib3.git"
+ref = "2.7.0"
+release_version = "2.7.0"
+release_date = "2026-05-07T16:13:17.151740Z"
+install = []
+uv_sync = ["--frozen", "--group", "dev", "--extra", "socks", "--extra", "brotli", "--extra", "zstd", "--extra", "h2"]
+test = ["-m", "pytest", "test"]
+timeout_seconds = 1800
+note = "Uses the release's frozen uv environment, matching upstream's Python 3.14 nox session."

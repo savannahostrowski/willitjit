@@ -1,0 +1,12 @@
+[package]
+rank = 86
+name = "opentelemetry-api"
+downloads = 463796331
+repository = "https://github.com/open-telemetry/opentelemetry-python.git"
+ref = "v1.44.0"
+release_version = "1.44.0"
+release_date = "2026-07-16T15:25:11.657202Z"
+install = [["-m", "pip", "install", "-r", "opentelemetry-api/test-requirements.txt"]]
+test = ["-m", "pytest", "opentelemetry-api/tests"]
+timeout_seconds = 1200
+note = "Uses the package's upstream test requirements from the OpenTelemetry monorepo."

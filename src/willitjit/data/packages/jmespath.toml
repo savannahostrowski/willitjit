@@ -1,0 +1,14 @@
+[package]
+rank = 47
+name = "jmespath"
+downloads = 652344301
+repository = "https://github.com/jmespath/jmespath.py.git"
+ref = "1.1.0"
+release_version = "1.1.0"
+release_date = "2026-01-22T16:35:24.919874Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600

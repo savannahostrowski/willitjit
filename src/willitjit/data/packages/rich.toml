@@ -1,0 +1,14 @@
+[package]
+rank = 52
+name = "rich"
+downloads = 613852561
+repository = "https://github.com/Textualize/rich.git"
+ref = "v15.0.0"
+release_version = "15.0.0"
+release_date = "2026-04-12T08:24:00.750018Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest", "pytest-cov", "attrs", "pygments==2.19.2"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200

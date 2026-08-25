@@ -1,0 +1,16 @@
+[package]
+rank = 65
+name = "frozenlist"
+downloads = 554242815
+repository = "https://github.com/aio-libs/frozenlist.git"
+ref = "v1.8.0"
+release_version = "1.8.0"
+release_date = "2025-10-06T05:35:23.699793Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1200
+environment = { FROZENLIST_NO_EXTENSIONS = "1" }
+note = "Uses the upstream pure-Python lane so the JIT exercises Python code."

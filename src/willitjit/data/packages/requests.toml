@@ -1,0 +1,14 @@
+[package]
+rank = 7
+name = "requests"
+downloads = 1756048205
+repository = "https://github.com/psf/requests.git"
+ref = "v2.34.2"
+release_version = "2.34.2"
+release_date = "2026-05-14T19:25:26.443000Z"
+install = [
+  ["-m", "pip", "install", "-e", ".[socks]"],
+  ["-m", "pip", "install", "--group", "test"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200

@@ -1,0 +1,14 @@
+[package]
+rank = 88
+name = "annotated-doc"
+downloads = 456245916
+repository = "https://github.com/fastapi/annotated-doc.git"
+ref = "0.0.5"
+release_version = "0.0.5"
+release_date = "2026-07-28T13:50:57.239109Z"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900

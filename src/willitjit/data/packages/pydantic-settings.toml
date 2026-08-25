@@ -1,0 +1,13 @@
+[package]
+rank = 89
+name = "pydantic-settings"
+downloads = 453025118
+repository = "https://github.com/pydantic/pydantic-settings.git"
+ref = "v2.15.0"
+release_version = "2.15.0"
+release_date = "2026-08-07T09:24:55.839145Z"
+install = []
+uv_sync = ["--frozen", "--group", "testing", "--all-extras"]
+test = ["-m", "pytest", "tests", "-p", "no:xdist", "-W", "ignore:Exception ignored while finalizing scandir iterator:pytest.PytestUnraisableExceptionWarning"]
+timeout_seconds = 1800
+note = "Uses the release's frozen uv environment and ignores only CPython's scandir finalization warning."

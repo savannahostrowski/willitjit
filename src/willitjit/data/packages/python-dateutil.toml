@@ -1,0 +1,15 @@
+[package]
+rank = 16
+name = "python-dateutil"
+downloads = 1188011910
+repository = "https://github.com/dateutil/dateutil.git"
+ref = "2.9.0.post0"
+release_version = "2.9.0.post0"
+release_date = "2024-03-01T18:36:18.570437Z"
+install = [
+  ["-m", "pip", "install", "python-dateutil=={release_version}"],
+  ["-m", "pip", "install", "-r", "requirements-dev.txt"],
+  ["-m", "pip", "install", "pytest==9.0.2"],
+]
+test = ["-m", "pytest", "tests", "docs"]
+timeout_seconds = 900

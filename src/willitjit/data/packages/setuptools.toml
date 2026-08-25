@@ -1,0 +1,14 @@
+[package]
+rank = 9
+name = "setuptools"
+downloads = 1563563625
+repository = "https://github.com/pypa/setuptools.git"
+ref = "v84.0.0"
+release_version = "84.0.0"
+release_date = "2026-08-08T18:27:56.719708Z"
+install = [["-m", "pip", "install", "-e", ".[test,check,cover,enabler,type,core]"]]
+test = ["-m", "pytest"]
+timeout_seconds = 2400
+skip_platforms = { Linux = "The Actions CPython build omits test.support, which this upstream suite requires.", Darwin = "The Actions CPython build omits test.support, which this upstream suite requires.", Windows = "The Actions CPython build omits test.support, which this upstream suite requires." }
+note = "The full default suite runs where the selected CPython distribution includes test.support; integration is a separate tox environment."
+environment = { CFLAGS = "-Wno-error=deprecated-declarations" }

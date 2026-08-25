@@ -3,6 +3,7 @@ from __future__ import annotations
 import tomllib
 from datetime import datetime
 from importlib.resources import files
+from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
@@ -10,12 +11,27 @@ from .models import Package
 
 
 def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Package]]:
-    registry = (
-        path.read_text()
-        if path
-        else files("willitjit").joinpath("data/top100.toml").read_text()
+    root: Path | Traversable = path or files("willitjit").joinpath("data")
+    dataset_raw = tomllib.loads(root.joinpath("dataset.toml").read_text())
+    package_files = sorted(
+        (
+            item
+            for item in root.joinpath("packages").iterdir()
+            if item.name.endswith(".toml")
+        ),
+        key=lambda item: item.name,
     )
-    raw = tomllib.loads(registry)
+    if not package_files:
+        raise ValueError("registry needs package files")
+    package_items = []
+    for package_file in package_files:
+        item = tomllib.loads(package_file.read_text()).get("package")
+        if not isinstance(item, dict):
+            raise TypeError(f"{package_file.name} needs a package table")
+        if package_file.name != f"{item.get('name')}.toml":
+            raise ValueError(f"package filename does not match {item.get('name')}")
+        package_items.append(item)
+    package_items.sort(key=lambda item: item["rank"])
     packages = [
         Package(
             rank=item["rank"],
@@ -44,18 +60,22 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
             release_version=item.get("release_version", ""),
             release_date=item.get("release_date", ""),
         )
-        for item in raw["packages"]
+        for item in package_items
     ]
-    release_cutoff = raw["dataset"].get("release_cutoff")
+    dataset = dataset_raw.get("dataset")
+    if not isinstance(dataset, dict):
+        raise TypeError("dataset.toml needs a dataset table")
+    release_cutoff = dataset.get("release_cutoff")
     if not release_cutoff:
         raise ValueError("dataset needs a release_cutoff")
     validate_registry(packages, release_cutoff=release_cutoff)
-    return raw["dataset"], packages
+    return dataset, packages
 
 
 def validate_registry(
     packages: list[Package], *, release_cutoff: str | None = None
 ) -> None:
+    supported_platforms = {"Linux", "Darwin", "Windows"}
     ranks = [package.rank for package in packages]
     names = [package.name for package in packages]
     if any(rank < 1 for rank in ranks) or ranks != sorted(set(ranks)):
@@ -65,9 +85,16 @@ def validate_registry(
     for package in packages:
         if Path(package.name).name != package.name or package.name in {"", ".", ".."}:
             raise ValueError(f"unsafe package name: {package.name}")
-        if not package.repository.startswith("https://github.com/"):
+        skipped_platforms = {platform for platform, _reason in package.skip_platforms}
+        fully_skipped = skipped_platforms == supported_platforms
+        if (
+            not package.repository.startswith("https://github.com/")
+            and not fully_skipped
+        ):
             raise ValueError(f"unsupported repository URL for {package.name}")
-        if (not package.install and not package.uv_sync) or not package.test:
+        if not fully_skipped and (
+            (not package.install and not package.uv_sync) or not package.test
+        ):
             raise ValueError(f"{package.name} needs setup and test commands")
         if release_cutoff is not None:
             if package.ref == "HEAD" or not package.release_version:
@@ -93,7 +120,7 @@ def validate_registry(
         if any(not key or "=" in key for key, _value in package.environment):
             raise ValueError(f"invalid environment key for {package.name}")
         if any(
-            platform not in {"Linux", "Darwin", "Windows"} or not reason
+            platform not in supported_platforms or not reason
             for platform, reason in package.skip_platforms
         ):
             raise ValueError(f"invalid platform skip for {package.name}")

@@ -1,0 +1,14 @@
+[package]
+rank = 39
+name = "platformdirs"
+downloads = 763006168
+repository = "https://github.com/tox-dev/platformdirs.git"
+ref = "4.11.2"
+release_version = "4.11.2"
+release_date = "2026-08-10T15:48:04.855867Z"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600

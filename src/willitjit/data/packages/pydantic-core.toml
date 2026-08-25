@@ -1,0 +1,14 @@
+[package]
+rank = 26
+name = "pydantic-core"
+downloads = 1007754482
+repository = "https://github.com/pydantic/pydantic.git"
+ref = "core-v2.48.0"
+release_version = "2.48.0"
+release_date = "2026-08-06T14:21:51.964864Z"
+install = []
+uv_sync = ["--frozen", "--all-packages", "--group", "testing-extra", "--all-extras"]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+test_cwd = "pydantic-core"
+timeout_seconds = 1800
+note = "Uses the release's frozen workspace so the parent Pydantic and core test dependencies match pydantic-core."

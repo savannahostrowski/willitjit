@@ -1,0 +1,16 @@
+[package]
+rank = 83
+name = "hatchling"
+downloads = 484194815
+repository = "https://github.com/pypa/hatch.git"
+ref = "hatchling-v1.32.0"
+release_version = "1.32.0"
+release_date = "2026-08-11T05:03:42.644966Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "-e", "./backend"],
+  ["-m", "pip", "install", "pytest", "pytest-mock", "filelock", "flit-core", "trustme", "editables"],
+]
+test = ["-m", "pytest", "tests/backend", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Installs the Hatch workspace and Hatchling backend before running the monorepo backend suite."

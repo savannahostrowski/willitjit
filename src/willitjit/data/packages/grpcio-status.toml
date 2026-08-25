@@ -1,0 +1,16 @@
+[package]
+rank = 27
+name = "grpcio-status"
+downloads = 951128296
+repository = "https://github.com/grpc/grpc.git"
+ref = "v1.83.0"
+release_version = "1.83.0"
+release_date = "2026-07-23T15:23:49.044717Z"
+install = [
+  ["-m", "pip", "install", "coverage", "grpcio", "protobuf", "googleapis-common-protos"],
+  ["-m", "pip", "install", "--no-deps", "-e", "src/python/grpcio_status"],
+]
+test = ["-m", "unittest", "tests.status._grpc_status_test", "tests_aio.status.grpc_status_test"]
+test_cwd = "src/python/grpcio_tests"
+timeout_seconds = 900
+note = "Runs the upstream synchronous and asyncio grpcio-status suites from the gRPC monorepo."

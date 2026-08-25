@@ -1,0 +1,14 @@
+[package]
+rank = 13
+name = "pluggy"
+downloads = 1280274438
+repository = "https://github.com/pytest-dev/pluggy.git"
+ref = "1.6.0"
+release_version = "1.6.0"
+release_date = "2025-05-15T12:30:06.134003Z"
+install = [
+  ["-m", "pip", "install", "-e", ".[testing]"],
+]
+test = ["-m", "pytest", "testing"]
+timeout_seconds = 600
+note = "Installs the pinned checkout with its upstream testing extra."

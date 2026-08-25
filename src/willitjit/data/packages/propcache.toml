@@ -1,0 +1,16 @@
+[package]
+rank = 61
+name = "propcache"
+downloads = 587094457
+repository = "https://github.com/aio-libs/propcache.git"
+ref = "v0.5.2"
+release_version = "0.5.2"
+release_date = "2026-05-08T20:59:15.597140Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "--no-c-extensions"]
+timeout_seconds = 1200
+environment = { PROPCACHE_NO_EXTENSIONS = "1" }
+note = "Uses upstream's explicit --no-c-extensions test lane so the JIT exercises Python code."

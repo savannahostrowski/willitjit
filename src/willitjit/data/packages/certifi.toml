@@ -1,0 +1,15 @@
+[package]
+rank = 4
+name = "certifi"
+downloads = 1861401883
+repository = "https://github.com/certifi/python-certifi.git"
+ref = "2026.07.22"
+release_version = "2026.7.22"
+release_date = "2026-07-22T03:35:11.276376Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest"],
+]
+test = ["-W", "error", "-m", "pytest"]
+timeout_seconds = 300
+note = "Matches upstream's warning-as-error pytest invocation."

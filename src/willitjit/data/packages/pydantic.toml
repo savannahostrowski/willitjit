@@ -1,0 +1,13 @@
+[package]
+rank = 21
+name = "pydantic"
+downloads = 1105778495
+repository = "https://github.com/pydantic/pydantic.git"
+ref = "v2.13.4"
+release_version = "2.13.4"
+release_date = "2026-05-06T13:43:02.641507Z"
+install = []
+uv_sync = ["--frozen", "--all-packages", "--group", "testing-extra", "--all-extras"]
+test = ["-m", "pytest", "tests", "-p", "no:xdist", "--durations=10"]
+timeout_seconds = 1800
+note = "Uses the release's frozen workspace environment, matching upstream's Python 3.14 CI."

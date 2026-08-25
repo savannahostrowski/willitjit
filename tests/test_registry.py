@@ -3,12 +3,28 @@ from __future__ import annotations
 import unittest
 from dataclasses import replace
 from datetime import datetime
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 from willitjit.models import Package
 from willitjit.registry import load_registry, validate_registry
 
 
 class RegistryTests(unittest.TestCase):
+    def test_rejects_package_filename_mismatch(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "packages").mkdir()
+            (root / "dataset.toml").write_text(
+                '[dataset]\nrelease_cutoff = "2026-08-11T00:00:00Z"\n'
+            )
+            (root / "packages" / "wrong.toml").write_text(
+                '[package]\nname = "example"\n'
+            )
+
+            with self.assertRaisesRegex(ValueError, "filename does not match"):
+                load_registry(root)
+
     def test_rejects_unsafe_package_name(self) -> None:
         package = Package(
             rank=1,
@@ -74,7 +90,7 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(dataset["last_update"], "2026-08-01 06:34:08")
         self.assertEqual(
             dataset["selection"],
-            "first 100 packages with official GitHub repositories",
+            "top 100 packages; test execution currently requires GitHub-hosted source",
         )
         cutoff = datetime.fromisoformat(dataset["release_cutoff"])
         self.assertEqual(len(packages), 100)
@@ -185,16 +201,16 @@ class RegistryTests(unittest.TestCase):
                 "huggingface-hub",
                 "regex",
                 "pyarrow",
+                "beautifulsoup4",
                 "colorama",
                 "tenacity",
                 "soupsieve",
                 "sqlalchemy",
-                "distro",
             ],
         )
         self.assertEqual(packages[-6].rank, 95)
-        self.assertEqual(packages[-5].rank, 97)
-        self.assertEqual(packages[-1].rank, 101)
+        self.assertEqual(packages[-5].rank, 96)
+        self.assertEqual(packages[-1].rank, 100)
         numpy = next(package for package in packages if package.name == "numpy")
         self.assertFalse(numpy.recursive_submodules)
         self.assertIn("numpy=={release_version}", numpy.install[-1])
@@ -252,6 +268,15 @@ class RegistryTests(unittest.TestCase):
             "7077675d2cda485d63de4aefe0fefbf6f655c5a0",
         )
         self.assertEqual(pillow.fixture_destination, "Tests/images")
+        beautifulsoup = next(
+            package for package in packages if package.name == "beautifulsoup4"
+        )
+        self.assertEqual(beautifulsoup.install, ())
+        self.assertEqual(beautifulsoup.test, ())
+        self.assertEqual(
+            {platform for platform, _reason in beautifulsoup.skip_platforms},
+            {"Linux", "Darwin", "Windows"},
+        )
         aiobotocore = next(
             package for package in packages if package.name == "aiobotocore"
         )

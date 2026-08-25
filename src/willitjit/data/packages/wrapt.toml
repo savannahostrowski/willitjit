@@ -1,0 +1,11 @@
+[package]
+rank = 81
+name = "wrapt"
+downloads = 495611441
+repository = "https://github.com/GrahamDumpleton/wrapt.git"
+ref = "2.3.0"
+release_version = "2.3.0"
+release_date = "2026-07-28T06:04:04.858030Z"
+install = [["-m", "pip", "install", "-e", ".[dev]"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200

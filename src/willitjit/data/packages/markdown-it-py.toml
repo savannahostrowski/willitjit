@@ -1,0 +1,13 @@
+[package]
+rank = 53
+name = "markdown-it-py"
+downloads = 613779408
+repository = "https://github.com/executablebooks/markdown-it-py.git"
+ref = "v4.2.0"
+release_version = "4.2.0"
+release_date = "2026-05-07T12:08:27.182789Z"
+install = [["-m", "pip", "install", "-e", ".[testing,linkify,plugins]"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+environment = { PYTHONUTF8 = "1", PYTHONIOENCODING = "utf-8" }
+note = "Forces UTF-8 for the cmark fixtures because upstream tests only on Linux."

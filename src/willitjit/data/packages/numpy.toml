@@ -1,0 +1,16 @@
+[package]
+rank = 19
+name = "numpy"
+downloads = 1143792865
+repository = "https://github.com/numpy/numpy.git"
+ref = "v2.5.2"
+release_version = "2.5.2"
+release_date = "2026-08-09T13:44:51.702331Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test_requirements.txt"],
+  ["-m", "pip", "install", "numpy=={release_version}"],
+]
+test = ["-m", "pytest", "--pyargs", "numpy", "-m", "not slow", "-p", "no:xdist", "--durations=10"]
+test_cwd = "tools"
+timeout_seconds = 2400
+note = "Runs the release wheel's bundled suite from outside the checkout. Tests marked slow are excluded because upstream includes multi-gigabyte memory and disk tests in that group."

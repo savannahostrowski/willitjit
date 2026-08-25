@@ -1,0 +1,17 @@
+[package]
+rank = 49
+name = "aiohttp"
+downloads = 643629740
+repository = "https://github.com/aio-libs/aiohttp.git"
+ref = "v3.14.3"
+release_version = "3.14.3"
+release_date = "2026-07-23T01:52:08.217234Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test.in", "-c", "requirements/test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "-m", "not dev_mode and not autobahn", "-p", "no:xdist"]
+timeout_seconds = 2400
+environment = { AIOHTTP_NO_EXTENSIONS = "1" }
+note = "Uses the upstream pure-Python lane and excludes its separate dev-mode and Autobahn lanes."
+recursive_submodules = true

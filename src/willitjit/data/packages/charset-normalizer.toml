@@ -1,0 +1,16 @@
+[package]
+rank = 8
+name = "charset-normalizer"
+downloads = 1674555757
+repository = "https://github.com/jawah/charset_normalizer.git"
+ref = "3.4.9"
+release_version = "3.4.9"
+release_date = "2026-07-07T14:32:36.236156Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "dev"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+environment = { CHARSET_NORMALIZER_USE_CYTHON = "0" }
+note = "Matches upstream's primary pure-Python test lane so the JIT exercises Python code."

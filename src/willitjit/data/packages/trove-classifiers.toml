@@ -1,0 +1,14 @@
+[package]
+rank = 73
+name = "trove-classifiers"
+downloads = 540435669
+repository = "https://github.com/pypa/trove-classifiers.git"
+ref = "2026.6.1.19"
+release_version = "2026.6.1.19"
+release_date = "2026-06-01T19:41:33.434069Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/dev.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900

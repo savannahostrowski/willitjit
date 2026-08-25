@@ -1,0 +1,15 @@
+[package]
+rank = 75
+name = "aiosignal"
+downloads = 537226203
+repository = "https://github.com/aio-libs/aiosignal.git"
+ref = "v1.4.0"
+release_version = "1.4.0"
+release_date = "2025-07-03T22:54:42.156277Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/ci-wheel.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-bb", "-W", "error", "-m", "pytest", "tests"]
+timeout_seconds = 900
+note = "Uses upstream's CI requirements, which include pytest-cov in addition to the wheel test dependencies."

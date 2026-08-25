@@ -1,0 +1,14 @@
+[package]
+rank = 41
+name = "python-dotenv"
+downloads = 740099887
+repository = "https://github.com/theskumar/python-dotenv.git"
+ref = "v1.2.2"
+release_version = "1.2.2"
+release_date = "2026-03-01T16:00:25.090725Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements.txt"],
+  ["-m", "pip", "install", "-e", ".[cli]"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600

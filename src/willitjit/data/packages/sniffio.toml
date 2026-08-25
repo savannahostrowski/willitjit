@@ -1,0 +1,14 @@
+[package]
+rank = 82
+name = "sniffio"
+downloads = 487249508
+repository = "https://github.com/python-trio/sniffio.git"
+ref = "v1.3.1"
+release_version = "1.3.1"
+release_date = "2024-02-25T23:20:01.196159Z"
+install = [
+  ["-m", "pip", "install", "-r", "test-requirements.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "sniffio/_tests"]
+timeout_seconds = 900

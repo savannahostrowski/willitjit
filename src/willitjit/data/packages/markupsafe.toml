@@ -1,0 +1,14 @@
+[package]
+rank = 34
+name = "markupsafe"
+downloads = 797118023
+repository = "https://github.com/pallets/markupsafe.git"
+ref = "3.0.3"
+release_version = "3.0.3"
+release_date = "2025-09-27T18:36:05.558229Z"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600

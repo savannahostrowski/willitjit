@@ -1,0 +1,17 @@
+[package]
+rank = 1
+name = "boto3"
+downloads = 3717556977
+repository = "https://github.com/boto/boto3.git"
+ref = "1.43.68"
+release_version = "1.43.68"
+release_date = "2026-08-10T19:22:05.592139Z"
+install = [
+  ["-m", "pip", "install", "-r", "requirements-dev-lock.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "unit", "functional"]
+test_cwd = "tests"
+timeout_seconds = 1800
+note = "Uses the release's locked development requirements; integration tests are excluded."
+isolate_home = true

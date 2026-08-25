@@ -94,9 +94,9 @@ export function AboutPage() {
             <a href="https://github.com/hugovk/top-pypi-packages" target="_blank" rel="noreferrer">
               Top PyPI Packages list
             </a>.
-            The registry currently includes the first 100 packages on that list whose
-            source is hosted on GitHub. Other source hosts are out of scope for now.
-            The weekly survey runs all 100.
+            The registry includes the top 100 packages on that list. Test execution
+            currently supports GitHub-hosted source repositories. Packages hosted
+            elsewhere remain visible as not tested. The weekly survey covers all 100.
           </p>
         </section>
         <section>

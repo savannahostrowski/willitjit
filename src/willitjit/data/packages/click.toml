@@ -1,0 +1,15 @@
+[package]
+rank = 23
+name = "click"
+downloads = 1089240135
+repository = "https://github.com/pallets/click.git"
+ref = "8.4.2"
+release_version = "8.4.2"
+release_date = "2026-06-24T17:45:13.730054Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "pytest==9.0.2"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 600

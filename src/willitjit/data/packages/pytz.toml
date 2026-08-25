@@ -1,0 +1,12 @@
+[package]
+rank = 66
+name = "pytz"
+downloads = 551686335
+repository = "https://github.com/stub42/pytz.git"
+ref = "release_2026.3.post1"
+release_version = "2026.3.post1"
+release_date = "2026-07-25T15:12:05.782880Z"
+install = [["-m", "pip", "install", "pytz=={release_version}", "pytest"]]
+test = ["-m", "pytest", "src/pytz/tests"]
+timeout_seconds = 900
+note = "Runs the pinned release wheel against the upstream GitHub test suite because the checkout omits generated timezone data."

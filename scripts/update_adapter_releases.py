@@ -17,7 +17,7 @@ from typing import Any
 from packaging.version import InvalidVersion, Version
 
 
-REGISTRY = Path("src/willitjit/data/top100.toml")
+REGISTRY = Path("src/willitjit/data")
 USER_AGENT = "willitjit-adapter-refresh/1"
 
 # Some monorepos publish one repository tag for packages with independent
@@ -162,7 +162,13 @@ def matching_tag(
 def resolve_packages(
     packages: list[dict[str, Any]], cutoff: dt.datetime
 ) -> dict[str, tuple[str, str, str]]:
-    repositories = sorted({package["repository"] for package in packages})
+    repositories = sorted(
+        {
+            package["repository"]
+            for package in packages
+            if package["repository"].startswith("https://github.com/")
+        }
+    )
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
         tag_results = executor.map(repository_tags, repositories)
         tags_by_repository = dict(zip(repositories, tag_results, strict=True))
@@ -178,6 +184,9 @@ def resolve_packages(
     for package in packages:
         name = package["name"]
         version, release_date = releases[name]
+        if not package["repository"].startswith("https://github.com/"):
+            resolved[name] = (version, release_date, package["ref"])
+            continue
         tag_version = releases[TAG_VERSION_FROM_PACKAGE.get(name, name)][0]
         try:
             ref = matching_tag(
@@ -195,50 +204,52 @@ def resolve_packages(
     return resolved
 
 
-def rewrite_registry(
-    text: str, cutoff: str, resolved: dict[str, tuple[str, str, str]]
-) -> str:
-    output: list[str] = []
-    package_name: str | None = None
-    cutoff_written = False
+def rewrite_dataset(text: str, cutoff: str) -> str:
+    output = []
+    found = False
     for line in text.splitlines():
         if line.startswith("release_cutoff = "):
-            if not cutoff_written:
-                output.append(f'release_cutoff = "{cutoff}"')
-                cutoff_written = True
-            continue
+            output.append(f'release_cutoff = "{cutoff}"')
+            found = True
+        else:
+            output.append(line)
+    if not found:
+        raise RuntimeError("dataset has no release_cutoff")
+    return "\n".join(output) + "\n"
+
+
+def rewrite_package(text: str, resolved: tuple[str, str, str]) -> str:
+    output: list[str] = []
+    version, release_date, ref = resolved
+    found_ref = False
+    for line in text.splitlines():
         if line.startswith(("release_version = ", "release_date = ")):
             continue
-        if line.startswith("[[packages]]") and not cutoff_written:
-            output.append(f'release_cutoff = "{cutoff}"')
-            output.append("")
-            cutoff_written = True
-        if line.startswith("name = "):
-            package_name = json.loads(line.removeprefix("name = "))
         if line.startswith("ref = "):
-            if package_name is None:
-                raise RuntimeError("ref appeared before package name")
-            version, release_date, ref = resolved[package_name]
             output.append(f'ref = "{ref}"')
             output.append(f'release_version = "{version}"')
             output.append(f'release_date = "{release_date}"')
+            found_ref = True
             continue
         output.append(line)
+    if not found_ref:
+        raise RuntimeError("package has no ref")
     return "\n".join(output) + "\n"
 
 
 def main() -> None:
     args = parse_args()
     cutoff_value, cutoff_text = normalized_cutoff(args.cutoff)
-    text = args.registry.read_text()
-    raw = tomllib.loads(text)
-    packages = raw["packages"]
+    dataset_path = args.registry / "dataset.toml"
+    package_paths = sorted((args.registry / "packages").glob("*.toml"))
+    packages = [tomllib.loads(path.read_text())["package"] for path in package_paths]
     resolved = resolve_packages(packages, cutoff_value)
-    updated = rewrite_registry(text, cutoff_text, resolved)
     print(f"Resolved {len(packages)} package releases at {cutoff_text}.")
     if args.write:
-        args.registry.write_text(updated)
-        print(f"Updated {args.registry}.")
+        dataset_path.write_text(rewrite_dataset(dataset_path.read_text(), cutoff_text))
+        for path, package in zip(package_paths, packages, strict=True):
+            path.write_text(rewrite_package(path.read_text(), resolved[package["name"]]))
+        print(f"Updated {len(package_paths)} adapters in {args.registry}.")
     else:
         print("Dry run only. Pass --write to update the registry.")
 

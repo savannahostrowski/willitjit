@@ -1,0 +1,15 @@
+[package]
+rank = 24
+name = "iniconfig"
+downloads = 1033526081
+repository = "https://github.com/pytest-dev/iniconfig.git"
+ref = "v2.3.0"
+release_version = "2.3.0"
+release_date = "2025-10-18T21:55:41.639305Z"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "--group", "dev"],
+]
+test = ["-m", "pytest", "testing"]
+timeout_seconds = 600
+note = "The shallow checkout may produce a synthetic setuptools-scm development version."

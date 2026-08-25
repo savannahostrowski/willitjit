@@ -1,0 +1,14 @@
+[package]
+rank = 63
+name = "fastapi"
+downloads = 568552369
+repository = "https://github.com/fastapi/fastapi.git"
+ref = "0.141.1"
+release_version = "0.141.1"
+release_date = "2026-07-29T17:18:04.364385Z"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", ".[standard]"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 2400

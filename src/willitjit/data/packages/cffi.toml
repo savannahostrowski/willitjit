@@ -1,0 +1,16 @@
+[package]
+rank = 12
+name = "cffi"
+downloads = 1303772314
+repository = "https://github.com/python-cffi/cffi.git"
+ref = "v2.1.1"
+release_version = "2.1.1"
+release_date = "2026-08-03T21:19:15.602573Z"
+install = [
+  ["-m", "pip", "install", "cffi=={release_version}"],
+  ["-m", "pip", "install", "pytest", "setuptools", "meson-python", "ninja"],
+]
+test = ["-m", "pytest", "src/c"]
+timeout_seconds = 1200
+note = "Runs the upstream wheel-test subset used on Windows. The larger testing directory is intentionally excluded because upstream documents that it takes about 45 minutes and has failures there."
+embedded_python = true
