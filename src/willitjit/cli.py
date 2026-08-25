@@ -210,9 +210,23 @@ def main(argv: list[str] | None = None) -> int:
                 print("   checkout: fetch tags")
             if package.recursive_submodules:
                 print("   checkout: initialize recursive submodules")
+            if package.fixture_repository:
+                print(
+                    "   fixture: "
+                    f"{package.fixture_repository}@{package.fixture_ref} "
+                    f"-> {package.fixture_destination}"
+                )
+            if package.uv_sync:
+                print(
+                    f"   setup ({package.install_cwd}): uv sync "
+                    f"{format_command(package.uv_sync)}"
+                )
             for command in package.install:
                 command = release_install_arguments(package, command)
-                print(f"   setup: python {format_command(command)}")
+                print(
+                    f"   setup ({package.install_cwd}): "
+                    f"python {format_command(command)}"
+                )
             print(
                 f"   test twice ({package.test_cwd}): "
                 f"python {format_command(package.test)}"

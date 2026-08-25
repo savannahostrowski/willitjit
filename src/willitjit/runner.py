@@ -145,17 +145,17 @@ def run_logged(
 ) -> CommandResult:
     started = time.monotonic()
     header = f"$ {format_command(command)}\n\n"
-    if stream_output:
-        return _run_logged_streaming(
-            command,
-            cwd=cwd,
-            env=env,
-            timeout_seconds=timeout_seconds,
-            log_path=log_path,
-            header=header,
-            started=started,
-        )
     try:
+        if stream_output:
+            return _run_logged_streaming(
+                command,
+                cwd=cwd,
+                env=env,
+                timeout_seconds=timeout_seconds,
+                log_path=log_path,
+                header=header,
+                started=started,
+            )
         completed = subprocess.run(
             command,
             cwd=cwd,
@@ -168,14 +168,6 @@ def run_logged(
             timeout=timeout_seconds,
             check=False,
         )
-        output = completed.stdout or ""
-        result = CommandResult(
-            command=tuple(command),
-            returncode=completed.returncode,
-            elapsed_seconds=round(time.monotonic() - started, 3),
-            timed_out=False,
-            log=str(log_path),
-        )
     except subprocess.TimeoutExpired as error:
         captured = error.stdout or ""
         if isinstance(captured, bytes):
@@ -186,6 +178,24 @@ def run_logged(
             returncode=None,
             elapsed_seconds=round(time.monotonic() - started, 3),
             timed_out=True,
+            log=str(log_path),
+        )
+    except OSError as error:
+        output = f"FAILED TO START: {error}\n"
+        result = CommandResult(
+            command=tuple(command),
+            returncode=127,
+            elapsed_seconds=round(time.monotonic() - started, 3),
+            timed_out=False,
+            log=str(log_path),
+        )
+    else:
+        output = completed.stdout or ""
+        result = CommandResult(
+            command=tuple(command),
+            returncode=completed.returncode,
+            elapsed_seconds=round(time.monotonic() - started, 3),
+            timed_out=False,
             log=str(log_path),
         )
     log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -278,6 +288,20 @@ def installation_command(python: Path, arguments: tuple[str, ...]) -> list[str]:
     return [str(python), *arguments]
 
 
+def uv_sync_command(python: Path, arguments: tuple[str, ...]) -> list[str]:
+    uv = shutil.which("uv")
+    if not uv:
+        raise RuntimeError("uv is required by this package adapter")
+    return [
+        uv,
+        "sync",
+        "--active",
+        "--python",
+        str(python),
+        *arguments,
+    ]
+
+
 def release_install_arguments(
     package: Package, arguments: tuple[str, ...]
 ) -> tuple[str, ...]:
@@ -360,7 +384,7 @@ class SurveyRunner:
         package_dir = (self.run_dir / package_name).resolve()
         if package_dir.parent != self.run_dir:
             raise ValueError(f"unsafe package workspace: {package_name}")
-        for directory in ("baseline", "jit", "source"):
+        for directory in ("baseline", "jit", "source", "fixture"):
             shutil.rmtree(package_dir / directory, ignore_errors=True)
 
     def run_package(self, package: Package) -> PackageResult:
@@ -378,6 +402,7 @@ class SurveyRunner:
             )
         package_dir = self.run_dir / package.name
         source_repository = package_dir / "source"
+        fixture_repository = package_dir / "fixture"
         logs = package_dir / "logs"
         package_dir.mkdir(parents=True, exist_ok=False)
         setup_results: list[CommandResult] = []
@@ -394,6 +419,49 @@ class SurveyRunner:
         setup_results.append(result)
         if result.returncode != 0 or result.timed_out:
             return self._setup_error(package, setup_results, "repository clone failed")
+
+        if package.fixture_repository:
+            fixture_commands = (
+                [
+                    "git",
+                    "clone",
+                    "--filter=blob:none",
+                    "--no-checkout",
+                    package.fixture_repository,
+                    str(fixture_repository),
+                ],
+                [
+                    "git",
+                    "-C",
+                    str(fixture_repository),
+                    "fetch",
+                    "--depth",
+                    "1",
+                    "origin",
+                    package.fixture_ref,
+                ],
+                [
+                    "git",
+                    "-C",
+                    str(fixture_repository),
+                    "checkout",
+                    "--detach",
+                    "FETCH_HEAD",
+                ],
+            )
+            for index, command in enumerate(fixture_commands, start=1):
+                result = run_logged(
+                    command,
+                    cwd=package_dir,
+                    env=base_env,
+                    timeout_seconds=300,
+                    log_path=logs / f"00-fixture-{index}.log",
+                )
+                setup_results.append(result)
+                if result.returncode != 0 or result.timed_out:
+                    return self._setup_error(
+                        package, setup_results, "fixture repository setup failed"
+                    )
 
         if package.fetch_tags:
             result = run_logged(
@@ -488,6 +556,30 @@ class SurveyRunner:
                     revision,
                 )
 
+            if package.fixture_repository:
+                destination = (repository / package.fixture_destination).resolve()
+                if repository not in destination.parents:
+                    return self._setup_error(
+                        package,
+                        setup_results,
+                        f"{condition} fixture destination escaped repository",
+                        revision,
+                    )
+                try:
+                    shutil.copytree(
+                        fixture_repository,
+                        destination,
+                        dirs_exist_ok=True,
+                        ignore=shutil.ignore_patterns(".git"),
+                    )
+                except OSError as error:
+                    return self._setup_error(
+                        package,
+                        setup_results,
+                        f"{condition} fixture copy failed: {error}",
+                        revision,
+                    )
+
             result = run_logged(
                 [str(self.python), "-m", "venv", str(venv)],
                 cwd=repository,
@@ -507,11 +599,53 @@ class SurveyRunner:
             environment = self._condition_environment(
                 package, condition_dir, venv, base_env, jit_enabled
             )
-            for index, arguments in enumerate(package.install, start=4):
+            install_cwd = (repository / package.install_cwd).resolve()
+            if repository not in install_cwd.parents and install_cwd != repository:
+                return self._setup_error(
+                    package,
+                    setup_results,
+                    f"{condition} install_cwd escaped repository",
+                    revision,
+                )
+            if not install_cwd.is_dir():
+                return self._setup_error(
+                    package,
+                    setup_results,
+                    f"{condition} install_cwd does not exist",
+                    revision,
+                )
+            install_index = 4
+            if package.uv_sync:
+                try:
+                    command = uv_sync_command(venv_python(venv), package.uv_sync)
+                except RuntimeError as error:
+                    return self._setup_error(
+                        package,
+                        setup_results,
+                        f"{condition} dependency installation failed: {error}",
+                        revision,
+                    )
+                result = run_logged(
+                    command,
+                    cwd=install_cwd,
+                    env=environment,
+                    timeout_seconds=package.timeout_seconds,
+                    log_path=logs / condition / f"{install_index:02d}-uv-sync.log",
+                )
+                setup_results.append(result)
+                if result.returncode != 0 or result.timed_out:
+                    return self._setup_error(
+                        package,
+                        setup_results,
+                        f"{condition} dependency installation failed",
+                        revision,
+                    )
+                install_index += 1
+            for index, arguments in enumerate(package.install, start=install_index):
                 arguments = release_install_arguments(package, arguments)
                 result = run_logged(
                     installation_command(venv_python(venv), arguments),
-                    cwd=repository,
+                    cwd=install_cwd,
                     env=environment,
                     timeout_seconds=package.timeout_seconds,
                     log_path=logs / condition / f"{index:02d}-install.log",
@@ -531,6 +665,13 @@ class SurveyRunner:
                     package,
                     setup_results,
                     f"{condition} test_cwd escaped repository",
+                    revision,
+                )
+            if not test_cwd.is_dir():
+                return self._setup_error(
+                    package,
+                    setup_results,
+                    f"{condition} test_cwd does not exist",
                     revision,
                 )
             if self.stream_test_output:
@@ -581,6 +722,8 @@ class SurveyRunner:
     ) -> dict[str, str]:
         environment = base_env.copy()
         prepend_environment_path(environment, "PATH", venv_python(venv).parent)
+        environment["VIRTUAL_ENV"] = str(venv)
+        environment["UV_PROJECT_ENVIRONMENT"] = str(venv)
         if package.embedded_python:
             site_packages = venv_site_packages(venv)
             if site_packages is not None:

@@ -25,6 +25,11 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
             ref=item.get("ref", "HEAD"),
             install=tuple(tuple(command) for command in item["install"]),
             test=tuple(item["test"]),
+            uv_sync=tuple(item.get("uv_sync", ())),
+            install_cwd=item.get("install_cwd", "."),
+            fixture_repository=item.get("fixture_repository", ""),
+            fixture_ref=item.get("fixture_ref", ""),
+            fixture_destination=item.get("fixture_destination", ""),
             test_cwd=item.get("test_cwd", "."),
             timeout_seconds=item.get("timeout_seconds", 900),
             note=item.get("note", ""),
@@ -62,8 +67,8 @@ def validate_registry(
             raise ValueError(f"unsafe package name: {package.name}")
         if not package.repository.startswith("https://github.com/"):
             raise ValueError(f"unsupported repository URL for {package.name}")
-        if not package.install or not package.test:
-            raise ValueError(f"{package.name} needs install and test commands")
+        if (not package.install and not package.uv_sync) or not package.test:
+            raise ValueError(f"{package.name} needs setup and test commands")
         if release_cutoff is not None:
             if package.ref == "HEAD" or not package.release_version:
                 raise ValueError(f"{package.name} needs a pinned release")
@@ -73,8 +78,13 @@ def validate_registry(
             released = datetime.fromisoformat(package.release_date)
             if released > cutoff:
                 raise ValueError(f"{package.name} was released after the cutoff")
-        if package.test_cwd == ".." or package.test_cwd.startswith("/"):
-            raise ValueError(f"unsafe test_cwd for {package.name}")
+        for field, directory in (
+            ("install_cwd", package.install_cwd),
+            ("test_cwd", package.test_cwd),
+        ):
+            path = Path(directory)
+            if path.is_absolute() or ".." in path.parts:
+                raise ValueError(f"unsafe {field} for {package.name}")
         if any(
             not path or Path(path).is_absolute() or ".." in Path(path).parts
             for path in package.sparse_paths
@@ -87,3 +97,21 @@ def validate_registry(
             for platform, reason in package.skip_platforms
         ):
             raise ValueError(f"invalid platform skip for {package.name}")
+        fixture_fields = (
+            package.fixture_repository,
+            package.fixture_ref,
+            package.fixture_destination,
+        )
+        if any(fixture_fields) and not all(fixture_fields):
+            raise ValueError(f"incomplete fixture repository for {package.name}")
+        if package.fixture_repository and not package.fixture_repository.startswith(
+            "https://github.com/"
+        ):
+            raise ValueError(f"unsupported fixture URL for {package.name}")
+        fixture_destination = Path(package.fixture_destination)
+        if package.fixture_destination and (
+            fixture_destination.is_absolute()
+            or ".." in fixture_destination.parts
+            or package.fixture_ref == "HEAD"
+        ):
+            raise ValueError(f"unsafe fixture repository for {package.name}")

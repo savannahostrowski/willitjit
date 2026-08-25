@@ -22,6 +22,30 @@ class RegistryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsafe package name"):
             validate_registry([package])
 
+    def test_rejects_incomplete_or_moving_fixture_repository(self) -> None:
+        package = Package(
+            rank=1,
+            name="example",
+            downloads=1,
+            repository="https://github.com/example/example.git",
+            ref="v1.0.0",
+            install=(("-m", "pip", "install", "."),),
+            test=("-m", "pytest"),
+            fixture_repository="https://github.com/example/fixtures.git",
+        )
+        with self.assertRaisesRegex(ValueError, "incomplete fixture"):
+            validate_registry([package])
+        with self.assertRaisesRegex(ValueError, "unsafe fixture"):
+            validate_registry(
+                [
+                    replace(
+                        package,
+                        fixture_ref="HEAD",
+                        fixture_destination="tests/data",
+                    )
+                ]
+            )
+
     def test_rejects_moving_or_too_new_release(self) -> None:
         package = Package(
             rank=1,
@@ -172,7 +196,8 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(packages[-5].rank, 97)
         self.assertEqual(packages[-1].rank, 101)
         numpy = next(package for package in packages if package.name == "numpy")
-        self.assertTrue(numpy.recursive_submodules)
+        self.assertFalse(numpy.recursive_submodules)
+        self.assertIn("numpy=={release_version}", numpy.install[-1])
         protobuf = next(package for package in packages if package.name == "protobuf")
         self.assertIn(
             ("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python"),
@@ -190,9 +215,10 @@ class RegistryTests(unittest.TestCase):
         attrs = next(package for package in packages if package.name == "attrs")
         self.assertFalse(attrs.fetch_tags)
         urllib3 = next(package for package in packages if package.name == "urllib3")
-        self.assertIn("dev-base", urllib3.install[1])
+        self.assertIn("dev", urllib3.uv_sync)
         pytest = next(package for package in packages if package.name == "pytest")
-        self.assertIn(".[dev]", pytest.install[0])
+        self.assertIn("tox", pytest.install[0])
+        self.assertIn("py314", pytest.test)
         jinja2 = next(package for package in packages if package.name == "jinja2")
         self.assertIn("requirements/tests.txt", jinja2.install[0])
         pluggy = next(package for package in packages if package.name == "pluggy")
@@ -209,17 +235,23 @@ class RegistryTests(unittest.TestCase):
         self.assertEqual(
             pydantic_core.repository, "https://github.com/pydantic/pydantic.git"
         )
-        self.assertEqual(pydantic_core.sparse_paths, ("pydantic-core",))
-        self.assertIn(
-            "pydantic-core/pyproject.toml:testing-extra",
-            pydantic_core.install[0],
-        )
+        self.assertFalse(pydantic_core.sparse_paths)
+        self.assertIn("testing-extra", pydantic_core.uv_sync)
         pillow = next(package for package in packages if package.name == "pillow")
         self.assertFalse(pillow.skip_platforms)
         self.assertEqual(
             pillow.install,
             (("-m", "pip", "install", "Pillow[tests]=={release_version}"),),
         )
+        self.assertEqual(
+            pillow.fixture_repository,
+            "https://github.com/python-pillow/test-images.git",
+        )
+        self.assertEqual(
+            pillow.fixture_ref,
+            "7077675d2cda485d63de4aefe0fefbf6f655c5a0",
+        )
+        self.assertEqual(pillow.fixture_destination, "Tests/images")
         aiobotocore = next(
             package for package in packages if package.name == "aiobotocore"
         )
@@ -234,8 +266,10 @@ class RegistryTests(unittest.TestCase):
         self.assertIn("test", virtualenv.install[0])
         self.assertIn("virtualenv=={release_version}", virtualenv.install[-1])
         grpcio = next(package for package in packages if package.name == "grpcio")
-        self.assertIn("--no-deps", grpcio.install[-1])
-        self.assertIn("--no-build-isolation", grpcio.install[-1])
+        self.assertEqual(grpcio.install_cwd, "src/python/grpcio_tests")
+        self.assertIn("--no-deps", grpcio.install[-2])
+        self.assertIn("--no-build-isolation", grpcio.install[-2])
+        self.assertEqual(grpcio.install[-1], ("setup.py", "build_package_protos"))
         self.assertIn("--ignore=tests/unit/test_all_modules_installed.py", grpcio.test)
         referencing = next(
             package for package in packages if package.name == "referencing"

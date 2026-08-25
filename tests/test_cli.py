@@ -86,6 +86,10 @@ class PlanTests(unittest.TestCase):
                     "importlib-metadata",
                     "--package",
                     "referencing",
+                    "--package",
+                    "urllib3",
+                    "--package",
+                    "pillow",
                 ]
             )
 
@@ -94,6 +98,10 @@ class PlanTests(unittest.TestCase):
         self.assertIn("checkout: fetch tags", rendered)
         self.assertIn("sparse checkout: packages/google-auth", rendered)
         self.assertIn("checkout: initialize recursive submodules", rendered)
+        self.assertIn(
+            "fixture: https://github.com/python-pillow/test-images.git@", rendered
+        )
+        self.assertIn("setup (.): uv sync --frozen", rendered)
         self.assertIn("not tested: The Actions CPython build omits", rendered)
         self.assertIn("test twice (.): python -m pytest tests", rendered)
         self.assertIn("timeout:", rendered)

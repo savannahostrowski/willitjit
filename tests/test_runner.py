@@ -21,6 +21,7 @@ from willitjit.runner import (
     source_clone_command,
     sparse_checkout_command,
     untrusted_environment,
+    uv_sync_command,
     validate_jit_python,
 )
 
@@ -109,6 +110,26 @@ class SetupCommandTests(unittest.TestCase):
         self.assertEqual(
             command,
             ["/tmp/venv/bin/python", "-m", "pip", "install", "pytest"],
+        )
+
+    @patch("willitjit.runner.shutil.which", return_value="/opt/bin/uv")
+    def test_uv_sync_targets_active_condition_venv(self, _which) -> None:
+        command = uv_sync_command(
+            Path("/tmp/venv/bin/python"),
+            ("--frozen", "--group", "test"),
+        )
+        self.assertEqual(
+            command,
+            [
+                "/opt/bin/uv",
+                "sync",
+                "--active",
+                "--python",
+                "/tmp/venv/bin/python",
+                "--frozen",
+                "--group",
+                "test",
+            ],
         )
 
     def test_recursive_submodules_are_opt_in(self) -> None:
@@ -202,6 +223,25 @@ class SetupCommandTests(unittest.TestCase):
 
 
 class StreamingOutputTests(unittest.TestCase):
+    def test_records_command_start_failure(self) -> None:
+        for stream_output in (False, True):
+            with (
+                self.subTest(stream_output=stream_output),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                log = Path(temporary) / "test.log"
+                command_result = run_logged(
+                    [str(Path(temporary) / "missing-command")],
+                    cwd=Path(temporary),
+                    env=os.environ.copy(),
+                    timeout_seconds=30,
+                    log_path=log,
+                    stream_output=stream_output,
+                )
+
+                self.assertEqual(command_result.returncode, 127)
+                self.assertIn("FAILED TO START", log.read_text())
+
     def test_streams_output_and_retains_log(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             log = Path(temporary) / "test.log"
@@ -383,7 +423,14 @@ class FailEarlyTests(unittest.TestCase):
     ) -> None:
         passed = result(0)
         failed = result(1)
-        run_logged_mock.side_effect = [passed, passed, passed, passed, passed, failed]
+        results = iter([passed, passed, passed, passed, passed, failed])
+
+        def run_stub(command, **_kwargs):
+            if command[:3] == ["git", "clone", "--local"]:
+                Path(command[-1]).mkdir(parents=True)
+            return next(results)
+
+        run_logged_mock.side_effect = run_stub
         subprocess_mock.return_value.stdout = "abcdef123456\n"
         package = Package(
             1,
@@ -420,7 +467,7 @@ class CleanupTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             run_dir = Path(directory)
             package_dir = run_dir / "example"
-            for name in ("baseline", "jit", "source", "logs"):
+            for name in ("baseline", "jit", "source", "fixture", "logs"):
                 path = package_dir / name
                 path.mkdir(parents=True)
                 (path / "evidence.txt").write_text(name)
@@ -431,6 +478,7 @@ class CleanupTests(unittest.TestCase):
             self.assertFalse((package_dir / "baseline").exists())
             self.assertFalse((package_dir / "jit").exists())
             self.assertFalse((package_dir / "source").exists())
+            self.assertFalse((package_dir / "fixture").exists())
             self.assertTrue((package_dir / "logs" / "evidence.txt").exists())
 
     def test_rejects_workspace_escape(self) -> None:

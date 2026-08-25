@@ -21,6 +21,11 @@ class Package:
     ref: str
     install: tuple[tuple[str, ...], ...]
     test: tuple[str, ...]
+    uv_sync: tuple[str, ...] = ()
+    install_cwd: str = "."
+    fixture_repository: str = ""
+    fixture_ref: str = ""
+    fixture_destination: str = ""
     test_cwd: str = "."
     timeout_seconds: int = 900
     note: str = ""

@@ -112,6 +112,25 @@ jobs:
         shell: bash
         run: echo "OPENSSL_DIR=C:/openssl-win64" >> "$GITHUB_ENV"
 
+      # pip's upstream Python 3.14 unit lane requires Subversion. Rank 51 is in
+      # shard 0, so other shards do not pay this setup cost.
+      - name: Install pip test prerequisites on Linux
+        if: matrix.os == 'linux' && matrix.shard_index == 0
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes subversion
+
+      - name: Install pip test prerequisites on macOS
+        if: matrix.os == 'macos' && matrix.shard_index == 0
+        run: brew install subversion
+
+      - name: Install pip test prerequisites on Windows
+        if: matrix.os == 'windows' && matrix.shard_index == 0
+        shell: pwsh
+        run: |
+          choco install sliksvn --yes --no-progress
+          "C:\Program Files\SlikSvn\bin" >> $env:GITHUB_PATH
+
       - name: Install survey
         run: uv sync --locked --python 3.11
 
