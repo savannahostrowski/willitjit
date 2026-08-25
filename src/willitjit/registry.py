@@ -12,7 +12,7 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
     registry = (
         path.read_text()
         if path
-        else files("willitjit").joinpath("data/top50.toml").read_text()
+        else files("willitjit").joinpath("data/top100.toml").read_text()
     )
     raw = tomllib.loads(registry)
     packages = [
@@ -41,8 +41,8 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
 def validate_registry(packages: list[Package]) -> None:
     ranks = [package.rank for package in packages]
     names = [package.name for package in packages]
-    if ranks != list(range(1, len(packages) + 1)):
-        raise ValueError("package ranks must be contiguous and ordered from 1")
+    if any(rank < 1 for rank in ranks) or ranks != sorted(set(ranks)):
+        raise ValueError("package ranks must be positive, unique, and ordered")
     if len(names) != len(set(names)):
         raise ValueError("package names must be unique")
     for package in packages:

@@ -3,7 +3,11 @@ import { createRoot } from "react-dom/client";
 import { CompatibilityHistory as HistoryChart } from "./CompatibilityHistory";
 import { ResultsExplorer } from "./ResultsExplorer";
 import { AboutPage, SiteFooter, SiteHeader, type Theme } from "./SiteChrome";
-import type { CompatibilityHistory, Snapshot } from "./types";
+import type {
+  CompatibilityHistory,
+  LegacyCompatibilityHistory,
+  Snapshot,
+} from "./types";
 import "./styles.css";
 
 const DATA_ROOT = (
@@ -19,6 +23,37 @@ async function fetchJson<T>(url: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function normalizeHistory(
+  history: CompatibilityHistory | LegacyCompatibilityHistory,
+): CompatibilityHistory {
+  if (history.schemaVersion === 2) return history;
+  if (history.points.length === 0) {
+    return { schemaVersion: 2, activeSeries: null, series: [] };
+  }
+  const pointsByCount = new Map<number, typeof history.points>();
+  for (const point of history.points) {
+    pointsByCount.set(point.total, [...(pointsByCount.get(point.total) ?? []), point]);
+  }
+  const series = [...pointsByCount.entries()].map(([packageCount, points]) => {
+    const id = `${history.pythonSeries}-top${packageCount}-legacy`;
+    return {
+      id,
+      pythonSeries: history.pythonSeries,
+      packageCount,
+      datasetUpdated: null,
+      points: points.map((point) => ({ ...point, pythonVersion: null })),
+    };
+  });
+  const newest = series
+    .flatMap((item) => item.points.map((point) => ({ id: item.id, date: point.date })))
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  return {
+    schemaVersion: 2,
+    activeSeries: newest?.id ?? null,
+    series,
+  };
+}
+
 function Dashboard() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [history, setHistory] = useState<CompatibilityHistory | null>(null);
@@ -27,11 +62,11 @@ function Dashboard() {
   useEffect(() => {
     Promise.all([
       fetchJson<Snapshot>(`${DATA_ROOT}/results.json`),
-      fetchJson<CompatibilityHistory>(`${DATA_ROOT}/history.json`),
+      fetchJson<CompatibilityHistory | LegacyCompatibilityHistory>(`${DATA_ROOT}/history.json`),
     ])
       .then(([nextSnapshot, nextHistory]) => {
         setSnapshot(nextSnapshot);
-        setHistory(nextHistory);
+        setHistory(normalizeHistory(nextHistory));
       })
       .catch((reason: unknown) => {
         setError(
@@ -74,11 +109,11 @@ function initialTheme(): Theme {
     if (stored === "light" || stored === "dark") {
       theme = stored;
     } else {
-      theme = "dark";
+      theme = "light";
     }
   } catch {
     // Storage can be unavailable in privacy-focused browser contexts.
-    theme = "dark";
+    theme = "light";
   }
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
@@ -110,7 +145,7 @@ function Root() {
         theme={theme}
         toggleTheme={() => setTheme((current) => current === "light" ? "dark" : "light")}
       />
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1}>
         {aboutPage ? <AboutPage /> : <Dashboard />}
       </main>
       <SiteFooter />

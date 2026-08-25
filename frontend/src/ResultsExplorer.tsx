@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useMemo, useState } from "react";
 
 import type { Condition, Observation, Snapshot, Status } from "./types";
 
@@ -17,6 +17,22 @@ const statusLabels: Record<Status, string> = {
   "infrastructure-failure": "Setup failed",
   "not-tested": "Not completed",
 };
+
+type StatusFilter = Status | "all";
+
+const filters: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "compatible", label: "Compatible" },
+  { value: "needs-triage", label: "Needs triage" },
+  { value: "baseline-blocked", label: "Baseline failed" },
+  { value: "infrastructure-failure", label: "Setup failed" },
+  { value: "not-tested", label: "Not completed" },
+];
+
+const compactNumber = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 2,
+});
 
 function conditionLabel(condition: Condition) {
   if (!condition) return "Not run";
@@ -78,10 +94,25 @@ function FailureEvidence({ observation }: { observation: Observation }) {
 }
 
 export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [query, setQuery] = useState("");
   const compatible = snapshot.summary.packages.compatible ?? 0;
   const pending = snapshot.run.completedObservations === 0;
   const cpythonVersion = snapshot.run.github?.cpythonVersion ?? "3.14.6";
   const cpythonLabel = cpythonVersion.replace(".0rc", " RC").toUpperCase();
+  const statusCounts = useMemo(() => {
+    const counts = Object.fromEntries(filters.map(({ value }) => [value, 0])) as Record<StatusFilter, number>;
+    counts.all = snapshot.packages.length;
+    for (const item of snapshot.packages) counts[item.overallStatus] += 1;
+    return counts;
+  }, [snapshot.packages]);
+  const visiblePackages = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    return snapshot.packages.filter((item) => (
+      (statusFilter === "all" || item.overallStatus === statusFilter)
+      && (!normalizedQuery || item.name.toLocaleLowerCase().includes(normalizedQuery))
+    ));
+  }, [query, snapshot.packages, statusFilter]);
 
   return (
     <section className="results-section" id="results">
@@ -105,8 +136,48 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
         </div>
       </div>
 
+      <div className="results-controls">
+        <div className="status-filters" role="group" aria-label="Filter packages by result">
+          {filters.map(({ value, label }) => (
+            <button
+              className="status-filter"
+              type="button"
+              aria-pressed={statusFilter === value}
+              key={value}
+              onClick={() => setStatusFilter(value)}
+            >
+              <span>{label}</span>
+              <small>{statusCounts[value]}</small>
+            </button>
+          ))}
+        </div>
+        <label className="mobile-status-filter">
+          <span>Result</span>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as StatusFilter)}
+          >
+            {filters.map(({ value, label }) => (
+              <option value={value} key={value}>{label} ({statusCounts[value]})</option>
+            ))}
+          </select>
+        </label>
+        <label className="package-search">
+          <span className="sr-only">Search packages</span>
+          <input
+            type="search"
+            value={query}
+            placeholder="Search packages"
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </label>
+      </div>
+      <p className="sr-only" aria-live="polite">
+        Showing {visiblePackages.length} of {snapshot.packages.length} packages.
+      </p>
+
       <div className="checklist" aria-label="Package compatibility results">
-        {snapshot.packages.map((item) => {
+        {visiblePackages.map((item) => {
           const observations = snapshot.run.expectedPlatforms.map((platform) => ({
             name: platform,
             observation: item.platforms[platform],
@@ -121,7 +192,15 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
               <span className="check-mark" aria-hidden="true">{statusMarks[item.overallStatus]}</span>
               <span className="package-title">
                 <b>{item.name}</b>
-                <small>{statusLabels[item.overallStatus]}</small>
+                <span className="package-subline">
+                  <small className="package-status">{statusLabels[item.overallStatus]}</small>
+                  <small
+                    className="package-meta"
+                    title={`${item.downloads.toLocaleString("en-US")} downloads in 30 days`}
+                  >
+                    Rank {item.rank} · {compactNumber.format(item.downloads)} downloads / 30d
+                  </small>
+                </span>
               </span>
               <span className="platform-checks" aria-label="Platform statuses">
                 {snapshot.run.expectedPlatforms.map((platform) => {
@@ -192,6 +271,14 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
             </details>
           );
         })}
+        {visiblePackages.length === 0 && (
+          <div className="empty-results">
+            <strong>No packages found.</strong>
+            <button type="button" onClick={() => { setQuery(""); setStatusFilter("all"); }}>
+              Clear filters
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

@@ -25,13 +25,20 @@ function ThemeIcon({ theme }: { theme: Theme }) {
 
 export function SiteHeader({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void }) {
   const aboutPage = window.location.pathname.replace(/\/$/, "") === "/about";
+  const themeLabel = theme === "dark" ? "Use light theme" : "Use dark theme";
   return (
     <header className="site-header">
       <a className="site-logo" href="/">Will It JIT?</a>
       <nav aria-label="Primary navigation">
         <a href="/" aria-current={aboutPage ? undefined : "page"}>Results</a>
         <a href="/about" aria-current={aboutPage ? "page" : undefined}>About</a>
-        <a className="github-link" href={GITHUB_URL} target="_blank" rel="noreferrer">
+        <a
+          className="github-link"
+          href={GITHUB_URL}
+          target="_blank"
+          rel="noreferrer"
+          aria-label="GitHub"
+        >
           <GitHubIcon />
           <span>GitHub</span>
         </a>
@@ -39,8 +46,8 @@ export function SiteHeader({ theme, toggleTheme }: { theme: Theme; toggleTheme: 
           className="theme-toggle"
           type="button"
           onClick={toggleTheme}
-          aria-label="Switch color theme"
-          title="Switch color theme"
+          aria-label={themeLabel}
+          title={themeLabel}
         >
           <ThemeIcon theme={theme} />
         </button>
@@ -85,7 +92,9 @@ export function AboutPage() {
             <a href="https://github.com/hugovk/top-pypi-packages" target="_blank" rel="noreferrer">
               Top PyPI Packages list
             </a>.
-            There are 50 packages in the registry, and the weekly survey runs all 50.
+            The registry currently includes the first 100 packages on that list whose
+            source is hosted on GitHub. Other source hosts are out of scope for now.
+            The weekly survey runs all 100.
           </p>
         </section>
         <section>

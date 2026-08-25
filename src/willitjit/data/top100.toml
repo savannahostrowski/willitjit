@@ -2,6 +2,7 @@
 source = "https://github.com/hugovk/top-pypi-packages/blob/main/top-pypi-packages-30-days.json"
 last_update = "2026-08-01 06:34:08"
 window = "30 days"
+selection = "first 100 packages with official GitHub repositories"
 
 [[packages]]
 rank = 1
@@ -700,3 +701,629 @@ test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 1200
 environment = { YARL_NO_EXTENSIONS = "1" }
 note = "Uses the upstream pure-Python lane so the JIT exercises Python code."
+
+[[packages]]
+rank = 51
+name = "pip"
+downloads = 617503549
+repository = "https://github.com/pypa/pip.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests/unit", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Runs pip's upstream unit suite; functional tests that create external installations are a separate lane."
+isolate_home = true
+
+[[packages]]
+rank = 52
+name = "rich"
+downloads = 613852561
+repository = "https://github.com/Textualize/rich.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest", "pytest-cov", "attrs"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 53
+name = "markdown-it-py"
+downloads = 613779408
+repository = "https://github.com/executablebooks/markdown-it-py.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[testing]"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 54
+name = "rpds-py"
+downloads = 613601443
+repository = "https://github.com/crate-py/rpds.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+
+[[packages]]
+rank = 55
+name = "uvicorn"
+downloads = 609510360
+repository = "https://github.com/Kludex/uvicorn.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "dev"],
+  ["-m", "pip", "install", "-e", ".[standard]"],
+]
+test = ["-m", "pytest", "tests", "-o", "addopts=", "-p", "no:xdist"]
+timeout_seconds = 1800
+
+[[packages]]
+rank = 56
+name = "starlette"
+downloads = 605601182
+repository = "https://github.com/Kludex/starlette.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "dev"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+
+[[packages]]
+rank = 57
+name = "jsonschema"
+downloads = 596925041
+repository = "https://github.com/python-jsonschema/jsonschema.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", ".[format]"],
+]
+test = ["-m", "pytest", "jsonschema/tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 58
+name = "wheel"
+downloads = 595760140
+repository = "https://github.com/pypa/wheel.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 59
+name = "multidict"
+downloads = 594005645
+repository = "https://github.com/aio-libs/multidict.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/pytest.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "-m", "not leaks", "--no-cov", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+environment = { MULTIDICT_NO_EXTENSIONS = "1" }
+note = "Uses the upstream non-leak pure-Python lane so the JIT exercises Python code."
+
+[[packages]]
+rank = 60
+name = "google-auth"
+downloads = 590070847
+repository = "https://github.com/googleapis/google-cloud-python.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", "./packages/google-auth[testing]"]]
+test = ["-m", "pytest", "packages/google-auth/tests", "packages/google-auth/tests_async", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Runs the google-auth package suites from the upstream Google Cloud Python monorepo."
+
+[[packages]]
+rank = 61
+name = "propcache"
+downloads = 587094457
+repository = "https://github.com/aio-libs/propcache.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1200
+environment = { PROPCACHE_NO_EXTENSIONS = "1" }
+note = "Uses the upstream pure-Python lane so the JIT exercises Python code."
+
+[[packages]]
+rank = 62
+name = "pyasn1"
+downloads = 570897622
+repository = "https://github.com/pyasn1/pyasn1.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", "."]]
+test = ["-W", "error", "-m", "unittest", "discover", "-s", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 63
+name = "fastapi"
+downloads = 568552369
+repository = "https://github.com/fastapi/fastapi.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", ".[standard]"],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 2400
+
+[[packages]]
+rank = 64
+name = "aiohappyeyeballs"
+downloads = 560621750
+repository = "https://github.com/aio-libs/aiohappyeyeballs.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest", "pytest-cov", "pytest-asyncio"],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 65
+name = "frozenlist"
+downloads = 554242815
+repository = "https://github.com/aio-libs/frozenlist.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/test.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1200
+environment = { FROZENLIST_NO_EXTENSIONS = "1" }
+note = "Uses the upstream pure-Python lane so the JIT exercises Python code."
+
+[[packages]]
+rank = 66
+name = "pytz"
+downloads = 551686335
+repository = "https://github.com/stub42/pytz.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "pytest"]]
+test = ["-m", "pytest", "pytz/tests"]
+test_cwd = "src"
+timeout_seconds = 900
+note = "Runs the source suite directly because the upstream checkout does not contain root packaging metadata."
+
+[[packages]]
+rank = 67
+name = "mdurl"
+downloads = 548051038
+repository = "https://github.com/executablebooks/mdurl.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "tests/requirements.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 68
+name = "pillow"
+downloads = 547140713
+repository = "https://github.com/python-pillow/Pillow.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[tests]"]]
+test = ["-m", "pytest", "Tests", "-p", "no:xdist"]
+timeout_seconds = 2400
+
+[[packages]]
+rank = 69
+name = "referencing"
+downloads = 545376376
+repository = "https://github.com/python-jsonschema/referencing.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "dev"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "referencing/tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 70
+name = "importlib-metadata"
+downloads = 544435691
+repository = "https://github.com/python/importlib_metadata.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[test]"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 71
+name = "websockets"
+downloads = 543199444
+repository = "https://github.com/python-websockets/websockets.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "tests/requirements.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+
+[[packages]]
+rank = 72
+name = "opentelemetry-semantic-conventions"
+downloads = 542941923
+repository = "https://github.com/open-telemetry/opentelemetry-python.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-r", "opentelemetry-semantic-conventions/test-requirements.txt"]]
+test = ["-m", "pytest", "opentelemetry-semantic-conventions/tests"]
+timeout_seconds = 1200
+note = "Uses the package's upstream test requirements from the OpenTelemetry monorepo."
+
+[[packages]]
+rank = 73
+name = "trove-classifiers"
+downloads = 540435669
+repository = "https://github.com/pypa/trove-classifiers.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/dev.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 74
+name = "jsonschema-specifications"
+downloads = 540286306
+repository = "https://github.com/python-jsonschema/jsonschema-specifications.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "pytest"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-W", "error", "-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 75
+name = "aiosignal"
+downloads = 537226203
+repository = "https://github.com/aio-libs/aiosignal.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-r", "requirements/wheel.txt"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-bb", "-W", "error", "-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 76
+name = "virtualenv"
+downloads = 532873318
+repository = "https://github.com/pypa/virtualenv.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests", "-m", "not slow", "-p", "no:xdist"]
+timeout_seconds = 2400
+isolate_home = true
+
+[[packages]]
+rank = 77
+name = "zipp"
+downloads = 531220461
+repository = "https://github.com/jaraco/zipp.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[test]"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 78
+name = "opentelemetry-sdk"
+downloads = 521829274
+repository = "https://github.com/open-telemetry/opentelemetry-python.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-r", "opentelemetry-sdk/test-requirements.txt"]]
+test = ["-m", "pytest", "opentelemetry-sdk/tests"]
+timeout_seconds = 1200
+note = "Uses the package's upstream test requirements from the OpenTelemetry monorepo."
+
+[[packages]]
+rank = 79
+name = "googleapis-common-protos"
+downloads = 513693594
+repository = "https://github.com/googleapis/google-cloud-python.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "pytest", "pytest-asyncio", "mock", "asyncmock"],
+  ["-m", "pip", "install", "-e", "./packages/googleapis-common-protos"],
+]
+test = ["-m", "pytest", "packages/googleapis-common-protos/tests/unit", "-p", "no:xdist"]
+timeout_seconds = 1200
+environment = { PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION = "python" }
+note = "Runs the package's unit suite from the upstream Google Cloud Python monorepo."
+
+[[packages]]
+rank = 80
+name = "tzdata"
+downloads = 504527593
+repository = "https://github.com/python/tzdata.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "pytest"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 81
+name = "wrapt"
+downloads = 495611441
+repository = "https://github.com/GrahamDumpleton/wrapt.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[dev]"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 82
+name = "sniffio"
+downloads = 487249508
+repository = "https://github.com/python-trio/sniffio.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "sniffio/_tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 83
+name = "hatchling"
+downloads = 484194815
+repository = "https://github.com/pypa/hatch.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "pytest", "pytest-mock", "filelock", "flit-core", "trustme", "editables"],
+  ["-m", "pip", "install", "-e", "./backend"],
+]
+test = ["-m", "pytest", "backend/tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Runs Hatchling's backend suite from the upstream Hatch monorepo."
+
+[[packages]]
+rank = 84
+name = "google-api-core"
+downloads = 482456775
+repository = "https://github.com/googleapis/google-cloud-python.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "pytest", "pytest-mock"],
+  ["-m", "pip", "install", "-e", "./packages/google-api-core[grpc]"],
+]
+test = ["-m", "pytest", "packages/google-api-core/tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+note = "Runs the package suite from the upstream Google Cloud Python monorepo."
+
+[[packages]]
+rank = 85
+name = "greenlet"
+downloads = 476388596
+repository = "https://github.com/python-greenlet/greenlet.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[test]"]]
+test = ["-m", "unittest", "discover", "-v", "greenlet.tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 86
+name = "opentelemetry-api"
+downloads = 463796331
+repository = "https://github.com/open-telemetry/opentelemetry-python.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-r", "opentelemetry-api/test-requirements.txt"]]
+test = ["-m", "pytest", "opentelemetry-api/tests"]
+timeout_seconds = 1200
+note = "Uses the package's upstream test requirements from the OpenTelemetry monorepo."
+
+[[packages]]
+rank = 87
+name = "pyasn1-modules"
+downloads = 462465610
+repository = "https://github.com/pyasn1/pyasn1-modules.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", "."]]
+test = ["-m", "unittest", "discover", "-s", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 88
+name = "annotated-doc"
+downloads = 456245916
+repository = "https://github.com/fastapi/annotated-doc.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 89
+name = "pydantic-settings"
+downloads = 453025118
+repository = "https://github.com/pydantic/pydantic-settings.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "testing"],
+  ["-m", "pip", "install", "-e", ".[yaml,toml]"],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 1800
+
+[[packages]]
+rank = 90
+name = "scipy"
+downloads = 448963567
+repository = "https://github.com/scipy/scipy.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "--pyargs", "scipy", "-p", "no:xdist"]
+test_cwd = "tools"
+timeout_seconds = 3600
+note = "Builds SciPy from the checkout and runs the installed package's upstream suite."
+
+[[packages]]
+rank = 91
+name = "grpcio"
+downloads = 446417323
+repository = "https://github.com/grpc/grpc.git"
+ref = "v1.83.0"
+install = [
+  ["-m", "pip", "install", "grpcio==1.83.0", "grpcio-tools==1.83.0"],
+  ["-m", "pip", "install", "--no-build-isolation", "-e", "./src/python/grpcio_tests"],
+]
+test = ["-m", "unittest", "discover", "-s", "src/python/grpcio_tests/tests/unit", "-p", "*_test.py"]
+timeout_seconds = 3600
+note = "Runs the release-matched upstream unit suite against the official wheel to avoid rebuilding gRPC's native core on every shard."
+recursive_submodules = true
+
+[[packages]]
+rank = 92
+name = "textual"
+downloads = 443589157
+repository = "https://github.com/Textualize/textual.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "pytest", "pytest-asyncio", "pytest-textual-snapshot"],
+]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
+timeout_seconds = 2400
+
+[[packages]]
+rank = 93
+name = "huggingface-hub"
+downloads = 442399796
+repository = "https://github.com/huggingface/huggingface_hub.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[testing]"]]
+test = ["-m", "pytest", "tests", "-m", "not production and not inference and not xet and not git_lfs", "-p", "no:xdist"]
+timeout_seconds = 2400
+note = "Runs the upstream local suite without production-service, inference, Xet, or Git LFS lanes."
+isolate_home = true
+
+[[packages]]
+rank = 94
+name = "regex"
+downloads = 437721689
+repository = "https://github.com/mrabarnett/mrab-regex.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", "."]]
+test = ["-m", "unittest", "regex.tests.test_regex"]
+timeout_seconds = 1800
+
+[[packages]]
+rank = 95
+name = "pyarrow"
+downloads = 432924469
+repository = "https://github.com/apache/arrow.git"
+ref = "apache-arrow-25.0.1"
+install = [["-m", "pip", "install", "pyarrow==25.0.1", "pytest", "hypothesis", "cffi", "pytz", "pandas"]]
+test = ["-m", "pytest", "--import-mode=importlib", "python/pyarrow/tests", "-p", "no:xdist"]
+timeout_seconds = 3600
+note = "Runs the release-matched upstream Python suite against the official wheel to avoid rebuilding Arrow's native core on every shard."
+
+[[packages]]
+rank = 97
+name = "colorama"
+downloads = 431035221
+repository = "https://github.com/tartley/colorama.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", "."]]
+test = ["-m", "unittest", "discover", "-s", "colorama/tests", "-p", "*_test.py"]
+timeout_seconds = 900
+
+[[packages]]
+rank = 98
+name = "tenacity"
+downloads = 429288446
+repository = "https://github.com/jd/tenacity.git"
+ref = "HEAD"
+install = [["-m", "pip", "install", "-e", ".[test]"]]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 99
+name = "soupsieve"
+downloads = 428611663
+repository = "https://github.com/facelessuser/soupsieve.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "pytest", "pytest-cov", "beautifulsoup4"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 1200
+
+[[packages]]
+rank = 100
+name = "sqlalchemy"
+downloads = 422737345
+repository = "https://github.com/sqlalchemy/sqlalchemy.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "--group", "tests"],
+  ["-m", "pip", "install", "--group", "tests-greenlet"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "-c", "pyproject.toml", "--nomemory", "--notimingintensive", "--nomypy", "test", "-p", "no:xdist"]
+timeout_seconds = 2400
+environment = { DISABLE_SQLALCHEMY_CEXT = "1" }
+note = "Runs the upstream non-memory, non-timing, non-mypy suite in pure Python mode."
+
+[[packages]]
+rank = 101
+name = "distro"
+downloads = 417850387
+repository = "https://github.com/python-distro/distro.git"
+ref = "HEAD"
+install = [
+  ["-m", "pip", "install", "pytest", "pytest-cov"],
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "pytest", "tests"]
+timeout_seconds = 900
+note = "Included as the 100th GitHub-hosted package because dataset rank 96, beautifulsoup4, is hosted on Launchpad."

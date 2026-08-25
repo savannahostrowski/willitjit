@@ -19,8 +19,10 @@ concurrency:
   cancel-in-progress: false
 
 env:
+  # Survey one exact interpreter at a time. Patch updates continue the same
+  # history series; minor-version changes start a new series after completion.
   CPYTHON_VERSION: 3.14.6
-  TOP_N: "50"
+  TOP_N: "100"
   SHARD_COUNT: "10"
 
 jobs:

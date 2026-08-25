@@ -24,7 +24,9 @@ export type Observation = {
 };
 
 export type PackageResult = {
+  rank: number;
   name: string;
+  downloads: number;
   repository: string;
   overallStatus: Status;
   platforms: Record<string, Observation>;
@@ -47,12 +49,28 @@ export type Snapshot = {
 export type HistoryPoint = {
   date: string;
   runId: string;
+  pythonVersion: string | null;
   compatible: number;
   total: number;
 };
 
+export type CompatibilitySeries = {
+  id: string;
+  pythonSeries: string;
+  packageCount: number;
+  datasetUpdated: string | null;
+  points: HistoryPoint[];
+};
+
 export type CompatibilityHistory = {
+  schemaVersion: 2;
+  activeSeries: string | null;
+  series: CompatibilitySeries[];
+};
+
+export type LegacyCompatibilityHistory = {
+  schemaVersion: 1;
   pythonSeries: string;
   definition: string;
-  points: HistoryPoint[];
+  points: Omit<HistoryPoint, "pythonVersion">[];
 };

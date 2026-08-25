@@ -6,10 +6,14 @@ from willitjit.registry import load_registry
 
 
 class RegistryTests(unittest.TestCase):
-    def test_bundled_top_fifty(self) -> None:
+    def test_bundled_top_hundred(self) -> None:
         dataset, packages = load_registry()
         self.assertEqual(dataset["last_update"], "2026-08-01 06:34:08")
-        self.assertEqual(len(packages), 50)
+        self.assertEqual(
+            dataset["selection"],
+            "first 100 packages with official GitHub repositories",
+        )
+        self.assertEqual(len(packages), 100)
         self.assertEqual(
             [package.name for package in packages],
             [
@@ -63,8 +67,61 @@ class RegistryTests(unittest.TestCase):
                 "tqdm",
                 "aiohttp",
                 "yarl",
+                "pip",
+                "rich",
+                "markdown-it-py",
+                "rpds-py",
+                "uvicorn",
+                "starlette",
+                "jsonschema",
+                "wheel",
+                "multidict",
+                "google-auth",
+                "propcache",
+                "pyasn1",
+                "fastapi",
+                "aiohappyeyeballs",
+                "frozenlist",
+                "pytz",
+                "mdurl",
+                "pillow",
+                "referencing",
+                "importlib-metadata",
+                "websockets",
+                "opentelemetry-semantic-conventions",
+                "trove-classifiers",
+                "jsonschema-specifications",
+                "aiosignal",
+                "virtualenv",
+                "zipp",
+                "opentelemetry-sdk",
+                "googleapis-common-protos",
+                "tzdata",
+                "wrapt",
+                "sniffio",
+                "hatchling",
+                "google-api-core",
+                "greenlet",
+                "opentelemetry-api",
+                "pyasn1-modules",
+                "annotated-doc",
+                "pydantic-settings",
+                "scipy",
+                "grpcio",
+                "textual",
+                "huggingface-hub",
+                "regex",
+                "pyarrow",
+                "colorama",
+                "tenacity",
+                "soupsieve",
+                "sqlalchemy",
+                "distro",
             ],
         )
+        self.assertEqual(packages[-6].rank, 95)
+        self.assertEqual(packages[-5].rank, 97)
+        self.assertEqual(packages[-1].rank, 101)
         numpy = next(package for package in packages if package.name == "numpy")
         self.assertTrue(numpy.recursive_submodules)
         protobuf = next(package for package in packages if package.name == "protobuf")
