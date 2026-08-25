@@ -6,8 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: update-willitjit-adapter-releases
@@ -15,8 +14,12 @@ concurrency:
 
 jobs:
   update:
+    name: Refresh pinned adapter releases
     runs-on: ubuntu-26.04
     timeout-minutes: 20
+    permissions:
+      contents: write # Push the automation-owned update branch.
+      pull-requests: write # Open the monthly review pull request.
     steps:
       - name: Check out survey
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
