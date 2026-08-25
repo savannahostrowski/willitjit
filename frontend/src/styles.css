@@ -144,6 +144,9 @@ h1 { margin: 0; max-width: 820px; font-size: clamp(52px, 7vw, 82px); line-height
 .checklist-item > summary:hover .expand { border-color: color-mix(in srgb, var(--status) 30%, var(--line)); background: rgba(255,255,255,.3); }
 .checklist-item[open] .expand { transform: rotate(45deg); }
 .package-evidence { padding: 0 18px 20px 74px; background: var(--surface); }
+.not-tested-explanation { padding: 16px 14px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.not-tested-explanation strong { font: 700 10px var(--font-mono); letter-spacing: .05em; text-transform: uppercase; }
+.not-tested-explanation p { max-width: 72ch; margin: 7px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
 .evidence-table-wrap { overflow-x: auto; border-top: 1px solid var(--line); }
 .evidence-table { width: 100%; min-width: 690px; border-collapse: collapse; table-layout: fixed; }
 .evidence-table th, .evidence-table td { padding: 13px 14px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }

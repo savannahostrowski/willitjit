@@ -223,6 +223,9 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
           const commands = [...new Set(
             observations.flatMap(({ observation }) => observation.command ? [observation.command] : []),
           )];
+          const explanations = [...new Set(
+            observations.flatMap(({ observation }) => observation.explanation ? [observation.explanation] : []),
+          )];
 
           return (
             <details className={`checklist-item ${item.overallStatus}`} key={item.name}>
@@ -255,56 +258,68 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
               <span className="expand" aria-hidden="true">+</span>
             </summary>
             <div className="package-evidence" role="region" aria-label={`${item.name} run evidence`}>
-              <div className="evidence-table-wrap">
-                <table className="evidence-table">
-                  <caption className="sr-only">{item.name} results by platform</caption>
-                  <thead>
-                    <tr>
-                      <th scope="col">Platform</th>
-                      <th scope="col">JIT off</th>
-                      <th scope="col">JIT on</th>
-                      <th scope="col">Source</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {observations.map(({ name, observation }) => (
-                      <Fragment key={name}>
-                        <tr className={`evidence-result ${observation.status}`}>
-                          <th scope="row">
-                            <span>{name}</span>
-                            <small>
-                              <i aria-hidden="true">{statusMarks[observation.status]}</i>
-                              {observation.label}
-                            </small>
-                          </th>
-                          <ConditionResult condition={observation.baseline} label="JIT off" />
-                          <ConditionResult condition={observation.jit} label="JIT on" />
-                          <td data-label="Source">
-                            {observation.revision
-                              ? (
-                                <a
-                                  href={`${item.repository}/commit/${observation.revision}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  {observation.revision.slice(0, 9)} ↗
-                                </a>
-                              )
-                              : <small>Not available</small>}
-                          </td>
-                        </tr>
-                        <FailureEvidence observation={observation} />
-                      </Fragment>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {commands.length > 0 && (
-                <div className="evidence-commands">
-                  <span>{commands.length === 1 ? "Test command" : "Test commands"}</span>
-                  {commands.map((command) => <code key={command}>{command}</code>)}
-                </div>
-              )}
+              {item.overallStatus === "not-tested"
+                ? (
+                  <div className="not-tested-explanation">
+                    <strong>Why this package was not tested</strong>
+                    {(explanations.length ? explanations : ["No test result was captured for this package."])
+                      .map((explanation) => <p key={explanation}>{explanation}</p>)}
+                  </div>
+                )
+                : (
+                  <>
+                    <div className="evidence-table-wrap">
+                      <table className="evidence-table">
+                        <caption className="sr-only">{item.name} results by platform</caption>
+                        <thead>
+                          <tr>
+                            <th scope="col">Platform</th>
+                            <th scope="col">JIT off</th>
+                            <th scope="col">JIT on</th>
+                            <th scope="col">Source</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {observations.map(({ name, observation }) => (
+                            <Fragment key={name}>
+                              <tr className={`evidence-result ${observation.status}`}>
+                                <th scope="row">
+                                  <span>{name}</span>
+                                  <small>
+                                    <i aria-hidden="true">{statusMarks[observation.status]}</i>
+                                    {observation.label}
+                                  </small>
+                                </th>
+                                <ConditionResult condition={observation.baseline} label="JIT off" />
+                                <ConditionResult condition={observation.jit} label="JIT on" />
+                                <td data-label="Source">
+                                  {observation.revision
+                                    ? (
+                                      <a
+                                        href={`${item.repository}/commit/${observation.revision}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                      >
+                                        {observation.revision.slice(0, 9)} ↗
+                                      </a>
+                                    )
+                                    : <small>Not available</small>}
+                                </td>
+                              </tr>
+                              <FailureEvidence observation={observation} />
+                            </Fragment>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {commands.length > 0 && (
+                      <div className="evidence-commands">
+                        <span>{commands.length === 1 ? "Test command" : "Test commands"}</span>
+                        {commands.map((command) => <code key={command}>{command}</code>)}
+                      </div>
+                    )}
+                  </>
+                )}
             </div>
             </details>
           );
