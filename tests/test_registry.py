@@ -235,6 +235,7 @@ class RegistryTests(unittest.TestCase):
         self.assertIn("virtualenv=={release_version}", virtualenv.install[-1])
         grpcio = next(package for package in packages if package.name == "grpcio")
         self.assertIn("--no-deps", grpcio.install[-1])
+        self.assertIn("--no-build-isolation", grpcio.install[-1])
         self.assertIn("--ignore=tests/unit/test_all_modules_installed.py", grpcio.test)
         referencing = next(
             package for package in packages if package.name == "referencing"
