@@ -120,6 +120,8 @@ class AggregateTests(unittest.TestCase):
         self.assertEqual(payload["run"]["completedObservations"], 2)
         self.assertEqual(payload["run"]["github"]["cpythonVersion"], "3.15.0rc1")
         self.assertEqual(payload["packages"][0]["overallStatus"], "needs-triage")
+        self.assertFalse(payload["packages"][0]["baselineEligible"])
+        self.assertEqual(payload["summary"]["baselineEligible"], 0)
         self.assertEqual(
             payload["packages"][0]["platforms"]["macOS"]["status"], "not-tested"
         )
@@ -136,6 +138,41 @@ class AggregateTests(unittest.TestCase):
             1.0,
         )
         self.assertNotIn("/private/runner", json.dumps(payload))
+
+    def test_counts_only_packages_with_passing_baselines_on_every_platform(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for platform_name in ("Linux", "macOS", "Windows"):
+                run_file = root / platform_name / "run.json"
+                run_file.parent.mkdir()
+                classification = (
+                    "suspected-jit-regression"
+                    if platform_name == "Windows"
+                    else "observed-compatible"
+                )
+                payload = run_payload(platform_name, classification)
+                if classification == "suspected-jit-regression":
+                    payload["results"][0]["jit"] = {
+                        **payload["results"][0]["jit"],
+                        "returncode": 1,
+                    }
+                run_file.write_text(json.dumps(payload))
+
+            merged = build_compatibility_results(
+                run_files=find_run_files(root),
+                dataset={
+                    "source": "source",
+                    "last_update": "today",
+                    "window": "30 days",
+                },
+                packages=[package()],
+            )
+
+        self.assertTrue(merged["packages"][0]["baselineEligible"])
+        self.assertEqual(merged["summary"]["baselineEligible"], 1)
+        self.assertEqual(merged["packages"][0]["overallStatus"], "needs-triage")
 
     def test_reads_windows_log_paths_when_merging_on_posix(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

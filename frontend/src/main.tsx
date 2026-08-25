@@ -5,7 +5,7 @@ import { ResultsExplorer } from "./ResultsExplorer";
 import { AboutPage, SiteFooter, SiteHeader, type Theme } from "./SiteChrome";
 import type {
   CompatibilityHistory,
-  LegacyCompatibilityHistory,
+  PreviousCompatibilityHistory,
   Snapshot,
 } from "./types";
 import "./styles.css";
@@ -24,34 +24,10 @@ async function fetchJson<T>(url: string): Promise<T> {
 }
 
 function normalizeHistory(
-  history: CompatibilityHistory | LegacyCompatibilityHistory,
+  history: CompatibilityHistory | PreviousCompatibilityHistory,
 ): CompatibilityHistory {
-  if (history.schemaVersion === 2) return history;
-  if (history.points.length === 0) {
-    return { schemaVersion: 2, activeSeries: null, series: [] };
-  }
-  const pointsByCount = new Map<number, typeof history.points>();
-  for (const point of history.points) {
-    pointsByCount.set(point.total, [...(pointsByCount.get(point.total) ?? []), point]);
-  }
-  const series = [...pointsByCount.entries()].map(([packageCount, points]) => {
-    const id = `${history.pythonSeries}-top${packageCount}-legacy`;
-    return {
-      id,
-      pythonSeries: history.pythonSeries,
-      packageCount,
-      datasetUpdated: null,
-      points: points.map((point) => ({ ...point, pythonVersion: null })),
-    };
-  });
-  const newest = series
-    .flatMap((item) => item.points.map((point) => ({ id: item.id, date: point.date })))
-    .sort((a, b) => b.date.localeCompare(a.date))[0];
-  return {
-    schemaVersion: 2,
-    activeSeries: newest?.id ?? null,
-    series,
-  };
+  if (history.schemaVersion === 3) return history;
+  return { schemaVersion: 3, activeSeries: null, series: [] };
 }
 
 function Dashboard() {
@@ -62,7 +38,7 @@ function Dashboard() {
   useEffect(() => {
     Promise.all([
       fetchJson<Snapshot>(`${DATA_ROOT}/results.json`),
-      fetchJson<CompatibilityHistory | LegacyCompatibilityHistory>(`${DATA_ROOT}/history.json`),
+      fetchJson<CompatibilityHistory | PreviousCompatibilityHistory>(`${DATA_ROOT}/history.json`),
     ])
       .then(([nextSnapshot, nextHistory]) => {
         setSnapshot(nextSnapshot);

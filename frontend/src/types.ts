@@ -32,6 +32,7 @@ export type PackageResult = {
   releaseDate?: string;
   sourceRef?: string;
   overallStatus: Status;
+  baselineEligible?: boolean;
   platforms: Record<string, Observation>;
 };
 
@@ -45,6 +46,7 @@ export type Snapshot = {
   dataset: { source: string; releaseCutoff?: string };
   summary: {
     packages: Partial<Record<Status, number>>;
+    baselineEligible?: number;
   };
   packages: PackageResult[];
 };
@@ -54,6 +56,7 @@ export type HistoryPoint = {
   runId: string;
   pythonVersion: string | null;
   compatible: number;
+  baselineEligible: number;
   total: number;
 };
 
@@ -66,14 +69,9 @@ export type CompatibilitySeries = {
 };
 
 export type CompatibilityHistory = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   activeSeries: string | null;
   series: CompatibilitySeries[];
 };
 
-export type LegacyCompatibilityHistory = {
-  schemaVersion: 1;
-  pythonSeries: string;
-  definition: string;
-  points: Omit<HistoryPoint, "pythonVersion">[];
-};
+export type PreviousCompatibilityHistory = { schemaVersion: 1 | 2 };

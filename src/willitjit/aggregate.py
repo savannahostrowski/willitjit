@@ -74,6 +74,7 @@ def build_compatibility_results(
     public_packages = []
     observation_counts: Counter[str] = Counter()
     overall_counts: Counter[str] = Counter()
+    baseline_eligible = 0
     completed = 0
     for package in packages:
         platforms = {}
@@ -87,6 +88,8 @@ def build_compatibility_results(
             observation_counts[observation["status"]] += 1
         overall = _overall_status(platforms.values())
         overall_counts[overall] += 1
+        package_baseline_eligible = _baseline_eligible(platforms.values())
+        baseline_eligible += package_baseline_eligible
         public_packages.append(
             {
                 "rank": package.rank,
@@ -97,6 +100,7 @@ def build_compatibility_results(
                 "releaseDate": package.release_date,
                 "sourceRef": package.ref,
                 "overallStatus": overall,
+                "baselineEligible": package_baseline_eligible,
                 "platforms": platforms,
             }
         )
@@ -135,6 +139,7 @@ def build_compatibility_results(
         "pythonByPlatform": python_by_platform,
         "summary": {
             "packages": dict(sorted(overall_counts.items())),
+            "baselineEligible": baseline_eligible,
             "observations": dict(sorted(observation_counts.items())),
         },
         "packages": public_packages,
@@ -324,3 +329,12 @@ def _overall_status(observations: Iterable[dict[str, Any]]) -> str:
         if status in statuses:
             return status
     return "compatible"
+
+
+def _baseline_eligible(observations: Iterable[dict[str, Any]]) -> bool:
+    return all(
+        observation["baseline"] is not None
+        and observation["baseline"]["returnCode"] == 0
+        and not observation["baseline"]["timedOut"]
+        for observation in observations
+    )

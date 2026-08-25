@@ -15,8 +15,8 @@ const RANGES = [3, 6, 12] as const;
 
 type RangeMonths = (typeof RANGES)[number];
 
-function compatibilityRate(compatible: number, total: number) {
-  return total ? Math.round((compatible / total) * 100) : 0;
+function compatibilityRate(compatible: number, baselineEligible: number) {
+  return baselineEligible ? Math.round((compatible / baselineEligible) * 100) : 0;
 }
 
 function shortDate(value: string | number) {
@@ -101,9 +101,8 @@ export function CompatibilityHistory({ history }: { history: History }) {
       <div className="history-copy">
         <h2>JIT compatibility<br />over time</h2>
         <p>
-          Each line tracks one Python minor version and package cohort. A package
-          counts as compatible when it passes with the JIT off and on on every
-          tested platform.
+          Each line shows the share of packages with a passing JIT-off baseline
+          that also pass with the JIT on across every tested platform.
         </p>
       </div>
 
@@ -159,13 +158,13 @@ export function CompatibilityHistory({ history }: { history: History }) {
               {visibleSeries.map((series) => {
                 const points = [...series.points].sort((a, b) => a.date.localeCompare(b.date));
                 const line = points
-                  .map((point) => `${x(point.date)},${y(compatibilityRate(point.compatible, point.total))}`)
+                  .map((point) => `${x(point.date)},${y(compatibilityRate(point.compatible, point.baselineEligible))}`)
                   .join(" ");
                 return (
                   <g className={`chart-series-${series.colorIndex}`} key={series.id}>
                     {points.length > 1 && <polyline className="chart-series-line" points={line} />}
                     {points.map((point) => {
-                      const rate = compatibilityRate(point.compatible, point.total);
+                      const rate = compatibilityRate(point.compatible, point.baselineEligible);
                       return (
                         <g key={`${series.id}-${point.runId}-${point.date}`}>
                           <circle className="chart-series-point" cx={x(point.date)} cy={y(rate)} r="7" />
@@ -186,6 +185,7 @@ export function CompatibilityHistory({ history }: { history: History }) {
                     <th scope="col">Date</th>
                     <th scope="col">Python version</th>
                     <th scope="col">Compatible packages</th>
+                    <th scope="col">Packages with passing baselines</th>
                     <th scope="col">Surveyed packages</th>
                     <th scope="col">Compatibility rate</th>
                   </tr>
@@ -197,8 +197,9 @@ export function CompatibilityHistory({ history }: { history: History }) {
                       <td>{fullDate(point.date)}</td>
                       <td>{point.pythonVersion ?? "Not recorded"}</td>
                       <td>{point.compatible}</td>
+                      <td>{point.baselineEligible}</td>
                       <td>{point.total}</td>
-                      <td>{compatibilityRate(point.compatible, point.total)}%</td>
+                      <td>{compatibilityRate(point.compatible, point.baselineEligible)}%</td>
                     </tr>
                   )))}
                 </tbody>

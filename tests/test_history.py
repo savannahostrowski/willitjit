@@ -13,6 +13,7 @@ def snapshot(
     package_count: int = 100,
     dataset_updated: str = "2026-08-01 06:34:08",
     compatible: int = 42,
+    baseline_eligible: int = 50,
     complete: bool = True,
 ) -> dict:
     return {
@@ -24,7 +25,11 @@ def snapshot(
             "targetPackages": package_count,
         },
         "dataset": {"updated": dataset_updated},
-        "summary": {"packages": {"compatible": compatible}},
+        "summary": {
+            "packages": {"compatible": compatible},
+            "baselineEligible": baseline_eligible,
+        },
+        "packages": [],
     }
 
 
@@ -55,6 +60,7 @@ class HistoryTests(unittest.TestCase):
         points = history["series"][0]["points"]
         self.assertEqual(len(points), 1)
         self.assertEqual(points[0]["compatible"], 42)
+        self.assertEqual(points[0]["baselineEligible"], 50)
 
     def test_minor_release_starts_a_new_series(self) -> None:
         history = build_history(snapshot())
@@ -127,32 +133,27 @@ class HistoryTests(unittest.TestCase):
 
         self.assertEqual(history["activeSeries"], "3.15-top100-2026-08-01")
 
-    def test_migrates_v1_history_without_connecting_mixed_cohorts(self) -> None:
-        previous = {
-            "schemaVersion": 1,
-            "pythonSeries": "3.14",
-            "points": [
-                {
-                    "date": "2026-08-20T12:00:00Z",
-                    "runId": "top-50",
-                    "compatible": 40,
-                    "total": 50,
-                },
-                {
-                    "date": "2026-08-21T12:00:00Z",
-                    "runId": "top-100",
-                    "compatible": 70,
-                    "total": 100,
-                },
-            ],
-        }
+    def test_resets_history_with_the_old_denominator(self) -> None:
+        for schema_version in (1, 2):
+            with self.subTest(schema_version=schema_version):
+                previous = {
+                    "schemaVersion": schema_version,
+                    "pythonSeries": "3.14",
+                    "points": [
+                        {
+                            "date": "2026-08-21T12:00:00Z",
+                            "runId": "top-100",
+                            "compatible": 70,
+                            "total": 100,
+                        }
+                    ],
+                }
 
-        history = build_history(snapshot(complete=False), previous)
+                history = build_history(snapshot(complete=False), previous)
 
-        self.assertEqual(history["schemaVersion"], 2)
-        self.assertEqual(len(history["series"]), 2)
-        self.assertEqual(history["activeSeries"], "3.14-top100-legacy")
-        self.assertIsNone(history["series"][0]["points"][0]["pythonVersion"])
+                self.assertEqual(history["schemaVersion"], 3)
+                self.assertEqual(history["series"], [])
+                self.assertIsNone(history["activeSeries"])
 
     def test_empty_incomplete_snapshot_has_no_active_series(self) -> None:
         history = build_history(snapshot(complete=False))

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
@@ -26,6 +25,7 @@ def build_history(
         "runId": run_id,
         "pythonVersion": python_version,
         "compatible": int(snapshot["summary"]["packages"].get("compatible", 0)),
+        "baselineEligible": _baseline_eligible(snapshot),
         "total": package_count,
     }
 
@@ -64,43 +64,23 @@ def write_history(
 
 def _normalize_history(previous: dict[str, Any] | None) -> dict[str, Any]:
     if previous is None:
-        return {"schemaVersion": 2, "activeSeries": None, "series": []}
-    if previous.get("schemaVersion") == 2:
+        return _empty_history()
+    if previous.get("schemaVersion") == 3:
         series = [_series(value) for value in previous.get("series", [])]
         return {
-            "schemaVersion": 2,
+            "schemaVersion": 3,
             "activeSeries": _newest_series(series),
             "series": series,
         }
-    if previous.get("schemaVersion") == 1:
-        return _migrate_v1(previous)
+    if previous.get("schemaVersion") in (1, 2):
+        # Older points used every surveyed package as the denominator. That is
+        # not comparable with the baseline-eligible compatibility rate.
+        return _empty_history()
     raise ValueError("unsupported compatibility history schema")
 
 
-def _migrate_v1(previous: dict[str, Any]) -> dict[str, Any]:
-    python_series = str(previous.get("pythonSeries") or "unknown")
-    grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
-    for value in previous.get("points", []):
-        point = _point(value)
-        grouped[point["total"]].append(point)
-
-    series = []
-    for package_count, points in sorted(grouped.items()):
-        points.sort(key=lambda value: value["date"])
-        series.append(
-            {
-                "id": f"{python_series}-top{package_count}-legacy",
-                "pythonSeries": python_series,
-                "packageCount": package_count,
-                "datasetUpdated": None,
-                "points": points,
-            }
-        )
-    return {
-        "schemaVersion": 2,
-        "activeSeries": _newest_series(series),
-        "series": series,
-    }
+def _empty_history() -> dict[str, Any]:
+    return {"schemaVersion": 3, "activeSeries": None, "series": []}
 
 
 def _series(value: dict[str, Any]) -> dict[str, Any]:
@@ -130,8 +110,18 @@ def _point(value: dict[str, Any]) -> dict[str, Any]:
             else None
         ),
         "compatible": int(value["compatible"]),
+        "baselineEligible": int(value["baselineEligible"]),
         "total": int(value["total"]),
     }
+
+
+def _baseline_eligible(snapshot: dict[str, Any]) -> int:
+    summary = snapshot["summary"]
+    if "baselineEligible" in summary:
+        return int(summary["baselineEligible"])
+    return sum(
+        bool(package.get("baselineEligible")) for package in snapshot["packages"]
+    )
 
 
 def _newest_series(series: list[dict[str, Any]]) -> str | None:

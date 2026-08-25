@@ -80,9 +80,11 @@ export function AboutPage() {
         <section>
           <h2>Results</h2>
           <p>
-            Compatible means both runs passed on every reported platform. If the
-            JIT-off run fails, the JIT-on run is skipped. If only the JIT-on run
-            fails, the result is marked for investigation. It is not declared a CPython bug.
+            The compatibility rate only includes packages whose JIT-off baseline
+            passed on every reported platform. Baseline failures and setup problems
+            are shown as coverage gaps, not JIT incompatibilities. If only the JIT-on
+            run fails, the result is marked for investigation. It is not declared a
+            CPython bug.
           </p>
         </section>
         <section>

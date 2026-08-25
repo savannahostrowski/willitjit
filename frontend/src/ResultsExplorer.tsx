@@ -48,6 +48,14 @@ function elapsedLabel(seconds: number) {
   return `${minutes}m ${Math.round(seconds % 60)}s`;
 }
 
+function hasPassingBaseline(item: Snapshot["packages"][number], platforms: string[]) {
+  if (item.baselineEligible !== undefined) return item.baselineEligible;
+  return platforms.every((platform) => {
+    const baseline = item.platforms[platform]?.baseline;
+    return baseline?.returnCode === 0 && !baseline.timedOut;
+  });
+}
+
 function ConditionResult({ condition, label }: { condition: Condition; label: string }) {
   return (
     <td data-label={label}>
@@ -97,6 +105,12 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [query, setQuery] = useState("");
   const compatible = snapshot.summary.packages.compatible ?? 0;
+  const baselineEligible = snapshot.summary.baselineEligible ?? snapshot.packages.filter(
+    (item) => hasPassingBaseline(item, snapshot.run.expectedPlatforms),
+  ).length;
+  const compatibilityRate = baselineEligible
+    ? Math.round((compatible / baselineEligible) * 100)
+    : 0;
   const pending = snapshot.run.completedObservations === 0;
   const cpythonVersion = snapshot.run.github?.cpythonVersion ?? "3.14.6";
   const cpythonLabel = cpythonVersion.replace(".0rc", " RC").toUpperCase();
@@ -125,14 +139,19 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
           className="compatibility-summary"
           aria-label={pending
             ? `Awaiting the CPython ${cpythonLabel} survey`
-            : `${compatible} of ${snapshot.run.targetPackages} compatible`}
+            : `${compatible} of ${baselineEligible} packages with passing baselines are JIT compatible. ${baselineEligible} of ${snapshot.run.targetPackages} packages had passing baselines.`}
         >
           <span>{pending ? "Target" : "Latest survey"}</span>
           <strong>
-            {pending ? cpythonLabel : compatible}
-            {!pending && <small> of {snapshot.run.targetPackages}</small>}
+            {pending ? cpythonLabel : compatibilityRate}
+            {!pending && <small>%</small>}
           </strong>
-          <p>{pending ? "survey pending" : "packages compatible"}</p>
+          <p>{pending ? "survey pending" : `${compatible} of ${baselineEligible} JIT compatible`}</p>
+          {!pending && (
+            <small className="summary-coverage">
+              {baselineEligible} of {snapshot.run.targetPackages} had passing baselines
+            </small>
+          )}
         </div>
       </div>
 
