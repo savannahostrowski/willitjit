@@ -41,7 +41,11 @@ export type Snapshot = {
     targetPackages: number;
     expectedPlatforms: string[];
     completedObservations: number;
-    github?: { cpythonVersion?: string };
+    github?: {
+      cpythonVersion?: string;
+      repository?: string;
+      runId?: string;
+    };
   };
   dataset: { source: string; releaseCutoff?: string };
   summary: {

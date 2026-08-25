@@ -114,6 +114,14 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
   const pending = snapshot.run.completedObservations === 0;
   const cpythonVersion = snapshot.run.github?.cpythonVersion ?? "3.14.6";
   const cpythonLabel = cpythonVersion.replace(".0rc", " RC").toUpperCase();
+  const githubRepository = snapshot.run.github?.repository;
+  const githubRunId = snapshot.run.github?.runId;
+  const githubRunUrl = githubRepository
+    && /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(githubRepository)
+    && githubRunId
+    && /^\d+$/.test(githubRunId)
+    ? `https://github.com/${githubRepository}/actions/runs/${githubRunId}`
+    : null;
   const statusCounts = useMemo(() => {
     const counts = Object.fromEntries(filters.map(({ value }) => [value, 0])) as Record<StatusFilter, number>;
     counts.all = snapshot.packages.length;
@@ -151,6 +159,17 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
             <small className="summary-coverage">
               {baselineEligible} of {snapshot.run.targetPackages} had passing baselines
             </small>
+          )}
+          {githubRunUrl && (
+            <a
+              className="summary-run-link"
+              href={githubRunUrl}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="View the GitHub Actions run used for these results"
+            >
+              View CI run <span aria-hidden="true">↗</span>
+            </a>
           )}
         </div>
       </div>

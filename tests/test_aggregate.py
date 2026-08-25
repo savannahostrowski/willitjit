@@ -35,6 +35,7 @@ def run_payload(platform_name: str, classification: str) -> dict:
             "id": f"run-{platform_name}",
             "runner": {"os": platform_name, "arch": "x64"},
             "github": {
+                "repository": "example/willitjit",
                 "runId": "123",
                 "sha": "abc",
                 "cpythonVersion": "3.15.0rc1",
@@ -118,6 +119,8 @@ class AggregateTests(unittest.TestCase):
 
         self.assertFalse(payload["run"]["complete"])
         self.assertEqual(payload["run"]["completedObservations"], 2)
+        self.assertEqual(payload["run"]["github"]["repository"], "example/willitjit")
+        self.assertEqual(payload["run"]["github"]["runId"], "123")
         self.assertEqual(payload["run"]["github"]["cpythonVersion"], "3.15.0rc1")
         self.assertEqual(payload["packages"][0]["overallStatus"], "needs-triage")
         self.assertFalse(payload["packages"][0]["baselineEligible"])
