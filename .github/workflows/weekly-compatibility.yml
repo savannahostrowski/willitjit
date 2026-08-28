@@ -388,6 +388,7 @@ jobs:
             --input artifacts \
             "${replacement_args[@]}" \
             --output compatibility-results.json \
+            --github-run-id "$GITHUB_RUN_ID" \
             --expected-platform Linux \
             --expected-platform macOS \
             --expected-platform Windows \

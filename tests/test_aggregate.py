@@ -384,11 +384,13 @@ class AggregateTests(unittest.TestCase):
                 dataset=TEST_DATASET,
                 packages=[package()],
                 expected_platforms=("Linux",),
+                github_run_id="456",
             )
 
         observation = merged["packages"][0]["runtimes"]["jit"]["platforms"]["Linux"]
         self.assertEqual(observation["status"], "compatible")
         self.assertEqual(merged["run"]["completedObservations"], 1)
+        self.assertEqual(merged["run"]["github"]["runId"], "456")
 
     def test_rejects_replacement_without_existing_observation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

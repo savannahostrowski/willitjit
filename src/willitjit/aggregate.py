@@ -47,6 +47,7 @@ def build_compatibility_results(
     packages: list[Package],
     expected_platforms: tuple[str, ...] = EXPECTED_PLATFORMS,
     expected_runtimes: tuple[Runtime, ...] = EXPECTED_RUNTIMES,
+    github_run_id: str | None = None,
 ) -> dict[str, Any]:
     files = list(run_files)
     replacement_files = list(replacement_run_files)
@@ -112,6 +113,9 @@ def build_compatibility_results(
             )
         replacement_keys.update(keys)
         add_run(run_file, replace=True)
+
+    if github_run_id:
+        github["runId"] = github_run_id
 
     public_packages = []
     runtime_summaries: dict[Runtime, dict[str, Any]] = {}
@@ -224,6 +228,7 @@ def write_compatibility_results(
     packages: list[Package],
     expected_platforms: tuple[str, ...] = EXPECTED_PLATFORMS,
     expected_runtimes: tuple[Runtime, ...] = EXPECTED_RUNTIMES,
+    github_run_id: str | None = None,
 ) -> None:
     payload = build_compatibility_results(
         run_files=run_files,
@@ -232,6 +237,7 @@ def write_compatibility_results(
         packages=packages,
         expected_platforms=expected_platforms,
         expected_runtimes=expected_runtimes,
+        github_run_id=github_run_id,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2) + "\n")

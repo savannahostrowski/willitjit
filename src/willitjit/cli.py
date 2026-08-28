@@ -43,6 +43,10 @@ def parser() -> argparse.ArgumentParser:
         help="targeted rerun artifacts that replace matching base observations",
     )
     merge.add_argument("--output", type=Path, required=True)
+    merge.add_argument(
+        "--github-run-id",
+        help="GitHub Actions run that publishes the merged snapshot",
+    )
     merge.add_argument("--limit", type=int, help="only include the top N packages")
     merge.add_argument(
         "--expected-platform",
@@ -274,6 +278,7 @@ def main(argv: list[str] | None = None) -> int:
                 expected_platforms=tuple(args.expected_platform)
                 or ("Linux", "macOS", "Windows"),
                 expected_runtimes=tuple(args.expected_runtime) or ("jit",),
+                github_run_id=args.github_run_id,
             )
         except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
             print(f"Could not merge results: {error}", file=sys.stderr)
