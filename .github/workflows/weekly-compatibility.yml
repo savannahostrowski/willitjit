@@ -109,7 +109,10 @@ jobs:
       ${{ inputs.package != '' && format('package {0}', inputs.package) || format('shard {0}', matrix.shard) }}
     needs: prepare
     if: inputs.source_run_id == '' && needs.prepare.result == 'success'
-    runs-on: ${{ matrix.runner }}
+    runs-on: >-
+      ${{ matrix.platform == 'linux' && 'ubuntu-26.04' ||
+          matrix.platform == 'macos' && 'macos-26' ||
+          'windows-2025' }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
@@ -117,13 +120,6 @@ jobs:
         runtime: ${{ fromJSON(needs.prepare.outputs.runtimes) }}
         platform: ${{ fromJSON(needs.prepare.outputs.platforms) }}
         shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
-        include:
-          - platform: linux
-            runner: ubuntu-26.04
-          - platform: macos
-            runner: macos-26
-          - platform: windows
-            runner: windows-2025
 
     steps:
       - name: Check out survey
