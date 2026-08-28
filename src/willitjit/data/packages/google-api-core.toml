@@ -10,7 +10,8 @@ sparse_paths = ["packages/google-api-core"]
 install = [
   ["-m", "pip", "install", "pytest", "pytest-asyncio", "pytest-mock", "pytest-xdist", "asyncmock"],
   ["-m", "pip", "install", "-e", "./packages/google-api-core[grpc]", "-c", "packages/google-api-core/testing/constraints-3.14.txt"],
+  ["-m", "pip", "install", "google-auth==2.56.3"],
 ]
 test = ["-m", "pytest", "packages/google-api-core/tests", "-p", "no:xdist"]
 timeout_seconds = 1800
-note = "Uses the package's Python 3.14 constraints file from its upstream nox session."
+note = "Uses the package's Python 3.14 constraints and the google-auth release available at this survey's package cutoff."

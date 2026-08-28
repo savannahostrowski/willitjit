@@ -9,7 +9,7 @@ release_date = "2026-08-09T01:35:19.155629Z"
 install = [
   ["-m", "pip", "install", "--group", "dev"],
   ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "botocore", "orjson>=3.11.6,<4.0", "proto-plus", "pyjwt", "tzdata", "websockets>=15.0.1,<16.0"],
+  ["-m", "pip", "install", "audioread==3.1.0", "botocore", "orjson>=3.11.6,<4.0", "proto-plus", "pyjwt", "soundfile==0.12.1", "tzdata", "websockets>=15.0.1,<16.0"],
 ]
 test = [
   "-m",
@@ -21,5 +21,5 @@ test = [
   "no:xdist",
 ]
 timeout_seconds = 2400
-note = "Runs the upstream core-utilities unit shard, excluding two POSIX-only permission files plus proxy, end-to-end, and integration lanes."
+note = "Runs the upstream core-utilities unit shard with its locked audio dependencies, excluding two POSIX-only permission files plus proxy, end-to-end, and integration lanes."
 isolate_home = true

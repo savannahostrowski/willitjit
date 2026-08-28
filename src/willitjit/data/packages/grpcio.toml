@@ -9,11 +9,11 @@ release_date = "2026-07-23T15:18:53.099939Z"
 install = [
   ["-m", "pip", "install", "grpcio=={release_version}", "grpcio-tools=={release_version}", "coverage", "oauth2client", "absl-py", "pytest"],
   ["-m", "pip", "install", "--no-deps", "--no-build-isolation", "-e", "."],
-  ["setup.py", "build_package_protos"],
+  ["setup.py", "preprocess"],
 ]
 install_cwd = "src/python/grpcio_tests"
 test = ["-m", "pytest", "tests/unit", "--ignore=tests/unit/test_all_modules_installed.py", "-p", "no:xdist"]
 test_cwd = "src/python/grpcio_tests"
 timeout_seconds = 3600
-note = "Runs the release-matched upstream core unit suite and explicitly generates the test protobuf modules. The packaging-completeness check is excluded because grpcio-observability has no Windows CPython 3.14 wheel."
+note = "Runs the release-matched upstream core unit suite and gathers and generates its shared test protobuf modules. The packaging-completeness check is excluded because grpcio-observability has no Windows CPython 3.14 wheel."
 recursive_submodules = true

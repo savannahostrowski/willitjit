@@ -7,10 +7,9 @@ ref = "21.7.4"
 release_version = "21.7.4"
 release_date = "2026-08-10T22:54:31.515567Z"
 install = [
-  ["-m", "pip", "install", "--group", "test"],
-  ["-m", "pip", "install", "virtualenv=={release_version}"],
+  ["-m", "pip", "install", "tox-uv"],
 ]
-test = ["-m", "pytest", "tests", "-m", "not slow", "-p", "no:xdist"]
+test = ["-m", "tox", "run", "-e", "3.14", "--", "tests", "-m", "not slow", "-p", "no:xdist"]
 timeout_seconds = 2400
 isolate_home = true
-note = "Uses the pinned release wheel with the test dependency group declared by the matching checkout."
+note = "Uses upstream's Python 3.14 tox-uv environment, which builds and tests the pinned checkout as a wheel."

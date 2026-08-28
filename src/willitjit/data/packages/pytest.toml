@@ -6,7 +6,10 @@ repository = "https://github.com/pytest-dev/pytest.git"
 ref = "9.1.1"
 release_version = "9.1.1"
 release_date = "2026-06-19T10:58:31.347074Z"
-install = [["-m", "pip", "install", "tox"]]
-test = ["-m", "tox", "run", "-e", "py314", "--", "testing"]
+install = [
+  ["-m", "pip", "install", "build", "tox"],
+  ["-m", "build", "--sdist", "--outdir", "dist"],
+]
+test = ["-m", "tox", "run", "-e", "py314", "--installpkg", "dist/pytest-9.1.1.tar.gz", "--", "testing"]
 timeout_seconds = 2400
-note = "Uses pytest's own Python 3.14 tox environment and wheel-build path."
+note = "Builds the release sdist and installs it into pytest's Python 3.14 tox environment, matching upstream CI."

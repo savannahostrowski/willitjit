@@ -288,13 +288,13 @@ class RegistryTests(unittest.TestCase):
         virtualenv = next(
             package for package in packages if package.name == "virtualenv"
         )
-        self.assertIn("test", virtualenv.install[0])
-        self.assertIn("virtualenv=={release_version}", virtualenv.install[-1])
+        self.assertIn("tox-uv", virtualenv.install[0])
+        self.assertIn("3.14", virtualenv.test)
         grpcio = next(package for package in packages if package.name == "grpcio")
         self.assertEqual(grpcio.install_cwd, "src/python/grpcio_tests")
         self.assertIn("--no-deps", grpcio.install[-2])
         self.assertIn("--no-build-isolation", grpcio.install[-2])
-        self.assertEqual(grpcio.install[-1], ("setup.py", "build_package_protos"))
+        self.assertEqual(grpcio.install[-1], ("setup.py", "preprocess"))
         self.assertIn("--ignore=tests/unit/test_all_modules_installed.py", grpcio.test)
         referencing = next(
             package for package in packages if package.name == "referencing"

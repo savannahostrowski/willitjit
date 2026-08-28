@@ -6,8 +6,11 @@ repository = "https://github.com/huggingface/huggingface_hub.git"
 ref = "v1.27.0"
 release_version = "1.27.0"
 release_date = "2026-08-07T12:48:02.905935Z"
-install = [["-m", "pip", "install", "-e", ".[testing]"]]
-test = ["-m", "pytest", "tests", "-m", "not production and not inference and not xet and not git_lfs", "-k", "not test_push and not test_upload and not test_download and not test_create and not test_delete and not test_login and not test_repo and not test_api", "--ignore=tests/test_utils_git_credentials.py", "-p", "no:xdist"]
+install = [
+  ["-m", "pip", "install", "-e", ".[testing]"],
+  ["-m", "pip", "install", "click==8.4.2"],
+]
+test = ["-m", "pytest", "tests", "-m", "not production and not inference and not xet and not git_lfs", "-k", "not test_push and not test_upload and not test_download and not test_create and not test_delete and not test_login and not test_repo and not test_api", "--ignore=tests/test_utils_git_credentials.py", "--reruns", "8", "--reruns-delay", "2", "-p", "no:xdist"]
 timeout_seconds = 2400
-note = "Runs the local unit suite without external Hub API, credential-helper, production-service, inference, Xet, or Git LFS tests. La Ruche uses the same network-test exclusions."
+note = "Runs the local unit suite with the release's minimum Click version and upstream retry policy, without external Hub API, credential-helper, production-service, inference, Xet, or Git LFS tests. La Ruche uses the same network-test exclusions."
 isolate_home = true
