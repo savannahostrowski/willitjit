@@ -10,12 +10,37 @@ on:
         description: Existing workflow run ID to merge without rerunning surveys
         required: false
         type: string
+      package:
+        description: Exact package name to run by itself
+        required: false
+        type: string
+      shard:
+        description: Shard index to run by itself (0-9)
+        required: false
+        type: string
+      runtime:
+        description: Runtime to test
+        default: all
+        options:
+          - all
+          - jit
+          - free-threaded
+        type: choice
+      platform:
+        description: Platform to test
+        default: all
+        options:
+          - all
+          - linux
+          - macos
+          - windows
+        type: choice
 
 permissions:
   contents: read
 
 concurrency:
-  group: weekly-willitjit-${{ inputs.source_run_id || 'survey' }}
+  group: weekly-willitjit-${{ github.event_name == 'schedule' && 'scheduled' || inputs.source_run_id || github.run_id }}
   cancel-in-progress: true
 
 defaults:
@@ -28,23 +53,77 @@ env:
   CPYTHON_VERSION: 3.14.6
 
 jobs:
-  survey:
-    name: ${{ matrix.runtime }} ${{ matrix.platform.name }} shard ${{ matrix.shard }}
+  prepare:
+    name: Prepare survey matrix
     if: inputs.source_run_id == ''
-    runs-on: ${{ matrix.platform.runner }}
+    runs-on: ubuntu-24.04
+    outputs:
+      platforms: ${{ steps.matrix.outputs.platforms }}
+      runtimes: ${{ steps.matrix.outputs.runtimes }}
+      shards: ${{ steps.matrix.outputs.shards }}
+      targeted: ${{ steps.matrix.outputs.targeted }}
+    steps:
+      - name: Select jobs
+        id: matrix
+        env:
+          PACKAGE: ${{ inputs.package }}
+          PLATFORM: ${{ inputs.platform }}
+          RUNTIME: ${{ inputs.runtime }}
+          SHARD: ${{ inputs.shard }}
+        run: |
+          if [[ -n "$PACKAGE" && -n "$SHARD" ]]; then
+            echo "Choose either a package or a shard, not both." >&2
+            exit 1
+          fi
+          if [[ -n "$PACKAGE" && ! "$PACKAGE" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "Package must be an exact registry package name." >&2
+            exit 1
+          fi
+          if [[ -n "$SHARD" && ! "$SHARD" =~ ^[0-9]$ ]]; then
+            echo "Shard must be an integer from 0 through 9." >&2
+            exit 1
+          fi
+
+          platforms='["linux","macos","windows"]'
+          runtimes='["jit","free-threaded"]'
+          shards='[0,1,2,3,4,5,6,7,8,9]'
+          [[ -n "$PLATFORM" && "$PLATFORM" != all ]] && platforms="[\"$PLATFORM\"]"
+          [[ -n "$RUNTIME" && "$RUNTIME" != all ]] && runtimes="[\"$RUNTIME\"]"
+          [[ -n "$SHARD" ]] && shards="[$SHARD]"
+          [[ -n "$PACKAGE" ]] && shards='[0]'
+
+          targeted=false
+          if [[ -n "$PACKAGE" || -n "$SHARD" ||
+                ( -n "$PLATFORM" && "$PLATFORM" != all ) ||
+                ( -n "$RUNTIME" && "$RUNTIME" != all ) ]]; then
+            targeted=true
+          fi
+          echo "platforms=$platforms" >> "$GITHUB_OUTPUT"
+          echo "runtimes=$runtimes" >> "$GITHUB_OUTPUT"
+          echo "shards=$shards" >> "$GITHUB_OUTPUT"
+          echo "targeted=$targeted" >> "$GITHUB_OUTPUT"
+
+  survey:
+    name: >-
+      ${{ matrix.runtime }} ${{ matrix.platform }}
+      ${{ inputs.package != '' && format('package {0}', inputs.package) || format('shard {0}', matrix.shard) }}
+    needs: prepare
+    if: inputs.source_run_id == '' && needs.prepare.result == 'success'
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
-        platform:
-          - name: linux
+        runtime: ${{ fromJSON(needs.prepare.outputs.runtimes) }}
+        platform: ${{ fromJSON(needs.prepare.outputs.platforms) }}
+        shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
+        include:
+          - platform: linux
             runner: ubuntu-26.04
-          - name: macos
+          - platform: macos
             runner: macos-26
-          - name: windows
+          - platform: windows
             runner: windows-2025
-        runtime: [jit, free-threaded]
-        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     steps:
       - name: Check out survey
@@ -69,7 +148,7 @@ jobs:
           cache-python: true
 
       - name: Install JIT CPython from uv
-        if: matrix.runtime == 'jit' && matrix.platform.name != 'windows'
+        if: matrix.runtime == 'jit' && matrix.platform != 'windows'
         run: |
           uv python install "$CPYTHON_VERSION"
           python_path="$(uv python find --managed-python "$CPYTHON_VERSION")"
@@ -77,7 +156,7 @@ jobs:
           "$python_path" --version
 
       - name: Install official JIT CPython on Windows
-        if: matrix.runtime == 'jit' && matrix.platform.name == 'windows'
+        if: matrix.runtime == 'jit' && matrix.platform == 'windows'
         id: windows-python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
@@ -85,7 +164,7 @@ jobs:
           architecture: x64
 
       - name: Select official JIT CPython on Windows
-        if: matrix.runtime == 'jit' && matrix.platform.name == 'windows'
+        if: matrix.runtime == 'jit' && matrix.platform == 'windows'
         shell: pwsh
         env:
           PYTHON_PATH: ${{ steps.windows-python.outputs.python-path }}
@@ -110,7 +189,7 @@ jobs:
           "$PYTHON_PATH" -VV
 
       - name: Preserve LF test fixtures on Windows
-        if: matrix.platform.name == 'windows'
+        if: matrix.platform == 'windows'
         run: |
           git config --global core.autocrlf false
           git config --global core.eol lf
@@ -122,13 +201,18 @@ jobs:
       - name: Inspect shard prerequisites
         id: shard
         env:
+          PACKAGE: ${{ inputs.package }}
           SHARD_INDEX: ${{ matrix.shard }}
         run: |
-          packages="$(uv run willitjit plan \
-            --limit 100 \
-            --shard-count 10 \
-            --shard-index "$SHARD_INDEX" \
-            --names-only)"
+          selection=(
+            --limit 100
+            --shard-count 10
+            --shard-index "$SHARD_INDEX"
+          )
+          if [[ -n "$PACKAGE" ]]; then
+            selection=(--package "$PACKAGE")
+          fi
+          packages="$(uv run willitjit plan "${selection[@]}" --names-only)"
           printf '%s\n' "$packages"
           for package in cryptography pip; do
             if printf '%s\n' "$packages" | grep -Fxq "$package"; then
@@ -139,7 +223,7 @@ jobs:
           done
 
       - name: Download OpenSSL for Cryptography on Windows
-        if: matrix.platform.name == 'windows' && steps.shard.outputs.cryptography == 'true'
+        if: matrix.platform == 'windows' && steps.shard.outputs.cryptography == 'true'
         uses: dawidd6/action-download-artifact@57aa996fc1713cc1579039614f4645a7f4841fd4 # v23
         with:
           repo: pyca/infra
@@ -151,21 +235,21 @@ jobs:
           github_token: ${{ github.token }}
 
       - name: Configure OpenSSL for Cryptography on Windows
-        if: matrix.platform.name == 'windows' && steps.shard.outputs.cryptography == 'true'
+        if: matrix.platform == 'windows' && steps.shard.outputs.cryptography == 'true'
         run: echo "OPENSSL_DIR=C:/openssl-win64" >> "$GITHUB_ENV"
 
       - name: Install pip test prerequisites on Linux
-        if: matrix.platform.name == 'linux' && steps.shard.outputs.pip == 'true'
+        if: matrix.platform == 'linux' && steps.shard.outputs.pip == 'true'
         run: |
           sudo apt-get update
           sudo apt-get install --yes subversion
 
       - name: Install pip test prerequisites on macOS
-        if: matrix.platform.name == 'macos' && steps.shard.outputs.pip == 'true'
+        if: matrix.platform == 'macos' && steps.shard.outputs.pip == 'true'
         run: brew install subversion
 
       - name: Install pip test prerequisites on Windows
-        if: matrix.platform.name == 'windows' && steps.shard.outputs.pip == 'true'
+        if: matrix.platform == 'windows' && steps.shard.outputs.pip == 'true'
         shell: pwsh
         run: |
           choco install sliksvn --yes --no-progress
@@ -178,16 +262,25 @@ jobs:
 
       - name: Run paired package suites
         env:
-          SURVEY_RUN_ID: github-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.runtime }}-${{ matrix.platform.name }}-${{ matrix.shard }}
+          PACKAGE: ${{ inputs.package }}
+          SURVEY_RUN_ID: >-
+            github-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.runtime }}-${{ matrix.platform }}-${{
+            inputs.package != '' && format('package-{0}', inputs.package) || format('shard-{0}', matrix.shard) }}
           SHARD_INDEX: ${{ matrix.shard }}
           RUNTIME: ${{ matrix.runtime }}
         run: |
+          selection=(
+            --limit 100
+            --shard-count 10
+            --shard-index "$SHARD_INDEX"
+          )
+          if [[ -n "$PACKAGE" ]]; then
+            selection=(--package "$PACKAGE")
+          fi
           uv run willitjit run \
             --python "$TARGET_PYTHON" \
             --runtime "$RUNTIME" \
-            --limit 100 \
-            --shard-count 10 \
-            --shard-index "$SHARD_INDEX" \
+            "${selection[@]}" \
             --run-id "$SURVEY_RUN_ID" \
             --allow-findings \
             --stream-test-output
@@ -196,7 +289,9 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: raw-${{ matrix.runtime }}-${{ matrix.platform.name }}-${{ matrix.shard }}
+          name: >-
+            raw-${{ matrix.runtime }}-${{ matrix.platform }}-${{
+            inputs.package != '' && format('package-{0}', inputs.package) || format('shard-{0}', matrix.shard) }}
           if-no-files-found: warn
           retention-days: 30
           path: |
@@ -206,8 +301,11 @@ jobs:
 
   merge:
     name: Merge public JSON
-    if: always()
-    needs: survey
+    if: >-
+      always() &&
+      (inputs.source_run_id != '' ||
+       (needs.prepare.result == 'success' && needs.prepare.outputs.targeted == 'false'))
+    needs: [prepare, survey]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
