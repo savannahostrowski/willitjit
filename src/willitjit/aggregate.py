@@ -42,12 +42,14 @@ def find_run_files(root: Path) -> list[Path]:
 def build_compatibility_results(
     *,
     run_files: Iterable[Path],
+    replacement_run_files: Iterable[Path] = (),
     dataset: dict[str, Any],
     packages: list[Package],
     expected_platforms: tuple[str, ...] = EXPECTED_PLATFORMS,
     expected_runtimes: tuple[Runtime, ...] = EXPECTED_RUNTIMES,
 ) -> dict[str, Any]:
     files = list(run_files)
+    replacement_files = list(replacement_run_files)
     if not files:
         raise ValueError("no run.json files found")
 
@@ -58,12 +60,12 @@ def build_compatibility_results(
     run_ids: set[str] = set()
     github: dict[str, Any] = {}
 
-    for run_file in files:
+    def add_run(run_file: Path, *, replace: bool) -> None:
         raw = json.loads(run_file.read_text())
         run = raw.get("run", {})
         runtime = _runtime_name(run)
         if runtime not in expected_runtimes:
-            continue
+            return
         platform_name = _platform_name(run, raw)
         run_ids.add(str(run.get("id", run_file.parent.name)))
         github.update(
@@ -74,12 +76,42 @@ def build_compatibility_results(
         )
         for result in raw.get("results", []):
             key = (runtime, platform_name, result["package"])
-            if key in observations:
+            if replace and key not in observations:
+                raise ValueError(
+                    f"replacement has no existing {runtime} result for "
+                    f"{result['package']} on {platform_name}"
+                )
+            if not replace and key in observations:
                 raise ValueError(
                     f"duplicate {runtime} result for {result['package']} on "
                     f"{platform_name}"
                 )
             observations[key] = _observation(result, run_file.parent, runtime)
+
+    for run_file in files:
+        add_run(run_file, replace=False)
+
+    replacement_keys: set[tuple[Runtime, str, str]] = set()
+    for run_file in replacement_files:
+        raw = json.loads(run_file.read_text())
+        run = raw.get("run", {})
+        runtime = _runtime_name(run)
+        if runtime not in expected_runtimes:
+            continue
+        platform_name = _platform_name(run, raw)
+        keys = {
+            (runtime, platform_name, result["package"])
+            for result in raw.get("results", [])
+        }
+        duplicate_keys = replacement_keys & keys
+        if duplicate_keys:
+            duplicate = min(duplicate_keys)
+            raise ValueError(
+                f"duplicate replacement {duplicate[0]} result for {duplicate[2]} "
+                f"on {duplicate[1]}"
+            )
+        replacement_keys.update(keys)
+        add_run(run_file, replace=True)
 
     public_packages = []
     runtime_summaries: dict[Runtime, dict[str, Any]] = {}
@@ -186,6 +218,7 @@ def build_compatibility_results(
 def write_compatibility_results(
     *,
     run_files: Iterable[Path],
+    replacement_run_files: Iterable[Path] = (),
     output: Path,
     dataset: dict[str, Any],
     packages: list[Package],
@@ -194,6 +227,7 @@ def write_compatibility_results(
 ) -> None:
     payload = build_compatibility_results(
         run_files=run_files,
+        replacement_run_files=replacement_run_files,
         dataset=dataset,
         packages=packages,
         expected_platforms=expected_platforms,

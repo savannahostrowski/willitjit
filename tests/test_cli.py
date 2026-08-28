@@ -9,7 +9,13 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-from willitjit.cli import _merge_packages, _run_exit_code, _select, main
+from willitjit.cli import (
+    _merge_packages,
+    _run_exit_code,
+    _select,
+    _validate_replacement_cohorts,
+    main,
+)
 from willitjit.models import Package
 
 
@@ -139,6 +145,25 @@ class MergePackageTests(unittest.TestCase):
                 ValueError, "does not declare its package cohort"
             ):
                 _merge_packages(packages(3), [run_file], 3)
+
+    def test_accepts_targeted_replacement_within_base_cohort(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_file = Path(temporary) / "run.json"
+            run_file.write_text(
+                json.dumps({"selection": {"targetPackages": ["package-2"]}})
+            )
+
+            _validate_replacement_cohorts([run_file], packages(3))
+
+    def test_rejects_replacement_outside_base_cohort(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_file = Path(temporary) / "run.json"
+            run_file.write_text(
+                json.dumps({"selection": {"targetPackages": ["package-3"]}})
+            )
+
+            with self.assertRaisesRegex(ValueError, "outside the base cohort"):
+                _validate_replacement_cohorts([run_file], packages(2))
 
 
 class PlanTests(unittest.TestCase):

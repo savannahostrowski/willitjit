@@ -8,6 +8,8 @@ from pathlib import Path
 from willitjit.aggregate import build_compatibility_results, find_run_files
 from willitjit.models import Package
 
+TEST_DATASET = {"source": "source", "last_update": "today", "window": "30 days"}
+
 
 def package() -> Package:
     return Package(
@@ -71,6 +73,18 @@ def run_payload(platform_name: str, classification: str, runtime: str = "jit") -
             }
         ],
     }
+
+
+def write_run(
+    root: Path,
+    directory: str,
+    platform_name: str,
+    classification: str,
+) -> Path:
+    run_file = root / directory / "run.json"
+    run_file.parent.mkdir()
+    run_file.write_text(json.dumps(run_payload(platform_name, classification)))
+    return run_file
 
 
 class AggregateTests(unittest.TestCase):
@@ -348,22 +362,62 @@ class AggregateTests(unittest.TestCase):
     def test_rejects_duplicate_package_platform_results(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            first = root / "one" / "run.json"
-            second = root / "two" / "run.json"
-            first.parent.mkdir()
-            second.parent.mkdir()
-            value = json.dumps(run_payload("Linux", "observed-compatible"))
-            first.write_text(value)
-            second.write_text(value)
+            write_run(root, "one", "Linux", "observed-compatible")
+            write_run(root, "two", "Linux", "observed-compatible")
 
             with self.assertRaisesRegex(ValueError, "duplicate jit result"):
                 build_compatibility_results(
                     run_files=find_run_files(root),
-                    dataset={
-                        "source": "source",
-                        "last_update": "today",
-                        "window": "30 days",
-                    },
+                    dataset=TEST_DATASET,
+                    packages=[package()],
+                )
+
+    def test_targeted_rerun_replaces_existing_observation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            base = write_run(root, "base", "Linux", "baseline-failure")
+            replacement = write_run(root, "replacement", "Linux", "observed-compatible")
+
+            merged = build_compatibility_results(
+                run_files=[base],
+                replacement_run_files=[replacement],
+                dataset=TEST_DATASET,
+                packages=[package()],
+                expected_platforms=("Linux",),
+            )
+
+        observation = merged["packages"][0]["runtimes"]["jit"]["platforms"]["Linux"]
+        self.assertEqual(observation["status"], "compatible")
+        self.assertEqual(merged["run"]["completedObservations"], 1)
+
+    def test_rejects_replacement_without_existing_observation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            base = write_run(root, "base", "Linux", "observed-compatible")
+            replacement = write_run(
+                root, "replacement", "Windows", "observed-compatible"
+            )
+
+            with self.assertRaisesRegex(ValueError, "replacement has no existing"):
+                build_compatibility_results(
+                    run_files=[base],
+                    replacement_run_files=[replacement],
+                    dataset=TEST_DATASET,
+                    packages=[package()],
+                )
+
+    def test_rejects_duplicate_replacements(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            base = write_run(root, "base", "Linux", "observed-compatible")
+            first = write_run(root, "replacement-one", "Linux", "observed-compatible")
+            second = write_run(root, "replacement-two", "Linux", "observed-compatible")
+
+            with self.assertRaisesRegex(ValueError, "duplicate replacement jit result"):
+                build_compatibility_results(
+                    run_files=[base],
+                    replacement_run_files=[first, second],
+                    dataset=TEST_DATASET,
                     packages=[package()],
                 )
 

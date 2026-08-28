@@ -14,6 +14,10 @@ on:
         description: Optional targeted run whose artifacts supplement the source run
         required: false
         type: string
+      replacement_run_ids:
+        description: Comma-separated targeted run IDs that replace matching results
+        required: false
+        type: string
       package:
         description: Exact package name to run by itself
         required: false
@@ -73,12 +77,14 @@ jobs:
           PACKAGE: ${{ inputs.package }}
           PLATFORM: ${{ inputs.platform }}
           RUNTIME: ${{ inputs.runtime }}
+          REPLACEMENT_RUN_IDS: ${{ inputs.replacement_run_ids }}
           SHARD: ${{ inputs.shard }}
           SOURCE_RUN_ID: ${{ inputs.source_run_id }}
           SUPPLEMENTAL_RUN_ID: ${{ inputs.supplemental_run_id }}
         run: |
-          if [[ -n "$SUPPLEMENTAL_RUN_ID" && -z "$SOURCE_RUN_ID" ]]; then
-            echo "A supplemental run requires a source run." >&2
+          if [[ ( -n "$SUPPLEMENTAL_RUN_ID" || -n "$REPLACEMENT_RUN_IDS" ) &&
+                -z "$SOURCE_RUN_ID" ]]; then
+            echo "Supplemental and replacement runs require a source run." >&2
             exit 1
           fi
           if [[ -n "$PACKAGE" && -n "$SHARD" ]]; then
@@ -351,11 +357,36 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ inputs.supplemental_run_id }}
 
+      - name: Download replacement results
+        if: inputs.replacement_run_ids != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPLACEMENT_RUN_IDS: ${{ inputs.replacement_run_ids }}
+        run: |
+          if [[ ! "$REPLACEMENT_RUN_IDS" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+            echo "Replacement run IDs must be comma-separated integers." >&2
+            exit 1
+          fi
+          IFS=, read -ra run_ids <<< "$REPLACEMENT_RUN_IDS"
+          for run_id in "${run_ids[@]}"; do
+            gh run download "$run_id" \
+              --repo "$GITHUB_REPOSITORY" \
+              --pattern 'raw-*' \
+              --dir "replacement-artifacts/$run_id"
+          done
+
       - name: Merge compatibility results
+        env:
+          REPLACEMENT_RUN_IDS: ${{ inputs.replacement_run_ids }}
         run: |
           uv sync --locked
+          replacement_args=()
+          if [[ -n "$REPLACEMENT_RUN_IDS" ]]; then
+            replacement_args=(--replacement-input replacement-artifacts)
+          fi
           uv run willitjit merge \
             --input artifacts \
+            "${replacement_args[@]}" \
             --output compatibility-results.json \
             --expected-platform Linux \
             --expected-platform macOS \

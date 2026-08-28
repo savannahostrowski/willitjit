@@ -35,6 +35,13 @@ def parser() -> argparse.ArgumentParser:
         "merge", help="merge platform/shard runs into one public JSON artifact"
     )
     merge.add_argument("--input", type=Path, required=True)
+    merge.add_argument(
+        "--replacement-input",
+        type=Path,
+        action="append",
+        default=[],
+        help="targeted rerun artifacts that replace matching base observations",
+    )
     merge.add_argument("--output", type=Path, required=True)
     merge.add_argument("--limit", type=int, help="only include the top N packages")
     merge.add_argument(
@@ -194,6 +201,27 @@ def _merge_packages(
     return requested
 
 
+def _validate_replacement_cohorts(
+    replacement_run_files: list[Path], packages: list[Package]
+) -> None:
+    allowed = {package.name for package in packages}
+    for run_file in replacement_run_files:
+        raw = json.loads(run_file.read_text())
+        declared = raw.get("selection", {}).get("targetPackages")
+        if (
+            not isinstance(declared, list)
+            or not declared
+            or not all(isinstance(name, str) for name in declared)
+        ):
+            raise ValueError(f"invalid replacement package cohort in {run_file}")
+        unknown = set(declared) - allowed
+        if unknown:
+            raise ValueError(
+                "replacement package cohort is outside the base cohort: "
+                + ", ".join(sorted(unknown))
+            )
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
 
@@ -226,13 +254,20 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "merge":
         run_files = find_run_files(args.input)
+        replacement_run_files = [
+            run_file
+            for replacement_input in args.replacement_input
+            for run_file in find_run_files(replacement_input)
+        ]
         if args.limit is not None and args.limit < 1:
             print("limit must be at least 1", file=sys.stderr)
             return 2
         try:
             merged_packages = _merge_packages(packages, run_files, args.limit)
+            _validate_replacement_cohorts(replacement_run_files, merged_packages)
             write_compatibility_results(
                 run_files=run_files,
+                replacement_run_files=replacement_run_files,
                 output=args.output,
                 dataset=dataset,
                 packages=merged_packages,
