@@ -11,25 +11,25 @@ def build_history(
 ) -> dict[str, Any]:
     history = _normalize_history(previous)
     run = snapshot["run"]
-    if not run["complete"]:
+    summary = _runtime_summaries(snapshot).get("jit")
+    if summary is None or not _jit_complete(run, summary):
         return history
 
     python_version = _python_version(snapshot)
     python_series = _python_series(python_version)
     package_count = int(run["targetPackages"])
     dataset_updated = str(snapshot["dataset"]["updated"])
-    series_id = _series_id(python_series, package_count, dataset_updated)
     run_id = str(run.get("github", {}).get("runId") or run["ids"][0])
+    series = history["series"]
+    series_id = _series_id(python_series, package_count, dataset_updated)
     point = {
         "date": str(snapshot["generatedAt"]),
         "runId": run_id,
         "pythonVersion": python_version,
-        "compatible": int(snapshot["summary"]["packages"].get("compatible", 0)),
-        "baselineEligible": _baseline_eligible(snapshot),
+        "compatible": int(summary["packages"].get("compatible", 0)),
+        "baselineEligible": int(summary["baselineEligible"]),
         "total": package_count,
     }
-
-    series = history["series"]
     current = next((item for item in series if item["id"] == series_id), None)
     if current is None:
         current = {
@@ -115,13 +115,25 @@ def _point(value: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _baseline_eligible(snapshot: dict[str, Any]) -> int:
+def _legacy_baseline_eligible(snapshot: dict[str, Any]) -> int:
     summary = snapshot["summary"]
     if "baselineEligible" in summary:
         return int(summary["baselineEligible"])
     return sum(
         bool(package.get("baselineEligible")) for package in snapshot["packages"]
     )
+
+
+def _runtime_summaries(snapshot: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    summary = snapshot["summary"]
+    if "runtimes" in summary:
+        return {str(runtime): value for runtime, value in summary["runtimes"].items()}
+    return {
+        "jit": {
+            "packages": summary["packages"],
+            "baselineEligible": _legacy_baseline_eligible(snapshot),
+        }
+    }
 
 
 def _newest_series(series: list[dict[str, Any]]) -> str | None:
@@ -131,9 +143,22 @@ def _newest_series(series: list[dict[str, Any]]) -> str | None:
     return max(populated, key=lambda value: value["points"][-1]["date"])["id"]
 
 
+def _jit_complete(run: dict[str, Any], summary: dict[str, Any]) -> bool:
+    completed = summary.get("completedObservations")
+    expected_platforms = run.get("expectedPlatforms")
+    if completed is not None and isinstance(expected_platforms, list):
+        expected = int(run["targetPackages"]) * len(expected_platforms)
+        return int(completed) == expected
+    return bool(run["complete"])
+
+
 def _python_version(snapshot: dict[str, Any]) -> str:
     run = snapshot["run"]
     version = str(run.get("github", {}).get("cpythonVersion") or "")
+    if not version:
+        runtimes = snapshot.get("pythonByRuntime", {})
+        platforms = runtimes.get("jit", {})
+        version = str(next(iter(platforms.values()), {}).get("version") or "")
     if not version:
         platforms = snapshot.get("pythonByPlatform", {})
         version = str(next(iter(platforms.values()), {}).get("version") or "")

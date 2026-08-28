@@ -8,9 +8,10 @@ from datetime import UTC, datetime
 from pathlib import Path, PureWindowsPath
 from typing import Any, Literal, TypeAlias
 
-from .models import Classification, Package
+from .models import Package, Runtime
 
 EXPECTED_PLATFORMS = ("Linux", "macOS", "Windows")
+EXPECTED_RUNTIMES: tuple[Runtime, ...] = ("jit",)
 PublicStatus: TypeAlias = Literal[
     "compatible",
     "needs-triage",
@@ -18,15 +19,17 @@ PublicStatus: TypeAlias = Literal[
     "infrastructure-failure",
     "not-tested",
 ]
-PUBLIC_CLASSIFICATIONS: dict[Classification, tuple[PublicStatus, str]] = {
-    "observed-compatible": ("compatible", "No JIT-specific difference observed"),
-    "suspected-jit-regression": (
-        "needs-triage",
-        "Possible JIT-specific regression",
-    ),
-    "baseline-failure": ("baseline-blocked", "Baseline suite is already failing"),
-    "setup-error": ("infrastructure-failure", "Setup or infrastructure failure"),
-    "not-tested": ("not-tested", "Not tested on this platform"),
+RUNTIME_METADATA: dict[Runtime, dict[str, str]] = {
+    "jit": {
+        "label": "JIT",
+        "baselineLabel": "JIT off",
+        "targetLabel": "JIT on",
+    },
+    "free-threaded": {
+        "label": "Free-threaded",
+        "baselineLabel": "GIL on",
+        "targetLabel": "GIL off",
+    },
 }
 
 
@@ -42,54 +45,80 @@ def build_compatibility_results(
     dataset: dict[str, Any],
     packages: list[Package],
     expected_platforms: tuple[str, ...] = EXPECTED_PLATFORMS,
+    expected_runtimes: tuple[Runtime, ...] = EXPECTED_RUNTIMES,
 ) -> dict[str, Any]:
     files = list(run_files)
     if not files:
         raise ValueError("no run.json files found")
 
-    observations: dict[tuple[str, str], dict[str, Any]] = {}
-    python_by_platform: dict[str, dict[str, Any]] = {}
+    observations: dict[tuple[Runtime, str, str], dict[str, Any]] = {}
+    python_by_runtime: dict[Runtime, dict[str, dict[str, Any]]] = {
+        runtime: {} for runtime in expected_runtimes
+    }
     run_ids: set[str] = set()
     github: dict[str, Any] = {}
 
     for run_file in files:
         raw = json.loads(run_file.read_text())
         run = raw.get("run", {})
+        runtime = _runtime_name(run)
+        if runtime not in expected_runtimes:
+            continue
         platform_name = _platform_name(run, raw)
         run_ids.add(str(run.get("id", run_file.parent.name)))
         github.update(
             {key: value for key, value in run.get("github", {}).items() if value}
         )
-        python_by_platform.setdefault(
-            platform_name, _python_snapshot(raw["python_probe"])
+        python_by_runtime[runtime].setdefault(
+            platform_name, _python_snapshot(raw["python_probe"], runtime)
         )
         for result in raw.get("results", []):
-            key = (platform_name, result["package"])
+            key = (runtime, platform_name, result["package"])
             if key in observations:
                 raise ValueError(
-                    f"duplicate result for {result['package']} on {platform_name}"
+                    f"duplicate {runtime} result for {result['package']} on "
+                    f"{platform_name}"
                 )
-            observations[key] = _observation(result, run_file.parent)
+            observations[key] = _observation(result, run_file.parent, runtime)
 
     public_packages = []
-    observation_counts: Counter[str] = Counter()
-    overall_counts: Counter[str] = Counter()
-    baseline_eligible = 0
+    runtime_summaries: dict[Runtime, dict[str, Any]] = {}
+    runtime_observation_counts = {
+        runtime: Counter[str]() for runtime in expected_runtimes
+    }
+    runtime_overall_counts = {runtime: Counter[str]() for runtime in expected_runtimes}
+    runtime_baseline_eligible = {runtime: 0 for runtime in expected_runtimes}
+    runtime_completed = {runtime: 0 for runtime in expected_runtimes}
     completed = 0
     for package in packages:
-        platforms = {}
-        for platform_name in expected_platforms:
-            observation = observations.get((platform_name, package.name))
-            if observation is None:
-                observation = _not_tested()
-            else:
-                completed += 1
-            platforms[platform_name] = observation
-            observation_counts[observation["status"]] += 1
-        overall = _overall_status(platforms.values())
-        overall_counts[overall] += 1
-        package_baseline_eligible = _baseline_eligible(platforms.values())
-        baseline_eligible += package_baseline_eligible
+        runtimes = {}
+        package_runtime_statuses = []
+        for runtime in expected_runtimes:
+            platforms = {}
+            for platform_name in expected_platforms:
+                observation = observations.get((runtime, platform_name, package.name))
+                if observation is None:
+                    observation = _not_tested(runtime)
+                else:
+                    completed += 1
+                    runtime_completed[runtime] += 1
+                platforms[platform_name] = observation
+                runtime_observation_counts[runtime][observation["status"]] += 1
+            overall = _overall_status(platforms.values())
+            runtime_overall_counts[runtime][overall] += 1
+            package_baseline_eligible = _baseline_eligible(platforms.values())
+            runtime_baseline_eligible[runtime] += package_baseline_eligible
+            package_runtime_statuses.append(overall)
+            runtimes[runtime] = {
+                "overallStatus": overall,
+                "baselineEligible": package_baseline_eligible,
+                "platforms": platforms,
+            }
+        primary_status = (
+            runtimes["jit"]["overallStatus"]
+            if "jit" in runtimes
+            else _overall_status_values(package_runtime_statuses)
+        )
         public_packages.append(
             {
                 "rank": package.rank,
@@ -99,15 +128,22 @@ def build_compatibility_results(
                 "releaseVersion": package.release_version,
                 "releaseDate": package.release_date,
                 "sourceRef": package.ref,
-                "overallStatus": overall,
-                "baselineEligible": package_baseline_eligible,
-                "platforms": platforms,
+                "overallStatus": primary_status,
+                "runtimes": runtimes,
             }
         )
 
-    expected = len(packages) * len(expected_platforms)
+    for runtime in expected_runtimes:
+        runtime_summaries[runtime] = {
+            "packages": dict(sorted(runtime_overall_counts[runtime].items())),
+            "baselineEligible": runtime_baseline_eligible[runtime],
+            "observations": dict(sorted(runtime_observation_counts[runtime].items())),
+            "completedObservations": runtime_completed[runtime],
+        }
+
+    expected = len(packages) * len(expected_platforms) * len(expected_runtimes)
     return {
-        "schemaVersion": 2,
+        "schemaVersion": 3,
         "generatedAt": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "run": {
             "ids": sorted(run_ids),
@@ -116,6 +152,7 @@ def build_compatibility_results(
             "complete": completed == expected,
             "targetPackages": len(packages),
             "expectedPlatforms": list(expected_platforms),
+            "expectedRuntimes": list(expected_runtimes),
             "expectedObservations": expected,
             "completedObservations": completed,
         },
@@ -129,19 +166,19 @@ def build_compatibility_results(
             "name": "Paired isolated upstream test-suite run",
             "summary": (
                 "Each package is tested in separate clean checkouts and virtual "
-                "environments with identical commands. Only PYTHON_JIT changes."
+                "environments with identical commands. Each runtime changes one "
+                "feature between its paired conditions."
             ),
             "interpretation": (
-                "A JIT-only failure is a regression lead for human triage, not "
-                "automatically a confirmed CPython bug."
+                "A target-only failure is a regression lead for human triage, "
+                "not automatically a confirmed CPython bug."
             ),
         },
-        "pythonByPlatform": python_by_platform,
-        "summary": {
-            "packages": dict(sorted(overall_counts.items())),
-            "baselineEligible": baseline_eligible,
-            "observations": dict(sorted(observation_counts.items())),
+        "runtimeMetadata": {
+            runtime: RUNTIME_METADATA[runtime] for runtime in expected_runtimes
         },
+        "pythonByRuntime": python_by_runtime,
+        "summary": {"runtimes": runtime_summaries},
         "packages": public_packages,
     }
 
@@ -153,12 +190,14 @@ def write_compatibility_results(
     dataset: dict[str, Any],
     packages: list[Package],
     expected_platforms: tuple[str, ...] = EXPECTED_PLATFORMS,
+    expected_runtimes: tuple[Runtime, ...] = EXPECTED_RUNTIMES,
 ) -> None:
     payload = build_compatibility_results(
         run_files=run_files,
         dataset=dataset,
         packages=packages,
         expected_platforms=expected_platforms,
+        expected_runtimes=expected_runtimes,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2) + "\n")
@@ -168,42 +207,93 @@ def _platform_name(run: dict[str, Any], raw: dict[str, Any]) -> str:
     runner_os = run.get("runner", {}).get("os")
     if runner_os:
         return runner_os
-    platform_value = raw["python_probe"]["jit"]["platform"].lower()
+    target = raw["python_probe"].get("target") or raw["python_probe"]["jit"]
+    platform_value = target["platform"].lower()
     if "windows" in platform_value:
         return "Windows"
     if "macos" in platform_value or "darwin" in platform_value:
         return "macOS"
     if "linux" in platform_value:
         return "Linux"
-    return raw["python_probe"]["jit"]["platform"]
+    return target["platform"]
 
 
-def _python_snapshot(probe: dict[str, Any]) -> dict[str, Any]:
+def _runtime_name(run: dict[str, Any]) -> Runtime:
+    runtime = run.get("runtime", "jit")
+    if runtime not in RUNTIME_METADATA:
+        raise ValueError(f"unknown runtime: {runtime}")
+    return runtime
+
+
+def _python_snapshot(probe: dict[str, Any], runtime: Runtime) -> dict[str, Any]:
     baseline = probe["baseline"]
-    jit = probe["jit"]
-    return {
-        "version": jit["version"].split(" [", 1)[0],
-        "platform": jit["platform"],
-        "cacheTag": jit["cache_tag"],
-        "jitAvailable": jit["jit_available"],
-        "jitToggleVerified": (not baseline["jit_enabled"] and jit["jit_enabled"]),
+    target = probe.get("target") or probe["jit"]
+    snapshot = {
+        "version": target["version"].split(" [", 1)[0],
+        "platform": target["platform"],
+        "cacheTag": target["cache_tag"],
+        "runtime": runtime,
+        "freeThreaded": bool(target.get("free_threaded", False)),
     }
+    if runtime == "jit":
+        snapshot.update(
+            {
+                "jitAvailable": target["jit_available"],
+                "toggleVerified": (
+                    not baseline["jit_enabled"] and target["jit_enabled"]
+                ),
+            }
+        )
+    else:
+        snapshot.update(
+            {
+                "jitAvailable": target.get("jit_available", False),
+                "toggleVerified": (
+                    baseline.get("gil_enabled") is True
+                    and target.get("gil_enabled") is False
+                ),
+            }
+        )
+    return snapshot
 
 
-def _observation(result: dict[str, Any], run_dir: Path) -> dict[str, Any]:
+def _observation(
+    result: dict[str, Any], run_dir: Path, runtime: Runtime
+) -> dict[str, Any]:
     classification = result["classification"]
-    status, label = PUBLIC_CLASSIFICATIONS[classification]
+    status: PublicStatus = {
+        "observed-compatible": "compatible",
+        "suspected-runtime-regression": "needs-triage",
+        "suspected-jit-regression": "needs-triage",
+        "baseline-failure": "baseline-blocked",
+        "setup-error": "infrastructure-failure",
+        "not-tested": "not-tested",
+    }[classification]
+    feature = RUNTIME_METADATA[runtime]["label"]
+    label = {
+        "compatible": f"{feature} compatible",
+        "needs-triage": f"Possible {feature.lower()} regression",
+        "baseline-blocked": f"{feature} baseline failed",
+        "infrastructure-failure": "Setup or infrastructure failure",
+        "not-tested": "Not tested on this platform",
+    }[status]
     explanation = {
-        "compatible": "The suite passed with the JIT off and on.",
+        "compatible": (
+            "The suite passed with the JIT off and on."
+            if runtime == "jit"
+            else "The suite passed in the free-threaded build with the GIL on and off."
+        ),
         "needs-triage": "The paired conditions differed and need human triage.",
         "baseline-blocked": (
-            "The suite failed with the JIT off, so this run cannot evaluate JIT compatibility."
+            "The suite failed in the control condition, so this run cannot evaluate "
+            f"{feature.lower()} compatibility."
         ),
         "infrastructure-failure": result.get("error") or "Setup failed.",
         "not-tested": result.get("error")
         or "This adapter is not available on this platform.",
     }[status]
-    command_source = result.get("baseline") or result.get("jit")
+    target = result.get("target") or result.get("jit")
+    command_source = result.get("baseline") or target
     command = None
     if command_source:
         command = "python " + " ".join(command_source["command"][1:])
@@ -214,7 +304,7 @@ def _observation(result: dict[str, Any], run_dir: Path) -> dict[str, Any]:
         "revision": result.get("revision"),
         "command": command,
         "baseline": _condition(result.get("baseline"), run_dir),
-        "jit": _condition(result.get("jit"), run_dir),
+        "target": _condition(target, run_dir),
     }
 
 
@@ -306,27 +396,36 @@ def _failure_excerpt(log: Path) -> str:
     )
 
 
-def _not_tested() -> dict[str, Any]:
+def _not_tested(runtime: Runtime) -> dict[str, Any]:
     return {
         "status": "not-tested",
         "label": "Not completed",
-        "explanation": "No result was uploaded for this package and platform.",
+        "explanation": (
+            f"No {RUNTIME_METADATA[runtime]['label'].lower()} result was uploaded "
+            "for this package and platform."
+        ),
         "revision": None,
         "command": None,
         "baseline": None,
-        "jit": None,
+        "target": None,
     }
 
 
 def _overall_status(observations: Iterable[dict[str, Any]]) -> str:
-    statuses = [observation["status"] for observation in observations]
+    return _overall_status_values(
+        [observation["status"] for observation in observations]
+    )
+
+
+def _overall_status_values(statuses: Iterable[str]) -> str:
+    values = list(statuses)
     for status in (
         "needs-triage",
         "infrastructure-failure",
         "baseline-blocked",
         "not-tested",
     ):
-        if status in statuses:
+        if status in values:
             return status
     return "compatible"
 

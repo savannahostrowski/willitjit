@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "willitjit"
 version = "0.1.0"
-description = "Run upstream package test suites with the CPython JIT off and on"
+description = "Test package compatibility with the experimental CPython JIT"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

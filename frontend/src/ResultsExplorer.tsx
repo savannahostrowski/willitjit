@@ -1,6 +1,13 @@
 import { Fragment, useMemo, useState } from "react";
 
-import type { Condition, Observation, Snapshot, Status } from "./types";
+import type {
+  Condition,
+  Observation,
+  Runtime,
+  RuntimeResult,
+  Snapshot,
+  Status,
+} from "./types";
 
 const statusMarks: Record<Status, string> = {
   compatible: "✓",
@@ -11,8 +18,8 @@ const statusMarks: Record<Status, string> = {
 };
 
 const statusLabels: Record<Status, string> = {
-  compatible: "JIT compatible",
-  "needs-triage": "Needs JIT triage",
+  compatible: "Compatible",
+  "needs-triage": "Needs triage",
   "baseline-blocked": "Baseline failed",
   "infrastructure-failure": "Setup failed",
   "not-tested": "Not tested",
@@ -48,12 +55,8 @@ function elapsedLabel(seconds: number) {
   return `${minutes}m ${Math.round(seconds % 60)}s`;
 }
 
-function hasPassingBaseline(item: Snapshot["packages"][number], platforms: string[]) {
-  if (item.baselineEligible !== undefined) return item.baselineEligible;
-  return platforms.every((platform) => {
-    const baseline = item.platforms[platform]?.baseline;
-    return baseline?.returnCode === 0 && !baseline.timedOut;
-  });
+function compatibilityRate(compatible: number, baselineEligible: number) {
+  return baselineEligible ? Math.round((compatible / baselineEligible) * 100) : 0;
 }
 
 function ConditionResult({ condition, label }: { condition: Condition; label: string }) {
@@ -72,10 +75,18 @@ function ConditionResult({ condition, label }: { condition: Condition; label: st
   );
 }
 
-function FailureEvidence({ observation }: { observation: Observation }) {
+function FailureEvidence({
+  observation,
+  baselineLabel,
+  targetLabel,
+}: {
+  observation: Observation;
+  baselineLabel: string;
+  targetLabel: string;
+}) {
   const failures = [
-    ["JIT off", observation.baseline?.failureExcerpt],
-    ["JIT on", observation.jit?.failureExcerpt],
+    [baselineLabel, observation.baseline?.failureExcerpt],
+    [targetLabel, observation.target?.failureExcerpt],
   ].filter((entry): entry is [string, string] => Boolean(entry[1]));
 
   if (
@@ -101,17 +112,22 @@ function FailureEvidence({ observation }: { observation: Observation }) {
   );
 }
 
+function packageStatusLabel(results: Partial<Record<Runtime, RuntimeResult>>) {
+  const status = results.jit?.overallStatus ?? "not-tested";
+  if (status === "compatible") return "JIT compatible";
+  if (status === "needs-triage") return "Possible JIT regression";
+  return statusLabels[status];
+}
+
 export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [query, setQuery] = useState("");
-  const compatible = snapshot.summary.packages.compatible ?? 0;
-  const baselineEligible = snapshot.summary.baselineEligible ?? snapshot.packages.filter(
-    (item) => hasPassingBaseline(item, snapshot.run.expectedPlatforms),
-  ).length;
-  const compatibilityRate = baselineEligible
-    ? Math.round((compatible / baselineEligible) * 100)
-    : 0;
-  const pending = snapshot.run.completedObservations === 0;
+  const [evidenceRuntimeByPackage, setEvidenceRuntimeByPackage] = useState<Record<string, Runtime>>({});
+  const jitSummary = snapshot.summary.runtimes.jit;
+  const compatible = jitSummary?.packages.compatible ?? 0;
+  const baselineEligible = jitSummary?.baselineEligible ?? 0;
+  const rate = compatibilityRate(compatible, baselineEligible);
+  const pending = !jitSummary?.completedObservations;
   const cpythonVersion = snapshot.run.github?.cpythonVersion ?? "3.14.6";
   const cpythonLabel = cpythonVersion.replace(".0rc", " RC").toUpperCase();
   const githubRepository = snapshot.run.github?.repository;
@@ -141,25 +157,25 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
       <div className="checklist-heading">
         <div>
           <h1>Will It JIT?</h1>
-          <p>Testing CPython JIT compatibility across the top PyPI packages.</p>
+          <p>Testing JIT compatibility across the top PyPI packages.</p>
         </div>
-        <div
-          className="compatibility-summary"
-          aria-label={pending
-            ? `Awaiting the CPython ${cpythonLabel} survey`
-            : `${compatible} of ${baselineEligible} packages with passing baselines are JIT compatible. ${baselineEligible} of ${snapshot.run.targetPackages} packages had passing baselines.`}
-        >
-          <span>{pending ? "Target" : "Latest survey"}</span>
-          <strong>
-            {pending ? cpythonLabel : compatibilityRate}
-            {!pending && <small>%</small>}
-          </strong>
-          <p>{pending ? "survey pending" : `${compatible} of ${baselineEligible} JIT compatible`}</p>
-          {!pending && (
-            <small className="summary-coverage">
-              {baselineEligible} of {snapshot.run.targetPackages} had passing baselines
-            </small>
-          )}
+        <div className="survey-summary">
+          <div className="runtime-summaries">
+            <div
+              className="compatibility-summary"
+              aria-label={pending
+                ? "JIT survey pending"
+                : `${compatible} of ${baselineEligible} packages with passing baselines are JIT compatible.`}
+            >
+              <span>JIT</span>
+              <strong>
+                {pending ? "Pending" : rate}
+                {!pending && <small>%</small>}
+              </strong>
+              <p>{pending ? "not surveyed yet" : `${compatible} of ${baselineEligible} compatible`}</p>
+            </div>
+          </div>
+          {pending && <small className="summary-coverage">Targeting CPython {cpythonLabel}</small>}
           {githubRunUrl && (
             <a
               className="summary-run-link"
@@ -216,111 +232,172 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
 
       <div className="checklist" aria-label="Package compatibility results">
         {visiblePackages.map((item) => {
-          const observations = snapshot.run.expectedPlatforms.map((platform) => ({
-            name: platform,
-            observation: item.platforms[platform],
+          const runtimeObservations = snapshot.run.expectedRuntimes.map((runtime) => ({
+            runtime,
+            result: item.runtimes[runtime],
+            metadata: snapshot.runtimeMetadata[runtime],
           }));
+          const jitObservation = runtimeObservations.find(({ runtime }) => runtime === "jit");
+          const selectedRuntime = evidenceRuntimeByPackage[item.name] ?? "jit";
+          const selectedRuntimeObservation = runtimeObservations.find(
+            ({ runtime }) => runtime === selectedRuntime,
+          ) ?? runtimeObservations[0];
+          const observations = runtimeObservations.flatMap(({ result }) => (
+            snapshot.run.expectedPlatforms.map((platform) => result?.platforms[platform])
+          ));
           const commands = [...new Set(
-            observations.flatMap(({ observation }) => observation.command ? [observation.command] : []),
+            snapshot.run.expectedPlatforms.flatMap((platform) => {
+              const command = selectedRuntimeObservation?.result?.platforms[platform]?.command;
+              return command ? [command] : [];
+            }),
           )];
           const explanations = [...new Set(
-            observations.flatMap(({ observation }) => observation.explanation ? [observation.explanation] : []),
+            observations.flatMap((observation) => observation?.explanation ? [observation.explanation] : []),
           )];
+          const allNotTested = runtimeObservations.every(
+            ({ result }) => !result || result.overallStatus === "not-tested",
+          );
 
           return (
             <details className={`checklist-item ${item.overallStatus}`} key={item.name}>
-            <summary>
-              <span className="check-mark" aria-hidden="true">{statusMarks[item.overallStatus]}</span>
-              <span className="package-title">
-                <b>{item.name}</b>
-                <span className="package-subline">
-                  <small className="package-status">{statusLabels[item.overallStatus]}</small>
-                  <small
-                    className="package-meta"
-                    title={`${item.downloads.toLocaleString("en-US")} downloads in 30 days`}
-                  >
-                    Rank {item.rank} · {compactNumber.format(item.downloads)} downloads / 30d
-                  </small>
+              <summary>
+                <span className="check-mark" aria-hidden="true">{statusMarks[item.overallStatus]}</span>
+                <span className="package-title">
+                  <b>{item.name}</b>
+                  <span className="package-subline">
+                    <small className="package-status">
+                      {packageStatusLabel(item.runtimes)}
+                    </small>
+                    <small
+                      className="package-meta"
+                      title={`${item.downloads.toLocaleString("en-US")} downloads in 30 days`}
+                    >
+                      Rank {item.rank} · {compactNumber.format(item.downloads)} downloads / 30d
+                    </small>
+                  </span>
                 </span>
-              </span>
-              <span className="platform-checks" aria-label="Platform statuses">
-                {snapshot.run.expectedPlatforms.map((platform) => {
-                  const status = item.platforms[platform]?.status ?? "not-tested";
-                  return (
-                    <span className={status} key={platform} title={statusLabels[status]}>
-                      <b aria-hidden="true">{statusMarks[status]}</b>
-                      {platform}
-                      <span className="sr-only">: {statusLabels[status]}</span>
-                    </span>
-                  );
-                })}
-              </span>
-              <span className="expand" aria-hidden="true">+</span>
-            </summary>
-            <div className="package-evidence" role="region" aria-label={`${item.name} run evidence`}>
-              {item.overallStatus === "not-tested"
-                ? (
-                  <div className="not-tested-explanation">
-                    <strong>Why this package was not tested</strong>
-                    {(explanations.length ? explanations : ["No test result was captured for this package."])
-                      .map((explanation) => <p key={explanation}>{explanation}</p>)}
-                  </div>
-                )
-                : (
-                  <>
-                    <div className="evidence-table-wrap">
-                      <table className="evidence-table">
-                        <caption className="sr-only">{item.name} results by platform</caption>
-                        <thead>
-                          <tr>
-                            <th scope="col">Platform</th>
-                            <th scope="col">JIT off</th>
-                            <th scope="col">JIT on</th>
-                            <th scope="col">Source</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {observations.map(({ name, observation }) => (
-                            <Fragment key={name}>
-                              <tr className={`evidence-result ${observation.status}`}>
-                                <th scope="row">
-                                  <span>{name}</span>
-                                  <small>
-                                    <i aria-hidden="true">{statusMarks[observation.status]}</i>
-                                    {observation.label}
-                                  </small>
-                                </th>
-                                <ConditionResult condition={observation.baseline} label="JIT off" />
-                                <ConditionResult condition={observation.jit} label="JIT on" />
-                                <td data-label="Source">
-                                  {observation.revision
-                                    ? (
-                                      <a
-                                        href={`${item.repository}/commit/${observation.revision}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                      >
-                                        {observation.revision.slice(0, 9)} ↗
-                                      </a>
-                                    )
-                                    : <small>Not available</small>}
-                                </td>
-                              </tr>
-                              <FailureEvidence observation={observation} />
-                            </Fragment>
-                          ))}
-                        </tbody>
-                      </table>
+                <span
+                  className="runtime-checks"
+                  aria-label="JIT platform statuses"
+                >
+                  {snapshot.run.expectedPlatforms.map((platform) => {
+                    const status = jitObservation?.result?.platforms[platform]?.status ?? "not-tested";
+                    return (
+                      <span className={status} key={platform} title={statusLabels[status]}>
+                        <b aria-hidden="true">{statusMarks[status]}</b>
+                        {platform}
+                        <span className="sr-only">
+                          : {jitObservation?.result?.platforms[platform]?.label ?? statusLabels[status]}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </span>
+                <span className="expand" aria-hidden="true">+</span>
+              </summary>
+              <div className="package-evidence" role="region" aria-label={`${item.name} run evidence`}>
+                {allNotTested
+                  ? (
+                    <div className="not-tested-explanation">
+                      <strong>Why this package was not tested</strong>
+                      {(explanations.length ? explanations : ["No test result was captured for this package."])
+                        .map((explanation) => <p key={explanation}>{explanation}</p>)}
                     </div>
-                    {commands.length > 0 && (
-                      <div className="evidence-commands">
-                        <span>{commands.length === 1 ? "Test command" : "Test commands"}</span>
-                        {commands.map((command) => <code key={command}>{command}</code>)}
-                      </div>
-                    )}
-                  </>
-                )}
-            </div>
+                  )
+                  : (
+                    <>
+                      {runtimeObservations.length > 1 && (
+                        <div className="evidence-runtime-tabs" role="group" aria-label={`${item.name} evidence runtime`}>
+                          {runtimeObservations.map(({ runtime, metadata }) => (
+                            <button
+                              type="button"
+                              aria-pressed={selectedRuntimeObservation?.runtime === runtime}
+                              key={runtime}
+                              onClick={() => setEvidenceRuntimeByPackage((current) => ({
+                                ...current,
+                                [item.name]: runtime,
+                              }))}
+                            >
+                              {metadata.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      {selectedRuntimeObservation && (
+                        <section className="runtime-evidence" key={selectedRuntimeObservation.runtime}>
+                          <h3 className="sr-only">{selectedRuntimeObservation.metadata.label}</h3>
+                          {selectedRuntimeObservation.runtime === "free-threaded" && (
+                            <p className="runtime-note">
+                              Free-threaded CPython can run without the global interpreter lock.
+                              This sanity check compares the same package suite with the GIL on and off.
+                              It does not affect the package&apos;s JIT compatibility status.
+                            </p>
+                          )}
+                          <div className="evidence-table-wrap">
+                            <table className="evidence-table">
+                              <caption className="sr-only">{item.name} {selectedRuntimeObservation.metadata.label} results by platform</caption>
+                              <thead>
+                                <tr>
+                                  <th scope="col">Platform</th>
+                                  <th scope="col">{selectedRuntimeObservation.metadata.baselineLabel}</th>
+                                  <th scope="col">{selectedRuntimeObservation.metadata.targetLabel}</th>
+                                  <th scope="col">Source</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {snapshot.run.expectedPlatforms.map((platform) => {
+                                  const observation = selectedRuntimeObservation.result?.platforms[platform];
+                                  if (!observation) return null;
+                                  return (
+                                    <Fragment key={platform}>
+                                      <tr className={`evidence-result ${observation.status}`}>
+                                        <th scope="row">
+                                          <span>{platform}</span>
+                                          <small>
+                                            <i aria-hidden="true">{statusMarks[observation.status]}</i>
+                                            {observation.label}
+                                          </small>
+                                        </th>
+                                        <ConditionResult condition={observation.baseline} label={selectedRuntimeObservation.metadata.baselineLabel} />
+                                        <ConditionResult condition={observation.target} label={selectedRuntimeObservation.metadata.targetLabel} />
+                                        <td data-label="Source">
+                                          {observation.revision
+                                            ? (
+                                              <a
+                                                href={`${item.repository}/commit/${observation.revision}`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                              >
+                                                {observation.revision.slice(0, 9)} ↗
+                                              </a>
+                                            )
+                                            : <small>Not available</small>}
+                                        </td>
+                                      </tr>
+                                      <FailureEvidence
+                                        observation={observation}
+                                        baselineLabel={selectedRuntimeObservation.metadata.baselineLabel}
+                                        targetLabel={selectedRuntimeObservation.metadata.targetLabel}
+                                      />
+                                    </Fragment>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </section>
+                      )}
+                      {commands.length > 0 && (
+                        <div className="evidence-commands">
+                          <span>{commands.length === 1 ? "Command used" : "Commands used"}</span>
+                          {commands.map((command) => (
+                            <pre key={command}><code>{command}</code></pre>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+              </div>
             </details>
           );
         })}

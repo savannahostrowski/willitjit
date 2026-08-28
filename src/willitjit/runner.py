@@ -13,10 +13,10 @@ from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
 
-from .models import Classification, CommandResult, Package, PackageResult
+from .models import Classification, CommandResult, Package, PackageResult, Runtime
 
 PROBE = r"""
-import json, platform, sys
+import json, platform, sys, sysconfig
 try:
     import ssl
 except ImportError as error:
@@ -28,6 +28,7 @@ else:
     ssl_error = None
     openssl_version = ssl.OPENSSL_VERSION
 jit = getattr(sys, "_jit", None)
+smoke_result = sum(range(10_000))
 print(json.dumps({
     "executable": sys.executable,
     "version": sys.version,
@@ -37,9 +38,11 @@ print(json.dumps({
     "jit_available": bool(jit and jit.is_available()),
     "jit_enabled": bool(jit and jit.is_enabled()),
     "gil_enabled": getattr(sys, "_is_gil_enabled", lambda: None)(),
+    "free_threaded": bool(sysconfig.get_config_var("Py_GIL_DISABLED")),
     "ssl_available": ssl_available,
     "ssl_error": ssl_error,
     "openssl_version": openssl_version,
+    "smoke_result": smoke_result,
 }))
 """
 
@@ -87,9 +90,26 @@ def untrusted_environment(source: Mapping[str, str]) -> dict[str, str]:
     return environment
 
 
-def probe_python(python: Path, jit_enabled: bool) -> dict[str, Any]:
+def runtime_environment(runtime: Runtime, target_enabled: bool) -> dict[str, str]:
+    if runtime == "jit":
+        return {"PYTHON_JIT": "1" if target_enabled else "0"}
+    return {
+        "PYTHON_GIL": "0" if target_enabled else "1",
+        "PYTHON_JIT": "0",
+    }
+
+
+def runtime_condition_labels(runtime: Runtime) -> tuple[str, str]:
+    if runtime == "jit":
+        return "JIT off", "JIT on"
+    return "GIL on", "GIL off"
+
+
+def probe_python(
+    python: Path, runtime: Runtime, target_enabled: bool
+) -> dict[str, Any]:
     env = os.environ.copy()
-    env["PYTHON_JIT"] = "1" if jit_enabled else "0"
+    env.update(runtime_environment(runtime, target_enabled))
     completed = subprocess.run(
         [str(python), "-c", PROBE],
         env=env,
@@ -110,24 +130,41 @@ def probe_python(python: Path, jit_enabled: bool) -> dict[str, Any]:
         ) from error
 
 
-def validate_jit_python(python: Path) -> dict[str, dict[str, Any]]:
-    baseline = probe_python(python, False)
-    jit = probe_python(python, True)
+def validate_runtime_python(
+    python: Path, runtime: Runtime
+) -> dict[str, dict[str, Any]]:
+    baseline = probe_python(python, runtime, False)
+    target = probe_python(python, runtime, True)
     problems = []
-    if not jit["jit_api"]:
-        problems.append("sys._jit is missing")
-    elif not jit["jit_available"]:
-        problems.append("sys._jit.is_available() is false")
-    if baseline["jit_enabled"]:
-        problems.append("PYTHON_JIT=0 did not disable the JIT")
-    if not jit["jit_enabled"]:
-        problems.append("PYTHON_JIT=1 did not enable the JIT")
-    for condition, probe in (("PYTHON_JIT=0", baseline), ("PYTHON_JIT=1", jit)):
+    if runtime == "jit":
+        if target["free_threaded"]:
+            problems.append("the JIT survey requires a regular GIL-enabled build")
+        if not target["jit_api"]:
+            problems.append("sys._jit is missing")
+        elif not target["jit_available"]:
+            problems.append("sys._jit.is_available() is false")
+        if baseline["jit_enabled"]:
+            problems.append("PYTHON_JIT=0 did not disable the JIT")
+        if not target["jit_enabled"]:
+            problems.append("PYTHON_JIT=1 did not enable the JIT")
+    else:
+        if not target["free_threaded"]:
+            problems.append("Py_GIL_DISABLED is not set")
+        if baseline["gil_enabled"] is not True:
+            problems.append("PYTHON_GIL=1 did not enable the GIL")
+        if target["gil_enabled"] is not False:
+            problems.append("PYTHON_GIL=0 did not disable the GIL")
+        if baseline["jit_enabled"] or target["jit_enabled"]:
+            problems.append("the JIT must remain disabled in free-threaded mode")
+    baseline_label, target_label = runtime_condition_labels(runtime)
+    for condition, probe in ((baseline_label, baseline), (target_label, target)):
         if not probe["ssl_available"]:
             problems.append(f"{condition} could not import ssl: {probe['ssl_error']}")
+        if probe["smoke_result"] != 49_995_000:
+            problems.append(f"{condition} failed the interpreter smoke check")
     if problems:
         raise RuntimeError("; ".join(problems))
-    return {"baseline": baseline, "jit": jit}
+    return {"baseline": baseline, "target": target}
 
 
 def format_command(command: Iterable[str]) -> str:
@@ -263,10 +300,10 @@ def _run_logged_streaming(
     )
 
 
-def classify_jit(jit: CommandResult) -> Classification:
-    if jit.returncode == 0 and not jit.timed_out:
+def classify_target(target: CommandResult) -> Classification:
+    if target.returncode == 0 and not target.timed_out:
         return "observed-compatible"
-    return "suspected-jit-regression"
+    return "suspected-runtime-regression"
 
 
 def venv_python(venv: Path) -> Path:
@@ -374,17 +411,23 @@ def venv_site_packages(venv: Path) -> Path | None:
 
 class SurveyRunner:
     def __init__(
-        self, python: Path, run_dir: Path, *, stream_test_output: bool = False
+        self,
+        python: Path,
+        run_dir: Path,
+        *,
+        runtime: Runtime = "jit",
+        stream_test_output: bool = False,
     ) -> None:
         self.python = python.resolve()
         self.run_dir = run_dir.resolve()
+        self.runtime = runtime
         self.stream_test_output = stream_test_output
 
     def cleanup_package_workspaces(self, package_name: str) -> None:
         package_dir = (self.run_dir / package_name).resolve()
         if package_dir.parent != self.run_dir:
             raise ValueError(f"unsafe package workspace: {package_name}")
-        for directory in ("baseline", "jit", "source", "fixture"):
+        for directory in ("baseline", "target", "jit", "source", "fixture"):
             shutil.rmtree(package_dir / directory, ignore_errors=True)
 
     def run_package(self, package: Package) -> PackageResult:
@@ -394,10 +437,11 @@ class SurveyRunner:
                 package=package.name,
                 rank=package.rank,
                 revision=None,
+                runtime=self.runtime,
                 classification="not-tested",
                 setup=(),
                 baseline=None,
-                jit=None,
+                target=None,
                 error=skip_reason,
             )
         package_dir = self.run_dir / package.name
@@ -496,7 +540,7 @@ class SurveyRunner:
             check=True,
         ).stdout.strip()
         condition_results: dict[str, CommandResult] = {}
-        for condition, jit_enabled in (("baseline", False), ("jit", True)):
+        for condition, target_enabled in (("baseline", False), ("target", True)):
             condition_dir = package_dir / condition
             repository = condition_dir / "repository"
             venv = condition_dir / "venv"
@@ -597,7 +641,7 @@ class SurveyRunner:
                 )
 
             environment = self._condition_environment(
-                package, condition_dir, venv, base_env, jit_enabled
+                package, condition_dir, venv, base_env, target_enabled
             )
             install_cwd = (repository / package.install_cwd).resolve()
             if repository not in install_cwd.parents and install_cwd != repository:
@@ -675,8 +719,12 @@ class SurveyRunner:
                     revision,
                 )
             if self.stream_test_output:
+                baseline_label, target_label = runtime_condition_labels(self.runtime)
+                condition_label = (
+                    baseline_label if condition == "baseline" else target_label
+                )
                 print(
-                    f"  {condition} suite (PYTHON_JIT={int(jit_enabled)})",
+                    f"  {condition} suite ({condition_label})",
                     flush=True,
                 )
             condition_results[condition] = run_logged(
@@ -694,22 +742,24 @@ class SurveyRunner:
                         package=package.name,
                         rank=package.rank,
                         revision=revision,
+                        runtime=self.runtime,
                         classification="baseline-failure",
                         setup=tuple(setup_results),
                         baseline=baseline,
-                        jit=None,
+                        target=None,
                     )
 
         baseline = condition_results["baseline"]
-        jit = condition_results["jit"]
+        target = condition_results["target"]
         return PackageResult(
             package=package.name,
             rank=package.rank,
             revision=revision,
-            classification=classify_jit(jit),
+            runtime=self.runtime,
+            classification=classify_target(target),
             setup=tuple(setup_results),
             baseline=baseline,
-            jit=jit,
+            target=target,
         )
 
     def _condition_environment(
@@ -718,7 +768,7 @@ class SurveyRunner:
         condition_dir: Path,
         venv: Path,
         base_env: dict[str, str],
-        jit_enabled: bool,
+        target_enabled: bool,
     ) -> dict[str, str]:
         environment = base_env.copy()
         prepend_environment_path(environment, "PATH", venv_python(venv).parent)
@@ -764,11 +814,11 @@ class SurveyRunner:
             if os.name == "nt":
                 environment["USERPROFILE"] = str(isolated_home)
         environment.update(package.environment)
-        environment["PYTHON_JIT"] = "1" if jit_enabled else "0"
+        environment.update(runtime_environment(self.runtime, target_enabled))
         return environment
 
-    @staticmethod
     def _setup_error(
+        self,
         package: Package,
         setup: list[CommandResult],
         error: str,
@@ -778,9 +828,10 @@ class SurveyRunner:
             package=package.name,
             rank=package.rank,
             revision=revision,
+            runtime=self.runtime,
             classification="setup-error",
             setup=tuple(setup),
             baseline=None,
-            jit=None,
+            target=None,
             error=error,
         )

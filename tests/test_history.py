@@ -15,25 +15,91 @@ def snapshot(
     compatible: int = 42,
     baseline_eligible: int = 50,
     complete: bool = True,
+    include_free_threaded: bool = False,
+    jit_completed: int | None = None,
+    expected_platforms: list[str] | None = None,
+    include_github_version: bool = True,
 ) -> dict:
+    summary = {
+        "packages": {"compatible": compatible},
+        "baselineEligible": baseline_eligible,
+    }
+    if jit_completed is not None:
+        summary["completedObservations"] = jit_completed
+    if include_free_threaded:
+        summary = {
+            "runtimes": {
+                "jit": {
+                    "packages": {"compatible": compatible},
+                    "baselineEligible": baseline_eligible,
+                    **(
+                        {"completedObservations": jit_completed}
+                        if jit_completed is not None
+                        else {}
+                    ),
+                },
+                "free-threaded": {
+                    "packages": {"compatible": compatible - 2},
+                    "baselineEligible": baseline_eligible - 1,
+                },
+            }
+        }
     return {
         "generatedAt": generated_at,
         "run": {
             "ids": ["survey-run"],
-            "github": {"runId": run_id, "cpythonVersion": python_version},
+            "github": {
+                "runId": run_id,
+                **(
+                    {"cpythonVersion": python_version} if include_github_version else {}
+                ),
+            },
             "complete": complete,
             "targetPackages": package_count,
+            **(
+                {"expectedPlatforms": expected_platforms}
+                if expected_platforms is not None
+                else {}
+            ),
         },
         "dataset": {"updated": dataset_updated},
-        "summary": {
-            "packages": {"compatible": compatible},
-            "baselineEligible": baseline_eligible,
-        },
+        "summary": summary,
         "packages": [],
     }
 
 
 class HistoryTests(unittest.TestCase):
+    def test_records_only_jit_compatibility_history(self) -> None:
+        history = build_history(snapshot(include_free_threaded=True))
+
+        self.assertEqual(history["schemaVersion"], 3)
+        self.assertEqual(len(history["series"]), 1)
+        self.assertEqual(history["series"][0]["id"], "3.14-top100-2026-08-01")
+        self.assertEqual(history["series"][0]["points"][0]["compatible"], 42)
+
+    def test_records_complete_jit_history_when_free_threaded_is_incomplete(
+        self,
+    ) -> None:
+        history = build_history(
+            snapshot(
+                complete=False,
+                include_free_threaded=True,
+                jit_completed=300,
+                expected_platforms=["Linux", "macOS", "Windows"],
+            )
+        )
+
+        self.assertEqual(len(history["series"]), 1)
+        self.assertEqual(history["series"][0]["points"][0]["compatible"], 42)
+
+    def test_reads_python_version_from_schema_three_runtime_metadata(self) -> None:
+        value = snapshot(include_github_version=False)
+        value["pythonByRuntime"] = {"jit": {"Linux": {"version": "3.14.6 (main, now)"}}}
+
+        history = build_history(value)
+
+        self.assertEqual(history["series"][0]["points"][0]["pythonVersion"], "3.14.6")
+
     def test_patch_releases_append_to_the_same_series(self) -> None:
         history = build_history(snapshot())
         history = build_history(

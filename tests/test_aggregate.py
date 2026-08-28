@@ -21,7 +21,7 @@ def package() -> Package:
     )
 
 
-def run_payload(platform_name: str, classification: str) -> dict:
+def run_payload(platform_name: str, classification: str, runtime: str = "jit") -> dict:
     condition = {
         "command": ["/private/runner/venv/python", "-m", "pytest"],
         "returncode": 0,
@@ -30,9 +30,10 @@ def run_payload(platform_name: str, classification: str) -> dict:
         "log": "example/logs/baseline.log",
     }
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "run": {
             "id": f"run-{platform_name}",
+            "runtime": runtime,
             "runner": {"os": platform_name, "arch": "x64"},
             "github": {
                 "repository": "example/willitjit",
@@ -42,13 +43,19 @@ def run_payload(platform_name: str, classification: str) -> dict:
             },
         },
         "python_probe": {
-            "baseline": {"jit_enabled": False},
-            "jit": {
+            "baseline": {
+                "jit_enabled": False,
+                "gil_enabled": True,
+                "free_threaded": runtime == "free-threaded",
+            },
+            "target": {
                 "version": "3.16.0a0 (main:abc, now) [Clang]",
                 "platform": platform_name,
                 "cache_tag": "cpython-316",
-                "jit_available": True,
-                "jit_enabled": True,
+                "jit_available": runtime == "jit",
+                "jit_enabled": runtime == "jit",
+                "gil_enabled": runtime == "jit",
+                "free_threaded": runtime == "free-threaded",
             },
         },
         "results": [
@@ -59,7 +66,7 @@ def run_payload(platform_name: str, classification: str) -> dict:
                 "classification": classification,
                 "setup": [],
                 "baseline": condition,
-                "jit": condition,
+                "target": condition,
                 "error": None,
             }
         ],
@@ -67,12 +74,79 @@ def run_payload(platform_name: str, classification: str) -> dict:
 
 
 class AggregateTests(unittest.TestCase):
+    def test_merges_jit_and_free_threaded_as_separate_runtimes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            run_files = []
+            for runtime in ("jit", "free-threaded"):
+                run_file = root / runtime / "run.json"
+                run_file.parent.mkdir()
+                classification = (
+                    "observed-compatible" if runtime == "jit" else "baseline-failure"
+                )
+                payload = run_payload("Linux", classification, runtime)
+                if classification == "baseline-failure":
+                    payload["results"][0]["baseline"]["returncode"] = 1
+                    payload["results"][0]["target"] = None
+                run_file.write_text(json.dumps(payload))
+                run_files.append(run_file)
+
+            merged = build_compatibility_results(
+                run_files=run_files,
+                dataset={
+                    "source": "source",
+                    "last_update": "today",
+                    "window": "30 days",
+                },
+                packages=[package()],
+                expected_platforms=("Linux",),
+                expected_runtimes=("jit", "free-threaded"),
+            )
+
+        self.assertTrue(merged["run"]["complete"])
+        self.assertEqual(merged["run"]["completedObservations"], 2)
+        self.assertEqual(
+            set(merged["packages"][0]["runtimes"]), {"jit", "free-threaded"}
+        )
+        self.assertEqual(
+            merged["summary"]["runtimes"]["free-threaded"]["packages"],
+            {"baseline-blocked": 1},
+        )
+        self.assertEqual(merged["packages"][0]["overallStatus"], "compatible")
+
+    def test_reads_legacy_jit_run_schema(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_file = Path(temporary) / "run.json"
+            payload = run_payload("Linux", "observed-compatible")
+            payload["schema_version"] = 2
+            payload["run"].pop("runtime")
+            payload["python_probe"]["jit"] = payload["python_probe"].pop("target")
+            payload["results"][0]["jit"] = payload["results"][0].pop("target")
+            run_file.write_text(json.dumps(payload))
+
+            merged = build_compatibility_results(
+                run_files=[run_file],
+                dataset={
+                    "source": "source",
+                    "last_update": "today",
+                    "window": "30 days",
+                },
+                packages=[package()],
+                expected_platforms=("Linux",),
+            )
+
+        self.assertTrue(merged["run"]["complete"])
+        self.assertEqual(
+            merged["packages"][0]["runtimes"]["jit"]["overallStatus"],
+            "compatible",
+        )
+
     def test_explicit_not_tested_result_is_a_completed_observation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             run_file = Path(temporary) / "run.json"
             payload = run_payload("Linux", "not-tested")
             payload["results"][0]["baseline"] = None
-            payload["results"][0]["jit"] = None
+            payload["results"][0]["target"] = None
             payload["results"][0]["error"] = "Selected Python omits test.support."
             run_file.write_text(json.dumps(payload))
 
@@ -87,7 +161,7 @@ class AggregateTests(unittest.TestCase):
                 expected_platforms=("Linux",),
             )
 
-        observation = merged["packages"][0]["platforms"]["Linux"]
+        observation = merged["packages"][0]["runtimes"]["jit"]["platforms"]["Linux"]
         self.assertTrue(merged["run"]["complete"])
         self.assertEqual(merged["run"]["completedObservations"], 1)
         self.assertEqual(observation["status"], "not-tested")
@@ -104,7 +178,7 @@ class AggregateTests(unittest.TestCase):
             windows.parent.mkdir()
             linux.write_text(json.dumps(run_payload("Linux", "observed-compatible")))
             windows.write_text(
-                json.dumps(run_payload("Windows", "suspected-jit-regression"))
+                json.dumps(run_payload("Windows", "suspected-runtime-regression"))
             )
 
             payload = build_compatibility_results(
@@ -123,21 +197,18 @@ class AggregateTests(unittest.TestCase):
         self.assertEqual(payload["run"]["github"]["runId"], "123")
         self.assertEqual(payload["run"]["github"]["cpythonVersion"], "3.15.0rc1")
         self.assertEqual(payload["packages"][0]["overallStatus"], "needs-triage")
-        self.assertFalse(payload["packages"][0]["baselineEligible"])
-        self.assertEqual(payload["summary"]["baselineEligible"], 0)
-        self.assertEqual(
-            payload["packages"][0]["platforms"]["macOS"]["status"], "not-tested"
-        )
-        self.assertEqual(
-            payload["packages"][0]["platforms"]["Windows"]["status"], "needs-triage"
-        )
+        jit = payload["packages"][0]["runtimes"]["jit"]
+        self.assertFalse(jit["baselineEligible"])
+        self.assertEqual(payload["summary"]["runtimes"]["jit"]["baselineEligible"], 0)
+        self.assertEqual(jit["platforms"]["macOS"]["status"], "not-tested")
+        self.assertEqual(jit["platforms"]["Windows"]["status"], "needs-triage")
         self.assertNotIn("performance", payload["packages"][0])
         self.assertNotIn(
             "durationSeconds",
-            payload["packages"][0]["platforms"]["Linux"]["baseline"],
+            jit["platforms"]["Linux"]["baseline"],
         )
         self.assertEqual(
-            payload["packages"][0]["platforms"]["Linux"]["baseline"]["elapsedSeconds"],
+            jit["platforms"]["Linux"]["baseline"]["elapsedSeconds"],
             1.0,
         )
         self.assertNotIn("/private/runner", json.dumps(payload))
@@ -151,14 +222,14 @@ class AggregateTests(unittest.TestCase):
                 run_file = root / platform_name / "run.json"
                 run_file.parent.mkdir()
                 classification = (
-                    "suspected-jit-regression"
+                    "suspected-runtime-regression"
                     if platform_name == "Windows"
                     else "observed-compatible"
                 )
                 payload = run_payload(platform_name, classification)
-                if classification == "suspected-jit-regression":
-                    payload["results"][0]["jit"] = {
-                        **payload["results"][0]["jit"],
+                if classification == "suspected-runtime-regression":
+                    payload["results"][0]["target"] = {
+                        **payload["results"][0]["target"],
                         "returncode": 1,
                     }
                 run_file.write_text(json.dumps(payload))
@@ -173,8 +244,9 @@ class AggregateTests(unittest.TestCase):
                 packages=[package()],
             )
 
-        self.assertTrue(merged["packages"][0]["baselineEligible"])
-        self.assertEqual(merged["summary"]["baselineEligible"], 1)
+        jit = merged["packages"][0]["runtimes"]["jit"]
+        self.assertTrue(jit["baselineEligible"])
+        self.assertEqual(merged["summary"]["runtimes"]["jit"]["baselineEligible"], 1)
         self.assertEqual(merged["packages"][0]["overallStatus"], "needs-triage")
 
     def test_reads_windows_log_paths_when_merging_on_posix(self) -> None:
@@ -186,7 +258,7 @@ class AggregateTests(unittest.TestCase):
             log.write_text("================ 3 passed in 0.02s ================\n")
             payload = run_payload("Windows", "observed-compatible")
             payload["results"][0]["baseline"]["log"] = r"example\logs\baseline.log"
-            payload["results"][0]["jit"]["log"] = r"example\logs\baseline.log"
+            payload["results"][0]["target"]["log"] = r"example\logs\baseline.log"
             run_file.write_text(json.dumps(payload))
 
             merged = build_compatibility_results(
@@ -200,7 +272,9 @@ class AggregateTests(unittest.TestCase):
                 expected_platforms=("Windows",),
             )
 
-        condition = merged["packages"][0]["platforms"]["Windows"]["baseline"]
+        condition = merged["packages"][0]["runtimes"]["jit"]["platforms"]["Windows"][
+            "baseline"
+        ]
         self.assertEqual(condition["suiteSummary"], "3 passed in 0.02s")
 
     def test_rejects_log_paths_outside_the_artifact(self) -> None:
@@ -212,7 +286,7 @@ class AggregateTests(unittest.TestCase):
                 run_file = Path(temporary) / "run.json"
                 payload = run_payload("Linux", "baseline-failure")
                 payload["results"][0]["baseline"]["log"] = unsafe_path
-                payload["results"][0]["jit"] = None
+                payload["results"][0]["target"] = None
                 run_file.write_text(json.dumps(payload))
 
                 with self.assertRaisesRegex(
@@ -245,7 +319,7 @@ class AggregateTests(unittest.TestCase):
                 **payload["results"][0]["baseline"],
                 "returncode": 4,
             }
-            payload["results"][0]["jit"] = None
+            payload["results"][0]["target"] = None
             run_file.write_text(json.dumps(payload))
 
             merged = build_compatibility_results(
@@ -259,7 +333,9 @@ class AggregateTests(unittest.TestCase):
                 expected_platforms=("Linux",),
             )
 
-        condition = merged["packages"][0]["platforms"]["Linux"]["baseline"]
+        condition = merged["packages"][0]["runtimes"]["jit"]["platforms"]["Linux"][
+            "baseline"
+        ]
         self.assertEqual(
             condition["suiteSummary"], "Test collection failed before tests ran."
         )
@@ -280,7 +356,7 @@ class AggregateTests(unittest.TestCase):
             first.write_text(value)
             second.write_text(value)
 
-            with self.assertRaisesRegex(ValueError, "duplicate result"):
+            with self.assertRaisesRegex(ValueError, "duplicate jit result"):
                 build_compatibility_results(
                     run_files=find_run_files(root),
                     dataset={

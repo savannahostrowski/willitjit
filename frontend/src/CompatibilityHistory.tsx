@@ -72,21 +72,25 @@ export function CompatibilityHistory({ history }: { history: History }) {
     ...populatedSeries.flatMap((series) => series.points.map((point) => dateTime(point.date))),
     0,
   );
-  const pythonColors = new Map<string, number>();
+  const seriesColors = new Map<string, number>();
   for (const series of populatedSeries) {
-    if (!pythonColors.has(series.pythonSeries)) {
-      pythonColors.set(series.pythonSeries, pythonColors.size % 4);
+    const key = series.pythonSeries;
+    if (!seriesColors.has(key)) {
+      seriesColors.set(key, seriesColors.size % 4);
     }
   }
   const cutoff = latest ? cutoffTime(latest, rangeMonths) : 0;
   const visibleSeries = populatedSeries
     .map((series) => ({
       ...series,
-      colorIndex: pythonColors.get(series.pythonSeries) ?? 0,
+      colorIndex: seriesColors.get(series.pythonSeries) ?? 0,
       points: series.points.filter((point) => dateTime(point.date) >= cutoff),
     }))
     .filter((series) => series.points.length > 0);
-  const visiblePythonSeries = [...new Set(visibleSeries.map((series) => series.pythonSeries))];
+  const visibleLabels = [...new Map(visibleSeries.map((series) => [
+    series.pythonSeries,
+    series,
+  ])).values()];
   const plotWidth = WIDTH - LEFT - RIGHT;
   const plotHeight = HEIGHT - TOP - BOTTOM;
   const x = (date: string) => LEFT + ((dateTime(date) - cutoff) / (latest - cutoff)) * plotWidth;
@@ -99,10 +103,10 @@ export function CompatibilityHistory({ history }: { history: History }) {
   return (
     <section className="history-section" id="history">
       <div className="history-copy">
-        <h2>JIT compatibility<br />over time</h2>
+        <h2>Compatibility<br />over time</h2>
         <p>
-          Each line shows the share of packages with a passing JIT-off baseline
-          that also pass with the JIT on across every tested platform.
+          Each line shows the share of packages with a passing baseline that
+          are JIT compatible across every tested platform.
         </p>
       </div>
 
@@ -110,13 +114,13 @@ export function CompatibilityHistory({ history }: { history: History }) {
         {populatedSeries.length > 0 && (
           <div className="chart-toolbar">
             <div className="history-legend" aria-label="History series">
-              {visiblePythonSeries.map((pythonSeries) => (
+              {visibleLabels.map((series) => (
                 <span
-                  className={`chart-series-${pythonColors.get(pythonSeries) ?? 0}`}
-                  key={pythonSeries}
+                  className={`chart-series-${seriesColors.get(series.pythonSeries) ?? 0}`}
+                  key={series.pythonSeries}
                 >
                   <i aria-hidden="true" />
-                  Python {pythonSeries}
+                  Python {series.pythonSeries}
                 </span>
               ))}
             </div>
@@ -167,8 +171,19 @@ export function CompatibilityHistory({ history }: { history: History }) {
                       const rate = compatibilityRate(point.compatible, point.baselineEligible);
                       return (
                         <g key={`${series.id}-${point.runId}-${point.date}`}>
-                          <circle className="chart-series-point" cx={x(point.date)} cy={y(rate)} r="7" />
-                          <text className="chart-value" x={x(point.date)} y={y(rate) - 15}>{rate}%</text>
+                          <circle
+                            className="chart-series-point"
+                            cx={x(point.date)}
+                            cy={y(rate)}
+                            r="7"
+                          />
+                          <text
+                            className="chart-value"
+                            x={x(point.date)}
+                            y={y(rate) - 15}
+                          >
+                            {rate}%
+                          </text>
                         </g>
                       );
                     })}
@@ -178,7 +193,7 @@ export function CompatibilityHistory({ history }: { history: History }) {
             </svg>
             <div className="sr-only">
               <table>
-                <caption>JIT compatibility history for the selected time range</caption>
+                <caption>Compatibility history for the selected time range</caption>
                 <thead>
                   <tr>
                     <th scope="col">Series</th>

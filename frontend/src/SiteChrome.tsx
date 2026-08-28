@@ -24,14 +24,16 @@ function ThemeIcon({ theme }: { theme: Theme }) {
 }
 
 export function SiteHeader({ theme, toggleTheme }: { theme: Theme; toggleTheme: () => void }) {
-  const aboutPage = window.location.pathname.replace(/\/$/, "") === "/about";
+  const path = window.location.pathname.replace(/\/$/, "") || "/";
+  const currentPage = path === "/about" ? "about" : path === "/tools" ? "tools" : "packages";
   const themeLabel = theme === "dark" ? "Use light theme" : "Use dark theme";
   return (
     <header className="site-header">
       <a className="site-logo" href="/">Will It JIT?</a>
       <nav aria-label="Primary navigation">
-        <a href="/" aria-current={aboutPage ? undefined : "page"}>Results</a>
-        <a href="/about" aria-current={aboutPage ? "page" : undefined}>About</a>
+        <a href="/packages" aria-current={currentPage === "packages" ? "page" : undefined}>Packages</a>
+        <a href="/tools" aria-current={currentPage === "tools" ? "page" : undefined}>Tools</a>
+        <a href="/about" aria-current={currentPage === "about" ? "page" : undefined}>About</a>
         <a
           className="github-link"
           href={GITHUB_URL}
@@ -62,47 +64,76 @@ export function AboutPage() {
       <header>
         <p className="eyebrow">About</p>
         <h1>About Will It JIT?</h1>
-        <p>
-          Will It JIT? checks whether popular Python packages behave differently
-          when CPython&apos;s experimental JIT is enabled.
-        </p>
       </header>
 
-      <div className="about-sections">
-        <section>
-          <h2>How it works</h2>
-          <p>
-            For each package, the runner creates two clean checkouts and virtual
-            environments. It runs the package&apos;s own test suite once with
-            <code>PYTHON_JIT=0</code> and once with <code>PYTHON_JIT=1</code>.
-          </p>
-        </section>
-        <section>
-          <h2>Results</h2>
-          <p>
-            The compatibility rate only includes packages whose JIT-off baseline
-            passed on every reported platform. Baseline failures and setup problems
-            are shown as coverage gaps, not JIT incompatibilities. If only the JIT-on
-            run fails, the result is marked for investigation. It is not declared a
-            CPython bug.
-          </p>
-        </section>
+      <div className="about-body">
         <section>
           <h2>Packages</h2>
           <p>
-            The package list comes from the{" "}
-            <a href="https://github.com/hugovk/top-pypi-packages" target="_blank" rel="noreferrer">
-              Top PyPI Packages list
-            </a>.
-            The registry includes the top 100 packages on that list. Test execution
-            currently supports GitHub-hosted source repositories. Packages hosted
-            elsewhere remain visible as not tested. The weekly survey covers all 100.
+            Each project gets two fresh checkouts and virtual environments. We run
+            its test suite with <code>PYTHON_JIT=0</code> first. If that passes, we
+            run the same release, setup steps, and test command with
+            <code>PYTHON_JIT=1</code>. If the first run fails, we stop there. The
+            package is marked as a baseline failure and is not counted against the
+            JIT compatibility rate.
+          </p>
+          <p>
+            Python projects all install and test themselves differently. The
+            registry has one small TOML file per package with its pinned release,
+            install steps, test command, working directory, timeout, and any extra
+            fixtures it needs. The adapter does not replace the project&apos;s tests.
+            It tells the runner how to run them, and both sides of the comparison
+            use the same file. We also use it for a separate free-threaded check
+            with the GIL on and off. That check does not affect the JIT result.
           </p>
         </section>
         <section>
-          <h2>Code</h2>
+          <h2>Tools</h2>
           <p>
-            <a href={GITHUB_URL} target="_blank" rel="noreferrer">View the project on GitHub</a>.
+            We are also working on checks for debuggers, profilers, and other tools
+            that need to understand running Python code. Those checks will have
+            their own results and will stay separate from the package compatibility
+            rate.
+          </p>
+        </section>
+        <section>
+          <h2>Data</h2>
+          <p>
+            The registry follows the top 100 entries in the{" "}
+            <a href="https://github.com/hugovk/top-pypi-packages" target="_blank" rel="noreferrer">
+              Top PyPI Packages list
+            </a>.
+            Releases are pinned while a survey runs across Linux, macOS, and
+            Windows. Only GitHub-hosted sources are tested for now. Packages hosted
+            elsewhere stay on the list as not tested.
+          </p>
+          <p>
+            Results include the source revision, command used, test summary, run
+            time, failure output, and a link to the GitHub Actions run. The runner
+            and package adapters are also available on{" "}
+            <a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>.
+          </p>
+        </section>
+      </div>
+    </article>
+  );
+}
+
+export function ToolsPage() {
+  return (
+    <article className="about-page">
+      <header>
+        <p className="eyebrow">Tools</p>
+        <h1>Tool compatibility</h1>
+      </header>
+      <div className="about-body">
+        <section>
+          <h2>In progress</h2>
+          <p>
+            This page will track whether debuggers, profilers, and related Python
+            tools work correctly with CPython&apos;s JIT. Tool checks need different
+            test cases from package suites, so their results will live here instead
+            of being mixed into package compatibility.
           </p>
         </section>
       </div>
@@ -115,6 +146,8 @@ export function SiteFooter() {
     <footer className="site-footer">
       <p>Will It JIT? · CPython JIT compatibility</p>
       <nav aria-label="Footer navigation">
+        <a href="/packages">Packages</a>
+        <a href="/tools">Tools</a>
         <a href="/about">About</a>
         <a href={GITHUB_URL} target="_blank" rel="noreferrer">GitHub</a>
       </nav>

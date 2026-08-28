@@ -11,14 +11,14 @@ from pathlib import Path
 
 from .aggregate import find_run_files, write_compatibility_results
 from .history import write_history
-from .models import Classification, Package
+from .models import Classification, Package, Runtime
 from .registry import load_registry
 from .report import write_reports
 from .runner import (
     SurveyRunner,
     format_command,
     release_install_arguments,
-    validate_jit_python,
+    validate_runtime_python,
 )
 
 
@@ -43,6 +43,13 @@ def parser() -> argparse.ArgumentParser:
         default=[],
         help="expected platform label; repeat for each platform",
     )
+    merge.add_argument(
+        "--expected-runtime",
+        action="append",
+        choices=("jit", "free-threaded"),
+        default=[],
+        help="expected runtime; repeat for each runtime",
+    )
 
     history = commands.add_parser(
         "history", help="append a completed snapshot to compatibility history"
@@ -51,17 +58,26 @@ def parser() -> argparse.ArgumentParser:
     history.add_argument("--previous", type=Path)
     history.add_argument("--output", type=Path, required=True)
 
-    check = commands.add_parser("check-python", help="verify a JIT-enabled CPython")
+    check = commands.add_parser(
+        "check-python", help="verify the selected CPython runtime"
+    )
     check.add_argument("--python", type=Path, required=True)
+    check.add_argument("--runtime", choices=("jit", "free-threaded"), default="jit")
 
     plan = commands.add_parser(
         "plan", help="show work without cloning or executing code"
     )
     _selection_arguments(plan)
+    plan.add_argument(
+        "--names-only",
+        action="store_true",
+        help="print only the selected package names",
+    )
 
-    run = commands.add_parser("run", help="execute baseline and JIT package tests")
+    run = commands.add_parser("run", help="execute paired package tests")
     _selection_arguments(run)
     run.add_argument("--python", type=Path, required=True)
+    run.add_argument("--runtime", choices=("jit", "free-threaded"), default="jit")
     run.add_argument("--runs-dir", type=Path, default=Path("runs"))
     run.add_argument("--run-id", help="stable output directory name for CI")
     run.add_argument(
@@ -107,7 +123,21 @@ def _select(
     selected = [package for package in packages if not names or package.name in names]
     if limit is not None:
         selected = selected[:limit]
-    return selected[shard_index::shard_count]
+
+    shards: list[list[Package]] = [[] for _ in range(shard_count)]
+    shard_weights = [0] * shard_count
+    for package in sorted(
+        selected,
+        key=lambda package: (-package.timeout_seconds, package.rank),
+    ):
+        lightest_shard = min(
+            range(shard_count),
+            key=lambda index: (shard_weights[index], index),
+        )
+        shards[lightest_shard].append(package)
+        shard_weights[lightest_shard] += package.timeout_seconds
+
+    return sorted(shards[shard_index], key=lambda package: package.rank)
 
 
 def _run_exit_code(
@@ -118,6 +148,50 @@ def _run_exit_code(
     if allow_findings:
         return 0
     return 0 if all(value == "observed-compatible" for value in classifications) else 1
+
+
+def _merge_packages(
+    packages: list[Package], run_files: list[Path], limit: int | None
+) -> list[Package]:
+    declared_cohorts: set[tuple[str, ...]] = set()
+    missing_schema_three_cohort = False
+    for run_file in run_files:
+        raw = json.loads(run_file.read_text())
+        declared = raw.get("selection", {}).get("targetPackages")
+        if declared is None:
+            missing_schema_three_cohort |= int(raw.get("schema_version", 1)) >= 3
+            continue
+        if (
+            not isinstance(declared, list)
+            or not declared
+            or not all(isinstance(name, str) for name in declared)
+        ):
+            raise ValueError(f"invalid target package cohort in {run_file}")
+        declared_cohorts.add(tuple(declared))
+
+    if missing_schema_three_cohort:
+        raise ValueError("schema 3 run artifact does not declare its package cohort")
+    if not declared_cohorts:
+        return packages[:limit] if limit is not None else packages
+    if len(declared_cohorts) != 1:
+        raise ValueError("run artifacts declare different target package cohorts")
+
+    declared = next(iter(declared_cohorts))
+    declared_packages = packages[: len(declared)]
+    declared_registry_names = tuple(package.name for package in declared_packages)
+    if declared_registry_names != declared:
+        raise ValueError("artifact cohort does not match the current package registry")
+    if limit is None:
+        return declared_packages
+
+    requested = packages[:limit]
+    requested_names = tuple(package.name for package in requested)
+    if requested_names != declared:
+        raise ValueError(
+            f"requested package cohort ({len(requested_names)}) does not match "
+            f"artifact cohort ({len(declared)})"
+        )
+    return requested
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -155,8 +229,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.limit is not None and args.limit < 1:
             print("limit must be at least 1", file=sys.stderr)
             return 2
-        merged_packages = packages[: args.limit] if args.limit else packages
         try:
+            merged_packages = _merge_packages(packages, run_files, args.limit)
             write_compatibility_results(
                 run_files=run_files,
                 output=args.output,
@@ -164,6 +238,7 @@ def main(argv: list[str] | None = None) -> int:
                 packages=merged_packages,
                 expected_platforms=tuple(args.expected_platform)
                 or ("Linux", "macOS", "Windows"),
+                expected_runtimes=tuple(args.expected_runtime) or ("jit",),
             )
         except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
             print(f"Could not merge results: {error}", file=sys.stderr)
@@ -173,9 +248,9 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "check-python":
         try:
-            probe = validate_jit_python(args.python)
+            probe = validate_runtime_python(args.python, args.runtime)
         except (OSError, RuntimeError) as error:
-            print(f"JIT validation failed: {error}", file=sys.stderr)
+            print(f"{args.runtime} validation failed: {error}", file=sys.stderr)
             return 1
         print(json.dumps(probe, indent=2))
         return 0
@@ -193,6 +268,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     if args.command == "plan":
+        if args.names_only:
+            for package in selected:
+                print(package.name)
+            return 0
         for package in selected:
             print(f"{package.rank}. {package.name}")
             print(f"   repository: {package.repository}")
@@ -255,9 +334,10 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         selected = [replace(package, test=package.focused_test) for package in selected]
     try:
-        probe = validate_jit_python(args.python)
+        runtime: Runtime = args.runtime
+        probe = validate_runtime_python(args.python, runtime)
     except (OSError, RuntimeError) as error:
-        print(f"JIT validation failed: {error}", file=sys.stderr)
+        print(f"{args.runtime} validation failed: {error}", file=sys.stderr)
         return 1
 
     timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
@@ -268,11 +348,15 @@ def main(argv: list[str] | None = None) -> int:
     run_dir = (args.runs_dir / run_id).resolve()
     run_dir.mkdir(parents=True, exist_ok=False)
     runner = SurveyRunner(
-        args.python, run_dir, stream_test_output=args.stream_test_output
+        args.python,
+        run_dir,
+        runtime=runtime,
+        stream_test_output=args.stream_test_output,
     )
     results = []
     run_context = {
         "id": run_id,
+        "runtime": runtime,
         "startedAt": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "runner": {
             "os": os.environ.get("RUNNER_OS", platform.system()),
@@ -288,6 +372,10 @@ def main(argv: list[str] | None = None) -> int:
     }
     selection = {
         "registryPackages": len(packages),
+        "targetPackages": [
+            package.name
+            for package in _select(packages, args.package, args.limit, 1, 0)
+        ],
         "selectedPackages": [package.name for package in selected],
         "shardCount": args.shard_count,
         "shardIndex": args.shard_index,

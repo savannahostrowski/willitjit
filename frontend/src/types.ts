@@ -5,6 +5,8 @@ export type Status =
   | "infrastructure-failure"
   | "not-tested";
 
+export type Runtime = "jit" | "free-threaded";
+
 export type Condition = {
   returnCode: number | null;
   timedOut: boolean;
@@ -20,7 +22,13 @@ export type Observation = {
   revision: string | null;
   command: string | null;
   baseline: Condition;
-  jit: Condition;
+  target: Condition;
+};
+
+export type RuntimeResult = {
+  overallStatus: Status;
+  baselineEligible: boolean;
+  platforms: Record<string, Observation>;
 };
 
 export type PackageResult = {
@@ -32,14 +40,21 @@ export type PackageResult = {
   releaseDate?: string;
   sourceRef?: string;
   overallStatus: Status;
-  baselineEligible?: boolean;
-  platforms: Record<string, Observation>;
+  runtimes: Partial<Record<Runtime, RuntimeResult>>;
+};
+
+export type RuntimeSummary = {
+  packages: Partial<Record<Status, number>>;
+  baselineEligible: number;
+  completedObservations: number;
 };
 
 export type Snapshot = {
+  schemaVersion: 3;
   run: {
     targetPackages: number;
     expectedPlatforms: string[];
+    expectedRuntimes: Runtime[];
     completedObservations: number;
     github?: {
       cpythonVersion?: string;
@@ -48,11 +63,27 @@ export type Snapshot = {
     };
   };
   dataset: { source: string; releaseCutoff?: string };
+  runtimeMetadata: Record<Runtime, {
+    label: string;
+    baselineLabel: string;
+    targetLabel: string;
+  }>;
+  summary: { runtimes: Partial<Record<Runtime, RuntimeSummary>> };
+  packages: PackageResult[];
+};
+
+export type LegacySnapshot = {
+  schemaVersion?: 2;
+  run: Omit<Snapshot["run"], "expectedRuntimes">;
+  dataset: Snapshot["dataset"];
   summary: {
     packages: Partial<Record<Status, number>>;
     baselineEligible?: number;
   };
-  packages: PackageResult[];
+  packages: Array<Omit<PackageResult, "runtimes"> & {
+    baselineEligible?: boolean;
+    platforms: Record<string, Omit<Observation, "target"> & { jit: Condition }>;
+  }>;
 };
 
 export type HistoryPoint = {
@@ -78,4 +109,5 @@ export type CompatibilityHistory = {
   series: CompatibilitySeries[];
 };
 
-export type PreviousCompatibilityHistory = { schemaVersion: 1 | 2 };
+export type PreviousCompatibilityHistory =
+  { schemaVersion: 1 | 2 };

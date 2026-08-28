@@ -18,7 +18,7 @@ def write_reports(
     selection: dict[str, Any] | None = None,
 ) -> None:
     payload = {
-        "schema_version": 2,
+        "schema_version": 3,
         "run": run or {"id": run_dir.name},
         "selection": selection or {},
         "dataset": dataset,
@@ -43,7 +43,7 @@ def write_reports(
 
 def _result_dict(result: PackageResult, run_dir: Path) -> dict[str, Any]:
     payload = asdict(result)
-    for command in [*payload["setup"], payload["baseline"], payload["jit"]]:
+    for command in [*payload["setup"], payload["baseline"], payload["target"]]:
         if not command:
             continue
         log = Path(command["log"])

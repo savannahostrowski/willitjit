@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import io
+import json
+import tempfile
 import unittest
 from contextlib import redirect_stdout
+from dataclasses import replace
+from pathlib import Path
 from unittest.mock import patch
 
-from willitjit.cli import _run_exit_code, _select, main
+from willitjit.cli import _merge_packages, _run_exit_code, _select, main
 from willitjit.models import Package
 
 
@@ -38,6 +42,27 @@ class SelectionTests(unittest.TestCase):
         ]
         self.assertEqual(sorted(selected), list(range(1, 51)))
 
+    def test_shards_are_balanced_by_package_timeout(self) -> None:
+        registry = [
+            replace(package, timeout_seconds=timeout)
+            for package, timeout in zip(
+                packages(6),
+                (100, 90, 80, 10, 10, 10),
+                strict=True,
+            )
+        ]
+
+        shards = [_select(registry, [], None, 2, index) for index in range(2)]
+
+        self.assertEqual(
+            sorted(package.rank for shard in shards for package in shard),
+            list(range(1, 7)),
+        )
+        self.assertLessEqual(
+            max(sum(package.timeout_seconds for package in shard) for shard in shards),
+            170,
+        )
+
     def test_rejects_invalid_shard(self) -> None:
         with self.assertRaisesRegex(ValueError, "shard index"):
             _select(packages(2), [], None, 2, 2)
@@ -48,7 +73,7 @@ class RunExitCodeTests(unittest.TestCase):
         cases = (
             (["observed-compatible"], False, 0),
             (["baseline-failure"], True, 0),
-            (["suspected-jit-regression"], True, 0),
+            (["suspected-runtime-regression"], True, 0),
             (["not-tested"], True, 0),
             (["observed-compatible", "setup-error"], True, 1),
             (["not-tested"], False, 1),
@@ -68,7 +93,63 @@ class RunExitCodeTests(unittest.TestCase):
                 )
 
 
+class MergePackageTests(unittest.TestCase):
+    def test_validates_requested_limit_against_artifact_cohort(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_file = Path(temporary) / "run.json"
+            run_file.write_text(
+                json.dumps(
+                    {"selection": {"targetPackages": ["package-1", "package-2"]}}
+                )
+            )
+
+            selected = _merge_packages(packages(3), [run_file], 2)
+            self.assertEqual(
+                [package.name for package in selected], ["package-1", "package-2"]
+            )
+            inferred = _merge_packages(packages(3), [run_file], None)
+            self.assertEqual(
+                [package.name for package in inferred], ["package-1", "package-2"]
+            )
+
+            with self.assertRaisesRegex(ValueError, "does not match artifact cohort"):
+                _merge_packages(packages(3), [run_file], 1)
+
+    def test_rejects_different_artifact_cohorts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            run_files = []
+            for index, cohort in enumerate((["package-1"], ["package-1", "package-2"])):
+                run_file = root / str(index) / "run.json"
+                run_file.parent.mkdir()
+                run_file.write_text(
+                    json.dumps({"selection": {"targetPackages": cohort}})
+                )
+                run_files.append(run_file)
+
+            with self.assertRaisesRegex(ValueError, "different target package cohorts"):
+                _merge_packages(packages(3), run_files, None)
+
+    def test_rejects_schema_three_artifact_without_cohort_metadata(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_file = Path(temporary) / "run.json"
+            run_file.write_text(json.dumps({"schema_version": 3, "selection": {}}))
+
+            with self.assertRaisesRegex(
+                ValueError, "does not declare its package cohort"
+            ):
+                _merge_packages(packages(3), [run_file], 3)
+
+
 class PlanTests(unittest.TestCase):
+    def test_can_print_machine_readable_shard_names(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            exit_code = main(["plan", "--limit", "2", "--names-only"])
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(output.getvalue().splitlines(), ["boto3", "packaging"])
+
     def test_exposes_adapter_checkout_and_execution_details(self) -> None:
         output = io.StringIO()
         with (

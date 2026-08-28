@@ -21,6 +21,7 @@ class ReportTests(unittest.TestCase):
                 "example",
                 1,
                 "abc",
+                "jit",
                 "observed-compatible",
                 (),
                 command,
@@ -35,7 +36,7 @@ class ReportTests(unittest.TestCase):
             )
             payload = json.loads((run_dir / "run.json").read_text())
 
-        self.assertEqual(payload["schema_version"], 2)
+        self.assertEqual(payload["schema_version"], 3)
         self.assertEqual(
             payload["results"][0]["baseline"]["log"],
             "example/logs/baseline.log",

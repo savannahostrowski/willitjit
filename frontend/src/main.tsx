@@ -2,9 +2,10 @@ import { StrictMode, useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { CompatibilityHistory as HistoryChart } from "./CompatibilityHistory";
 import { ResultsExplorer } from "./ResultsExplorer";
-import { AboutPage, SiteFooter, SiteHeader, type Theme } from "./SiteChrome";
+import { AboutPage, SiteFooter, SiteHeader, ToolsPage, type Theme } from "./SiteChrome";
 import type {
   CompatibilityHistory,
+  LegacySnapshot,
   PreviousCompatibilityHistory,
   Snapshot,
 } from "./types";
@@ -30,6 +31,51 @@ function normalizeHistory(
   return { schemaVersion: 3, activeSeries: null, series: [] };
 }
 
+function normalizeSnapshot(snapshot: Snapshot | LegacySnapshot): Snapshot {
+  if (snapshot.schemaVersion === 3) return snapshot;
+  const expected = snapshot.run.expectedPlatforms.length * snapshot.run.targetPackages;
+  return {
+    ...snapshot,
+    schemaVersion: 3,
+    run: { ...snapshot.run, expectedRuntimes: ["jit"] },
+    runtimeMetadata: {
+      jit: { label: "JIT", baselineLabel: "JIT off", targetLabel: "JIT on" },
+      "free-threaded": {
+        label: "Free-threaded",
+        baselineLabel: "GIL on",
+        targetLabel: "GIL off",
+      },
+    },
+    summary: {
+      runtimes: {
+        jit: {
+          packages: snapshot.summary.packages,
+          baselineEligible: snapshot.summary.baselineEligible ?? 0,
+          completedObservations: snapshot.run.completedObservations ?? expected,
+        },
+      },
+    },
+    packages: snapshot.packages.map(({ baselineEligible, platforms, ...item }) => ({
+      ...item,
+      runtimes: {
+        jit: {
+          overallStatus: item.overallStatus,
+          baselineEligible: baselineEligible ?? false,
+          platforms: Object.fromEntries(
+            Object.entries(platforms).map(([platform, observation]) => [
+              platform,
+              {
+                ...observation,
+                target: observation.jit,
+              },
+            ]),
+          ),
+        },
+      },
+    })),
+  };
+}
+
 function Dashboard() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [history, setHistory] = useState<CompatibilityHistory | null>(null);
@@ -37,11 +83,11 @@ function Dashboard() {
 
   useEffect(() => {
     Promise.all([
-      fetchJson<Snapshot>(`${DATA_ROOT}/results.json`),
+      fetchJson<Snapshot | LegacySnapshot>(`${DATA_ROOT}/results.json`),
       fetchJson<CompatibilityHistory | PreviousCompatibilityHistory>(`${DATA_ROOT}/history.json`),
     ])
       .then(([nextSnapshot, nextHistory]) => {
-        setSnapshot(nextSnapshot);
+        setSnapshot(normalizeSnapshot(nextSnapshot));
         setHistory(normalizeHistory(nextHistory));
       })
       .catch((reason: unknown) => {
@@ -98,7 +144,8 @@ function initialTheme(): Theme {
 
 function Root() {
   const [theme, setTheme] = useState<Theme>(initialTheme);
-  const aboutPage = window.location.pathname.replace(/\/$/, "") === "/about";
+  const path = window.location.pathname.replace(/\/$/, "") || "/";
+  const page = path === "/about" ? "about" : path === "/tools" ? "tools" : "packages";
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -111,8 +158,12 @@ function Root() {
   }, [theme]);
 
   useEffect(() => {
-    document.title = aboutPage ? "About · Will It JIT?" : "Will It JIT?";
-  }, [aboutPage]);
+    document.title = page === "about"
+      ? "About · Will It JIT?"
+      : page === "tools"
+        ? "Tools · Will It JIT?"
+        : "Packages · Will It JIT?";
+  }, [page]);
 
   return (
     <div className="site-shell">
@@ -122,7 +173,7 @@ function Root() {
         toggleTheme={() => setTheme((current) => current === "light" ? "dark" : "light")}
       />
       <main id="main-content" tabIndex={-1}>
-        {aboutPage ? <AboutPage /> : <Dashboard />}
+        {page === "about" ? <AboutPage /> : page === "tools" ? <ToolsPage /> : <Dashboard />}
       </main>
       <SiteFooter />
     </div>

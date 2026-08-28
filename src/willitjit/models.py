@@ -3,9 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal, TypeAlias
 
+Runtime: TypeAlias = Literal["jit", "free-threaded"]
+
 Classification: TypeAlias = Literal[
     "observed-compatible",
-    "suspected-jit-regression",
+    "suspected-runtime-regression",
     "baseline-failure",
     "setup-error",
     "not-tested",
@@ -55,8 +57,9 @@ class PackageResult:
     package: str
     rank: int
     revision: str | None
+    runtime: Runtime
     classification: Classification
     setup: tuple[CommandResult, ...]
     baseline: CommandResult | None
-    jit: CommandResult | None
+    target: CommandResult | None
     error: str | None = None

@@ -12,7 +12,7 @@ from unittest.mock import patch
 from willitjit.models import CommandResult, Package
 from willitjit.runner import (
     SurveyRunner,
-    classify_jit,
+    classify_target,
     condition_clone_command,
     fetch_tags_command,
     installation_command,
@@ -22,7 +22,7 @@ from willitjit.runner import (
     sparse_checkout_command,
     untrusted_environment,
     uv_sync_command,
-    validate_jit_python,
+    validate_runtime_python,
 )
 
 
@@ -30,17 +30,35 @@ def result(code: int | None, *, timed_out: bool = False) -> CommandResult:
     return CommandResult(("python", "-m", "pytest"), code, 1.0, timed_out, "test.log")
 
 
-def python_probe(*, jit_enabled: bool, ssl_available: bool = True) -> dict:
+def python_probe(
+    *,
+    jit_enabled: bool,
+    ssl_available: bool = True,
+    free_threaded: bool = False,
+    gil_enabled: bool = True,
+) -> dict:
     return {
         "jit_api": True,
         "jit_available": True,
         "jit_enabled": jit_enabled,
+        "free_threaded": free_threaded,
+        "gil_enabled": gil_enabled,
         "ssl_available": ssl_available,
         "ssl_error": None if ssl_available else "ImportError: No module named '_ssl'",
+        "smoke_result": 49_995_000,
     }
 
 
 class PythonValidationTests(unittest.TestCase):
+    @patch("willitjit.runner.probe_python")
+    def test_requires_the_smoke_check_in_both_modes(self, probe_mock) -> None:
+        baseline = python_probe(jit_enabled=False)
+        baseline["smoke_result"] = 0
+        probe_mock.side_effect = [baseline, python_probe(jit_enabled=True)]
+
+        with self.assertRaisesRegex(RuntimeError, "interpreter smoke check"):
+            validate_runtime_python(Path("python"), "jit")
+
     @patch("willitjit.runner.probe_python")
     def test_requires_ssl_in_both_jit_modes(self, probe_mock) -> None:
         probe_mock.side_effect = [
@@ -49,19 +67,31 @@ class PythonValidationTests(unittest.TestCase):
         ]
 
         with self.assertRaisesRegex(RuntimeError, "could not import ssl"):
-            validate_jit_python(Path("python"))
+            validate_runtime_python(Path("python"), "jit")
+
+    @patch("willitjit.runner.probe_python")
+    def test_requires_a_verified_free_threaded_gil_toggle(self, probe_mock) -> None:
+        probe_mock.side_effect = [
+            python_probe(jit_enabled=False, free_threaded=True, gil_enabled=True),
+            python_probe(jit_enabled=False, free_threaded=True, gil_enabled=False),
+        ]
+
+        probe = validate_runtime_python(Path("python"), "free-threaded")
+
+        self.assertTrue(probe["baseline"]["gil_enabled"])
+        self.assertFalse(probe["target"]["gil_enabled"])
 
 
 class ClassificationTests(unittest.TestCase):
     def test_classifies_the_jit_outcome_after_a_passing_baseline(self) -> None:
         cases = (
             (result(0), "observed-compatible"),
-            (result(1), "suspected-jit-regression"),
-            (result(None, timed_out=True), "suspected-jit-regression"),
+            (result(1), "suspected-runtime-regression"),
+            (result(None, timed_out=True), "suspected-runtime-regression"),
         )
         for jit, expected in cases:
             with self.subTest(expected=expected, jit=jit):
-                self.assertEqual(classify_jit(jit), expected)
+                self.assertEqual(classify_target(jit), expected)
 
 
 class SetupCommandTests(unittest.TestCase):
@@ -449,7 +479,7 @@ class FailEarlyTests(unittest.TestCase):
 
         self.assertEqual(outcome.classification, "baseline-failure")
         self.assertIsNotNone(outcome.baseline)
-        self.assertIsNone(outcome.jit)
+        self.assertIsNone(outcome.target)
         self.assertEqual(run_logged_mock.call_count, 6)
         self.assertEqual(
             run_logged_mock.call_args_list[2].args[0][-4:],
@@ -467,7 +497,7 @@ class CleanupTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             run_dir = Path(directory)
             package_dir = run_dir / "example"
-            for name in ("baseline", "jit", "source", "fixture", "logs"):
+            for name in ("baseline", "target", "source", "fixture", "logs"):
                 path = package_dir / name
                 path.mkdir(parents=True)
                 (path / "evidence.txt").write_text(name)
@@ -476,7 +506,7 @@ class CleanupTests(unittest.TestCase):
             runner.cleanup_package_workspaces("example")
 
             self.assertFalse((package_dir / "baseline").exists())
-            self.assertFalse((package_dir / "jit").exists())
+            self.assertFalse((package_dir / "target").exists())
             self.assertFalse((package_dir / "source").exists())
             self.assertFalse((package_dir / "fixture").exists())
             self.assertTrue((package_dir / "logs" / "evidence.txt").exists())
