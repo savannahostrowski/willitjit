@@ -290,11 +290,15 @@ class RegistryTests(unittest.TestCase):
         )
         self.assertIn("tox-uv", virtualenv.install[0])
         self.assertIn("3.14", virtualenv.test)
+        self.assertTrue(virtualenv.windows_native_line_endings)
         grpcio = next(package for package in packages if package.name == "grpcio")
-        self.assertEqual(grpcio.install_cwd, "src/python/grpcio_tests")
+        self.assertEqual(grpcio.install_cwd, ".")
         self.assertIn("--no-deps", grpcio.install[-2])
         self.assertIn("--no-build-isolation", grpcio.install[-2])
-        self.assertEqual(grpcio.install[-1], ("setup.py", "preprocess"))
+        self.assertEqual(
+            grpcio.install[-1],
+            ("src/python/grpcio_tests/setup.py", "preprocess"),
+        )
         self.assertIn("--ignore=tests/unit/test_all_modules_installed.py", grpcio.test)
         referencing = next(
             package for package in packages if package.name == "referencing"

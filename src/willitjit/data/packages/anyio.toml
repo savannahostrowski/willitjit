@@ -7,9 +7,9 @@ ref = "4.14.2"
 release_version = "4.14.2"
 release_date = "2026-07-12T20:29:05.763870Z"
 install = [
-  ["-m", "pip", "install", "--resolution", "lowest-direct", "--group", "test", "-e", ".[trio]"],
+  ["-m", "pip", "install", "--group", "test", "-e", ".[trio]"],
 ]
 test = ["-m", "pytest"]
 timeout_seconds = 1200
-note = "Uses upstream CI's lowest-direct dependency resolution, test group, Trio extra, and plugin isolation."
+note = "Uses upstream CI's normal Python 3.14 dependency resolution, test group, Trio extra, and plugin isolation."
 environment = { PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1" }

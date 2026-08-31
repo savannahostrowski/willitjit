@@ -12,6 +12,6 @@ install = [
   ["-m", "pip", "install", "pytest"],
 ]
 test = ["-m", "virtue", "jsonschema"]
-timeout_seconds = 1200
+timeout_seconds = 2400
 environment = { JSON_SCHEMA_TEST_SUITE = "json", PYTHONUTF8 = "1" }
-note = "Uses upstream's virtue test runner and UTF-8 mode."
+note = "Uses upstream's virtue test runner and UTF-8 mode, with enough time for the full generated suite on Windows."

@@ -226,7 +226,7 @@ jobs:
           fi
           packages="$(uv run willitjit plan "${selection[@]}" --names-only)"
           printf '%s\n' "$packages"
-          for package in cryptography pip; do
+          for package in cryptography pip pyarrow; do
             if printf '%s\n' "$packages" | grep -Fxq "$package"; then
               echo "$package=true" >> "$GITHUB_OUTPUT"
             else
@@ -255,6 +255,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes subversion
+
+      - name: Install PyArrow timezone data on Linux
+        if: matrix.platform == 'linux' && steps.shard.outputs.pyarrow == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes tzdata tzdata-legacy
 
       - name: Install pip test prerequisites on macOS
         if: matrix.platform == 'macos' && steps.shard.outputs.pip == 'true'

@@ -34,6 +34,7 @@ class Package:
     environment: tuple[tuple[str, str], ...] = ()
     isolate_home: bool = False
     recursive_submodules: bool = False
+    windows_native_line_endings: bool = False
     embedded_python: bool = False
     fetch_tags: bool = False
     sparse_paths: tuple[str, ...] = ()

@@ -52,6 +52,7 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
             environment=tuple(item.get("environment", {}).items()),
             isolate_home=item.get("isolate_home", False),
             recursive_submodules=item.get("recursive_submodules", False),
+            windows_native_line_endings=item.get("windows_native_line_endings", False),
             embedded_python=item.get("embedded_python", False),
             fetch_tags=item.get("fetch_tags", False),
             sparse_paths=tuple(item.get("sparse_paths", ())),

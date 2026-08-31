@@ -354,6 +354,7 @@ def condition_clone_command(
     *,
     recursive_submodules: bool,
     sparse_paths: tuple[str, ...] = (),
+    native_line_endings: bool = False,
 ) -> list[str]:
     if sparse_paths:
         return [
@@ -366,7 +367,10 @@ def condition_clone_command(
             str(destination),
             "HEAD",
         ]
-    command = ["git", "clone", "--local"]
+    command = ["git"]
+    if native_line_endings:
+        command += ["-c", "core.autocrlf=true", "-c", "core.eol=native"]
+    command += ["clone", "--local"]
     if recursive_submodules:
         command += ["--recurse-submodules", "--shallow-submodules"]
     return [*command, str(source), str(destination)]
@@ -552,6 +556,10 @@ class SurveyRunner:
                     repository,
                     recursive_submodules=package.recursive_submodules,
                     sparse_paths=package.sparse_paths,
+                    native_line_endings=(
+                        package.windows_native_line_endings
+                        and platform.system() == "Windows"
+                    ),
                 ),
                 cwd=condition_dir,
                 env=base_env,

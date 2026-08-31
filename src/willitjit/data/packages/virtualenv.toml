@@ -12,4 +12,5 @@ install = [
 test = ["-m", "tox", "run", "-e", "3.14", "--", "tests", "-m", "not slow", "-p", "no:xdist"]
 timeout_seconds = 2400
 isolate_home = true
-note = "Uses upstream's Python 3.14 tox-uv environment, which builds and tests the pinned checkout as a wheel."
+windows_native_line_endings = true
+note = "Uses upstream's Python 3.14 tox-uv environment, which builds and tests the pinned checkout as a wheel. Windows uses native checkout line endings because the activation suite verifies them."

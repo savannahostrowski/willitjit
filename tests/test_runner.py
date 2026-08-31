@@ -179,6 +179,28 @@ class SetupCommandTests(unittest.TestCase):
             ],
         )
 
+    def test_native_line_endings_are_opt_in(self) -> None:
+        command = condition_clone_command(
+            Path("source"),
+            Path("destination"),
+            recursive_submodules=False,
+            native_line_endings=True,
+        )
+        self.assertEqual(
+            command,
+            [
+                "git",
+                "-c",
+                "core.autocrlf=true",
+                "-c",
+                "core.eol=native",
+                "clone",
+                "--local",
+                "source",
+                "destination",
+            ],
+        )
+
     def test_sparse_checkout_is_applied_to_source_and_condition_clones(self) -> None:
         package = Package(
             1,

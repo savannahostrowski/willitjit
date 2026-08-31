@@ -17,9 +17,11 @@ test = [
   "tests/test_litellm/litellm_core_utils",
   "--ignore=tests/test_litellm/litellm_core_utils/test_cli_token_utils.py",
   "--ignore=tests/test_litellm/litellm_core_utils/test_private_json.py",
+  "-k",
+  "not test_process_pathlib_input and not test_process_pathlike_object",
   "-p",
   "no:xdist",
 ]
 timeout_seconds = 2400
-note = "Runs the upstream core-utilities unit shard with its locked audio dependencies, excluding two POSIX-only permission files plus proxy, end-to-end, and integration lanes."
+note = "Runs the upstream core-utilities unit shard with its locked audio dependencies, excluding two POSIX-only permission files and two Windows path-format assertions plus proxy, end-to-end, and integration lanes."
 isolate_home = true
