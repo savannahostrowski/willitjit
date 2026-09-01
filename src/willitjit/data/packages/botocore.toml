@@ -3,9 +3,9 @@ rank = 10
 name = "botocore"
 downloads = 1497531138
 repository = "https://github.com/boto/botocore.git"
-ref = "1.43.68"
-release_version = "1.43.68"
-release_date = "2026-08-10T19:21:58.157799Z"
+ref = "1.43.73"
+release_version = "1.43.73"
+release_date = "2026-08-17T20:39:34.332208Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements-dev-lock.txt"],
   ["-m", "pip", "install", "-e", "."],

@@ -3,9 +3,9 @@ rank = 39
 name = "platformdirs"
 downloads = 763006168
 repository = "https://github.com/tox-dev/platformdirs.git"
-ref = "4.11.2"
-release_version = "4.11.2"
-release_date = "2026-08-10T15:48:04.855867Z"
+ref = "4.11.3"
+release_version = "4.11.3"
+release_date = "2026-08-13T22:43:26.121545Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
