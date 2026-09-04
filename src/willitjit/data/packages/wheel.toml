@@ -3,9 +3,9 @@ rank = 58
 name = "wheel"
 downloads = 595760140
 repository = "https://github.com/pypa/wheel.git"
-ref = "0.47.0"
-release_version = "0.47.0"
-release_date = "2026-04-22T15:51:26.296257Z"
+ref = "0.48.0"
+release_version = "0.48.0"
+release_date = "2026-08-11T22:02:26.100721Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],

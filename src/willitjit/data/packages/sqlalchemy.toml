@@ -3,9 +3,9 @@ rank = 100
 name = "sqlalchemy"
 downloads = 422737345
 repository = "https://github.com/sqlalchemy/sqlalchemy.git"
-ref = "rel_2_0_51"
-release_version = "2.0.51"
-release_date = "2026-06-15T15:41:20.012455Z"
+ref = "rel_2_0_52"
+release_version = "2.0.52"
+release_date = "2026-08-11T19:07:09.829565Z"
 install = [
   ["-m", "pip", "install", "pytest>=7,<10", "pytest-xdist"],
   ["-m", "pip", "install", "-e", "."],

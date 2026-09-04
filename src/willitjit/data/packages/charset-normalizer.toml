@@ -3,9 +3,9 @@ rank = 8
 name = "charset-normalizer"
 downloads = 1674555757
 repository = "https://github.com/jawah/charset_normalizer.git"
-ref = "3.4.9"
-release_version = "3.4.9"
-release_date = "2026-07-07T14:32:36.236156Z"
+ref = "3.5.1"
+release_version = "3.5.1"
+release_date = "2026-08-15T08:16:22.964547Z"
 install = [
   ["-m", "pip", "install", "--require-hashes", "-r", "dev-requirements.txt"],
   ["-m", "pip", "install", "."],

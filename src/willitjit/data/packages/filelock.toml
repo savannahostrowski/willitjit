@@ -3,9 +3,9 @@ rank = 43
 name = "filelock"
 downloads = 717124668
 repository = "https://github.com/tox-dev/py-filelock.git"
-ref = "3.32.2"
-release_version = "3.32.2"
-release_date = "2026-07-29T22:46:03.520503Z"
+ref = "3.32.3"
+release_version = "3.32.3"
+release_date = "2026-08-13T16:00:03.974131Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", "."],
