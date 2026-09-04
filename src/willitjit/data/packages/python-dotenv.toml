@@ -12,3 +12,7 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 600
+guidance = [
+  "https://github.com/theskumar/python-dotenv/blob/36004e0e34be7665ff2b11a8a4005144f76f176d/tox.ini",
+  "https://github.com/theskumar/python-dotenv/blob/36004e0e34be7665ff2b11a8a4005144f76f176d/requirements.txt",
+]

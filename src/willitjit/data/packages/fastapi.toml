@@ -8,7 +8,20 @@ release_version = "0.141.1"
 release_date = "2026-07-29T17:18:04.364385Z"
 install = [
   ["-m", "pip", "install", "--group", "tests"],
-  ["-m", "pip", "install", "-e", ".[standard]"],
+  ["-m", "pip", "install", "-e", ".[all]"],
 ]
-test = ["-m", "pytest", "tests"]
+test = ["-m", "pytest", "tests", "scripts/tests", "-n", "0", "--ignore=tests/benchmarks", "--ignore=tests/memory_benchmarks"]
 timeout_seconds = 2400
+guidance = [
+  "https://github.com/fastapi/fastapi/blob/95f8322ee1dcda7ceace7b1c4f6c9915b36d748f/scripts/test.sh",
+  "https://github.com/fastapi/fastapi/blob/95f8322ee1dcda7ceace7b1c4f6c9915b36d748f/.github/workflows/test.yml",
+]
+environment = { "PYTHONPATH" = "./docs_src" }
+note = "Upstream all extra, tests group, docs_src import path and tests/scripts suite. Serial execution; separate benchmark and memory-benchmark jobs are excluded because this survey is compatibility-only."
+
+[[package.overrides]]
+runtime = "free-threaded"
+platform = "Linux"
+install = [["-m", "pip", "install", "--group", "tests"], ["-m", "pip", "install", "-e", ".[all]"], ["-m", "pip", "install", "--force-reinstall", "--no-binary", ":all:", "sqlalchemy"]]
+environment = { "DISABLE_SQLALCHEMY_CEXT" = "1" }
+note = "Matches the upstream Linux FT SQLAlchemy source reinstall without Cython extensions."

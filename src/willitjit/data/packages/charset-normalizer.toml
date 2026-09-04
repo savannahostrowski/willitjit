@@ -7,10 +7,14 @@ ref = "3.5.1"
 release_version = "3.5.1"
 release_date = "2026-08-15T08:16:22.964547Z"
 install = [
-  ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "--group", "dev"],
+  ["-m", "pip", "install", "--require-hashes", "-r", "dev-requirements.txt"],
+  ["-m", "pip", "install", "."],
 ]
-test = ["-m", "pytest", "tests"]
+test = ["-m", "pytest", "tests", "--strict-config", "--strict-markers"]
 timeout_seconds = 900
-environment = { CHARSET_NORMALIZER_USE_CYTHON = "0" }
-note = "Matches upstream's primary pure-Python test lane so the JIT exercises Python code."
+environment = { "CHARSET_NORMALIZER_USE_MYPYC" = "0", "PYTHONWARNINGS" = "always::DeprecationWarning" }
+note = "Upstream nox pure-Python lane, hash-checked development requirements and warning policy. Compiled mypyc and backward-compatibility jobs are separate."
+guidance = [
+  "https://github.com/jawah/charset_normalizer/blob/cc6840753f17f00dea4e339ce37507747217e916/setup.py",
+  "https://github.com/jawah/charset_normalizer/blob/cc6840753f17f00dea4e339ce37507747217e916/noxfile.py",
+]

@@ -12,3 +12,6 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 600
+guidance = [
+  "https://github.com/tox-dev/platformdirs/blob/a58fb9044f3d9c593ce37e3500345222df5b43db/pyproject.toml",
+]

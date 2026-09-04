@@ -10,6 +10,9 @@ install = [
   ["-m", "pip", "install", "--group", "tests"],
   ["-m", "pip", "install", "-e", ".[crypto]"],
 ]
-test = ["-m", "pytest", "tests"]
+test = ["-b", "-m", "pytest", "tests"]
 timeout_seconds = 900
 note = "Runs the upstream suite with the optional cryptography support enabled."
+guidance = [
+  "https://github.com/jpadilla/pyjwt/blob/7144e4534c34810f4525dc4578a32addd8212cff/pyproject.toml",
+]

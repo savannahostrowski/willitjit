@@ -6,11 +6,11 @@ repository = "https://github.com/grpc/grpc.git"
 ref = "v1.83.0"
 release_version = "1.83.0"
 release_date = "2026-07-23T15:23:49.044717Z"
-install = [
-  ["-m", "pip", "install", "coverage", "grpcio", "protobuf", "googleapis-common-protos"],
-  ["-m", "pip", "install", "--no-deps", "-e", "src/python/grpcio_status"],
-]
-test = ["-m", "unittest", "tests.status._grpc_status_test", "tests_aio.status.grpc_status_test"]
-test_cwd = "src/python/grpcio_tests"
+install = []
+test = []
 timeout_seconds = 900
-note = "Runs the upstream synchronous and asyncio grpcio-status suites from the gRPC monorepo."
+guidance = [
+  "https://github.com/grpc/grpc/blob/c876f4da50f7da2f331888b88b2a7243514139fe/src/python/grpcio_tests/setup.py",
+  "https://github.com/grpc/grpc/blob/c876f4da50f7da2f331888b88b2a7243514139fe/src/python/CONTRIBUTING.md",
+]
+skip_reason = "Not tested: its suites belong to the gRPC custom test harness. The former hand-built dependency list and two-module invocation have not been established as an equivalent upstream lane."

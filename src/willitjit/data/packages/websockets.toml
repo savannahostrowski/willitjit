@@ -12,3 +12,6 @@ install = [
 test = ["-W", "error::DeprecationWarning", "-W", "error::PendingDeprecationWarning", "-X", "context_aware_warnings=0", "-m", "unittest"]
 timeout_seconds = 1800
 note = "Matches upstream's Python 3.14 tox environment and unittest command."
+guidance = [
+  "https://github.com/python-websockets/websockets/blob/fd3f16cc4f57ace08e323a7806f1432e957cb75e/tox.ini",
+]

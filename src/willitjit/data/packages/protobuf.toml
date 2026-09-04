@@ -6,15 +6,10 @@ repository = "https://github.com/protocolbuffers/protobuf.git"
 ref = "v35.1"
 release_version = "7.35.1"
 release_date = "2026-06-11T21:55:31.719008Z"
-install = [["-m", "pip", "install", "-r", "python/requirements.txt"]]
-test = [
-  "-m",
-  "unittest",
-  "google.protobuf.internal.runtime_version_test",
-  "google.protobuf.internal.text_encoding_test",
-  "google.protobuf.internal.wire_format_test",
-]
-test_cwd = "python"
+install = []
+test = []
 timeout_seconds = 600
-environment = { PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION = "python" }
-note = "Runs upstream pure-Python core tests that do not require Bazel-generated fixtures from the protobuf monorepo."
+guidance = [
+  "https://github.com/protocolbuffers/protobuf/blob/35cd01f9fe9afbeea38cc7b979a3b6bfcde82c03/.github/workflows/test_python.yml",
+]
+skip_reason = "Not tested: upstream Python CI uses Bazel-generated fixtures and Bazel-selected interpreters. A verified recipe using the survey interpreter is not available yet; the former three-module smoke subset has been removed."

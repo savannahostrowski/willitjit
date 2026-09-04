@@ -10,6 +10,11 @@ install = [
   ["-m", "pip", "install", "--group", "test", "-e", ".[trio]"],
 ]
 test = ["-m", "pytest"]
+test_patch = "anyio-8dbe5b792a49344d8748e88ccbe1c6432bff49f3.patch"
 timeout_seconds = 1200
-note = "Uses upstream CI's normal Python 3.14 dependency resolution, test group, Trio extra, and plugin isolation."
-environment = { PYTEST_DISABLE_PLUGIN_AUTOLOAD = "1" }
+note = "Uses upstream's test group, Trio extra, and plugin isolation. Backports the test-only Windows TLS flakiness fix https://github.com/agronholm/anyio/commit/8dbe5b792a49344d8748e88ccbe1c6432bff49f3 onto 4.14.2 in both conditions; package code is unchanged. Linux CI selects system certificate paths to avoid python-build-standalone's fallback probes triggering Blockbuster. CI also supplies the upstream IDNA hosts fixtures."
+environment = { "PYTEST_DISABLE_PLUGIN_AUTOLOAD" = "1" }
+guidance = [
+  "https://github.com/agronholm/anyio/blob/c384f99687c64c59ed8a11c3a0f11a2d57daff71/.github/workflows/test.yml",
+  "https://github.com/agronholm/anyio/blob/c384f99687c64c59ed8a11c3a0f11a2d57daff71/pyproject.toml",
+]

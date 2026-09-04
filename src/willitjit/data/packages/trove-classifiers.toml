@@ -10,5 +10,10 @@ install = [
   ["-m", "pip", "install", "-r", "requirements/dev.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
-test = ["-m", "pytest", "tests"]
+test = ["-c", "import runpy, sys; runpy.run_module('tests.lib', run_name='__main__'); import pytest; sys.exit(pytest.main(['tests']))"]
 timeout_seconds = 900
+note = "Runs both parts of upstream make test in the selected interpreter: classifier validation (tests.lib), then pytest tests. Either failure fails the condition."
+guidance = [
+  "https://github.com/pypa/trove-classifiers/blob/71cb041f383cee31668d07e3302d2b09d10471a8/Makefile",
+  "https://github.com/pypa/trove-classifiers/blob/71cb041f383cee31668d07e3302d2b09d10471a8/tests/lib/__main__.py",
+]

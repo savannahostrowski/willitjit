@@ -10,5 +10,8 @@ install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest~=8.2", "pytest-randomly", "pytest-cov", "wcag-contrast-ratio"],
 ]
-test = ["-m", "pytest"]
+test = ["-m", "pytest", "-W", "error"]
 timeout_seconds = 1200
+guidance = [
+  "https://github.com/pygments/pygments/blob/708197d82827ba2d5ca78bcbb653c7102ce86dcd/tox.ini",
+]

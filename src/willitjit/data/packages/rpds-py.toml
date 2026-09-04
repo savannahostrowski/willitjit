@@ -12,3 +12,7 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1800
+guidance = [
+  "https://github.com/crate-py/rpds/blob/7277eb681f6efd67eca1bbaa32f78d78bdc044a5/noxfile.py",
+  "https://github.com/crate-py/rpds/blob/7277eb681f6efd67eca1bbaa32f78d78bdc044a5/pyproject.toml",
+]

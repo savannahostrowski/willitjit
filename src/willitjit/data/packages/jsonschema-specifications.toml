@@ -12,3 +12,7 @@ install = [
 ]
 test = ["-W", "error", "-m", "pytest", "jsonschema_specifications/tests"]
 timeout_seconds = 900
+guidance = [
+  "https://github.com/python-jsonschema/jsonschema-specifications/blob/3b846010c34ce254d8ced23023451d1d64de37f5/noxfile.py",
+]
+environment = { "PYTHONWARNDEFAULTENCODING" = "1" }

@@ -10,7 +10,10 @@ install = [
   ["-m", "pip", "install", "-r", "requirements/test.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
-test = ["-m", "pytest", "tests", "-p", "no:cov", "-p", "no:xdist", "-o", "addopts="]
+test = ["-m", "pytest", "tests", "-n", "0", "--no-cov"]
 timeout_seconds = 1200
-environment = { YARL_NO_EXTENSIONS = "1" }
-note = "Uses the upstream pure-Python lane and clears pytest addopts so the suite does not require the repository's xdist CI lane."
+environment = { "YARL_NO_EXTENSIONS" = "1" }
+note = "Upstream pure-Python lane. Override only worker count and coverage; retain doctest collection, strict markers and warning filters."
+guidance = [
+  "https://github.com/aio-libs/yarl/blob/0b30cb02d07f8ac454762eed3c2edea0892e9a24/pytest.ini",
+]

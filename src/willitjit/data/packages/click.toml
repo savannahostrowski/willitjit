@@ -9,7 +9,10 @@ release_date = "2026-06-24T17:45:13.730054Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "--group", "tests"],
-  ["-m", "pip", "install", "pytest==9.0.2"],
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 600
+guidance = [
+  "https://github.com/pallets/click/blob/b2e30a175449cfda909ee4fbf4a29a6a071cad53/pyproject.toml",
+]
+note = "Uses the declared tests group and upstream tests directory without a local pytest version override."

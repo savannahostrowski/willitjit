@@ -12,3 +12,6 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
+guidance = [
+  "https://github.com/pypa/wheel/blob/efd83a750f07a33462ea2eed365fd8dac9e51442/pyproject.toml",
+]

@@ -6,7 +6,13 @@ repository = "https://github.com/fsspec/filesystem_spec.git"
 ref = "2026.7.0"
 release_version = "2026.7.0"
 release_date = "2026-07-28T16:34:49.538692Z"
-install = [["-m", "pip", "install", "-e", ".[test]"]]
+install = [
+  ["-m", "pip", "install", "-e", ".[test]"],
+]
 test = ["-m", "pytest", "-v"]
 timeout_seconds = 1800
 note = "Uses the cross-platform upstream test extra rather than the optional full dependency matrix."
+guidance = [
+  "https://github.com/fsspec/filesystem_spec/blob/9e22b60ea6e96fbe8635e88cc71909bdd2850e60/pyproject.toml",
+  "https://github.com/fsspec/filesystem_spec/blob/9e22b60ea6e96fbe8635e88cc71909bdd2850e60/.github/workflows/main.yaml",
+]

@@ -7,11 +7,16 @@ ref = "3.9.0"
 release_version = "3.9.0"
 release_date = "2026-08-01T11:54:06.128433Z"
 install = [
-  ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "--group", "test"],
-  ["-m", "pip", "install", "botocore==1.43.56"],
+  ["-m", "pip", "install", "build"],
+  ["-m", "build", "--wheel", "--outdir", "dist"],
+  ["-m", "pip", "install", "--force-reinstall", "--no-deps", "dist/aiobotocore-{release_version}-py3-none-any.whl"],
 ]
-test = ["-m", "pytest", "-m", "not localonly", "tests", "-p", "no:xdist"]
+test = ["-P", "-m", "pytest", "-m", "not localonly", "tests", "-p", "no:xdist"]
 timeout_seconds = 1800
-note = "Uses the release lockfile's botocore version and excludes tests requiring local services."
+note = "Upstream frozen test environment and built-wheel not-localonly lane. -P avoids adding the checkout to sys.path when invoking pytest through the selected Python. No independent botocore pin."
 isolate_home = true
+guidance = [
+  "https://github.com/aio-libs/aiobotocore/blob/9e70a4e371cf9698062cc79c54567f9f050fdfe9/CONTRIBUTING.rst",
+  "https://github.com/aio-libs/aiobotocore/blob/9e70a4e371cf9698062cc79c54567f9f050fdfe9/pyproject.toml",
+]
+uv_sync = ["--frozen", "--group", "test"]

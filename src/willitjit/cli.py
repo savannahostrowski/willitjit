@@ -5,7 +5,6 @@ import json
 import os
 import platform
 import sys
-from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -79,6 +78,10 @@ def parser() -> argparse.ArgumentParser:
         "plan", help="show work without cloning or executing code"
     )
     _selection_arguments(plan)
+    plan.add_argument("--runtime", choices=("jit", "free-threaded"), default="jit")
+    plan.add_argument(
+        "--platform", choices=("Linux", "Darwin", "Windows"), default=platform.system()
+    )
     plan.add_argument(
         "--names-only",
         action="store_true",
@@ -313,20 +316,25 @@ def main(argv: list[str] | None = None) -> int:
                 print(package.name)
             return 0
         for package in selected:
+            package = package.for_environment(args.runtime, args.platform)
             print(f"{package.rank}. {package.name}")
             print(f"   repository: {package.repository}")
             print(f"   revision: {package.ref}")
+            for source in package.guidance:
+                print(f"   upstream guidance: {source}")
             print(
                 f"   release: {package.release_version} "
                 f"(published {package.release_date})"
             )
-            skip_reason = dict(package.skip_platforms).get(platform.system())
-            if skip_reason:
-                print(f"   not tested: {skip_reason}")
+            if package.skip_reason:
+                print(f"   not tested: {package.skip_reason}")
+                continue
             if package.sparse_paths:
                 print(f"   sparse checkout: {', '.join(package.sparse_paths)}")
             if package.fetch_tags:
                 print("   checkout: fetch tags")
+            if package.test_patch:
+                print(f"   test-only patch (both conditions): {package.test_patch}")
             if package.recursive_submodules:
                 print("   checkout: initialize recursive submodules")
             if package.fixture_repository:
@@ -372,7 +380,6 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
-        selected = [replace(package, test=package.focused_test) for package in selected]
     try:
         runtime: Runtime = args.runtime
         probe = validate_runtime_python(args.python, runtime)
@@ -431,7 +438,7 @@ def main(argv: list[str] | None = None) -> int:
     for package in selected:
         print(f"[{package.rank}/{len(packages)}] {package.name}", flush=True)
         try:
-            result = runner.run_package(package)
+            result = runner.run_package(package, focused=args.focused)
         finally:
             runner.cleanup_package_workspaces(package.name)
         results.append(result)

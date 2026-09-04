@@ -6,9 +6,10 @@ repository = "https://github.com/python/importlib_metadata.git"
 ref = "v9.0.0"
 release_version = "9.0.0"
 release_date = "2026-03-20T06:42:55.665400Z"
-install = [["-m", "pip", "install", "-e", ".[test]"]]
-test = ["-m", "pytest", "tests", "-p", "no:xdist", "-o", "addopts="]
+install = []
+test = []
 timeout_seconds = 1200
-fetch_tags = true
-skip_platforms = { Linux = "The Actions CPython build omits test.support, which this upstream suite requires.", Darwin = "The Actions CPython build omits test.support, which this upstream suite requires.", Windows = "The Actions CPython build omits test.support, which this upstream suite requires." }
-note = "Fetches tags for setuptools-scm. The full upstream suite runs only where the selected CPython distribution includes test.support."
+guidance = [
+  "https://github.com/python/importlib_metadata/blob/a9f883fef337c667a81a987bc0cbc0dbb43b2bfe/pyproject.toml",
+]
+skip_reason = "The Actions CPython build omits test.support, which this upstream suite requires."

@@ -12,3 +12,6 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 600
+guidance = [
+  "https://github.com/pallets/markupsafe/blob/297fc8e356e6836a62087949245d09a28e9f1b13/pyproject.toml",
+]

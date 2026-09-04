@@ -14,3 +14,7 @@ test = ["-m", "pytest", "--pyargs", "scipy", "-p", "no:xdist"]
 test_cwd = "tools"
 timeout_seconds = 3600
 note = "Runs the pinned SciPy wheel's bundled upstream suite from outside the source tree."
+guidance = [
+  "https://github.com/scipy/scipy/blob/54ef5423f2e4376230ec3bfda6912a07a50958e3/.github/workflows/linux.yml",
+  "https://github.com/scipy/scipy/blob/54ef5423f2e4376230ec3bfda6912a07a50958e3/requirements/test.txt",
+]

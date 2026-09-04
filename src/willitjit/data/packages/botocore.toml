@@ -16,3 +16,7 @@ test_cwd = "tests"
 timeout_seconds = 2400
 note = "Matches the repository CI dependencies and unit/functional selection; integration tests are excluded. The focused command reproduces the Windows JIT crash observed in functional/csm/test_monitoring.py."
 isolate_home = true
+guidance = [
+  "https://github.com/boto/botocore/blob/7fb8da7848707d52fbf544f097d51a4045d59aba/scripts/ci/run-tests",
+  "https://github.com/boto/botocore/blob/7fb8da7848707d52fbf544f097d51a4045d59aba/scripts/ci/install",
+]

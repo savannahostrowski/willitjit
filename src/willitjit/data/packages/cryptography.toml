@@ -7,10 +7,14 @@ ref = "50.0.0"
 release_version = "50.0.0"
 release_date = "2026-07-31T14:23:33.331759Z"
 install = [
-  ["-m", "pip", "install", "-e", "./vectors"],
-  ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-c", "ci-constraints-requirements.txt", "-e", "./vectors"],
+  ["-m", "pip", "install", "-c", "ci-constraints-requirements.txt", "."],
+  ["-m", "pip", "install", "-c", "ci-constraints-requirements.txt", "--group", "test"],
 ]
 test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 1800
-note = "Uses the upstream test dependency group; pytest-xdist is disabled so crashes remain attributable."
+note = "Upstream tests-nocoverage nox recipe with CI constraints and bundled vectors. External Wycheproof/x509-limbo corpus jobs are not selected; the default nox invocation does not require their roots."
+guidance = [
+  "https://github.com/pyca/cryptography/blob/dcb7050b807b00392fa9fe2eac7cb362fcf355cc/noxfile.py",
+  "https://github.com/pyca/cryptography/blob/dcb7050b807b00392fa9fe2eac7cb362fcf355cc/.github/workflows/ci.yml",
+]

@@ -13,3 +13,7 @@ install = [
 test = ["-m", "pytest", "testing"]
 timeout_seconds = 600
 note = "The shallow checkout may produce a synthetic setuptools-scm development version."
+guidance = [
+  "https://github.com/pytest-dev/iniconfig/blob/7faed13ae50bad7c5da3f5782f254a8a7736bb84/.github/workflows/test.yml",
+  "https://github.com/pytest-dev/iniconfig/blob/7faed13ae50bad7c5da3f5782f254a8a7736bb84/pyproject.toml",
+]

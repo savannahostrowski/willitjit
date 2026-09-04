@@ -12,3 +12,6 @@ install = [
 ]
 test = ["-m", "pytest", "sniffio/_tests"]
 timeout_seconds = 900
+guidance = [
+  "https://github.com/python-trio/sniffio/blob/ae020e13b98d276a6558ffc25e82509fd4c288f0/test-requirements.txt",
+]

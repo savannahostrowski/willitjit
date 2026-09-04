@@ -7,21 +7,15 @@ ref = "v1.97.0"
 release_version = "1.97.0"
 release_date = "2026-08-16T00:05:20.055801Z"
 install = [
-  ["-m", "pip", "install", "--group", "dev"],
-  ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "audioread==3.1.0", "botocore", "orjson>=3.11.6,<4.0", "proto-plus", "pyjwt", "soundfile==0.12.1", "tzdata", "websockets>=15.0.1,<16.0"],
+  ["-m", "prisma", "generate", "--schema", "litellm/proxy/schema.prisma"],
 ]
-test = [
-  "-m",
-  "pytest",
-  "tests/test_litellm/litellm_core_utils",
-  "--ignore=tests/test_litellm/litellm_core_utils/test_cli_token_utils.py",
-  "--ignore=tests/test_litellm/litellm_core_utils/test_private_json.py",
-  "-k",
-  "not test_process_pathlib_input and not test_process_pathlike_object",
-  "-p",
-  "no:xdist",
-]
+test = ["-m", "pytest", "tests/test_litellm/litellm_core_utils", "-p", "no:xdist"]
 timeout_seconds = 2400
-note = "Runs the upstream core-utilities unit shard with its locked audio dependencies, excluding two POSIX-only permission files and two Windows path-format assertions plus proxy, end-to-end, and integration lanes."
+note = "Upstream _test-unit-base dependency groups/extras, frozen lock and Prisma generation for the core-utils target. No hand-picked dependencies, test exclusions or automatic retries. Unsupported Windows tests remain visible baseline failures."
 isolate_home = true
+guidance = [
+  "https://github.com/BerriAI/litellm/blob/884376644d463a1fc05c846e61c361ff1369a1cc/Makefile",
+  "https://github.com/BerriAI/litellm/blob/884376644d463a1fc05c846e61c361ff1369a1cc/CONTRIBUTING.md",
+  "https://github.com/BerriAI/litellm/blob/884376644d463a1fc05c846e61c361ff1369a1cc/.github/workflows/_test-unit-base.yml",
+]
+uv_sync = ["--frozen", "--group", "ci", "--group", "proxy-dev", "--extra", "google", "--extra", "proxy", "--extra", "semantic-router", "--extra", "saml"]

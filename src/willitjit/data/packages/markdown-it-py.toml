@@ -6,8 +6,14 @@ repository = "https://github.com/executablebooks/markdown-it-py.git"
 ref = "v4.2.0"
 release_version = "4.2.0"
 release_date = "2026-05-07T12:08:27.182789Z"
-install = [["-m", "pip", "install", "-e", ".[testing,linkify,plugins]"]]
+install = [
+  ["-m", "pip", "install", "-e", ".[testing,linkify,plugins]"],
+]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
-environment = { PYTHONUTF8 = "1", PYTHONIOENCODING = "utf-8" }
+environment = { "PYTHONUTF8" = "1", "PYTHONIOENCODING" = "utf-8" }
 note = "Forces UTF-8 for the cmark fixtures because upstream tests only on Linux."
+guidance = [
+  "https://github.com/executablebooks/markdown-it-py/blob/36c5f547144df2d01970a5792d68c71a3380b227/tox.ini",
+  "https://github.com/executablebooks/markdown-it-py/blob/36c5f547144df2d01970a5792d68c71a3380b227/pyproject.toml",
+]

@@ -12,3 +12,7 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
+guidance = [
+  "https://github.com/executablebooks/mdurl/blob/596bf1c8752de45fa576a52c315d6d8cc5bb1a4e/.github/workflows/tests.yaml",
+  "https://github.com/executablebooks/mdurl/blob/596bf1c8752de45fa576a52c315d6d8cc5bb1a4e/tests/requirements.txt",
+]

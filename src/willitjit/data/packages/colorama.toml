@@ -6,6 +6,13 @@ repository = "https://github.com/tartley/colorama.git"
 ref = "0.4.6"
 release_version = "0.4.6"
 release_date = "2022-10-25T02:36:20.889702Z"
-install = [["-m", "pip", "install", "-e", ".", "pytest"]]
-test = ["-m", "pytest", "colorama/tests"]
+install = [
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-m", "unittest", "discover", "-p", "*_test.py"]
 timeout_seconds = 900
+guidance = [
+  "https://github.com/tartley/colorama/blob/3de9f013df4b470069d03d250224062e8cf15c49/tox.ini",
+  "https://github.com/tartley/colorama/blob/3de9f013df4b470069d03d250224062e8cf15c49/Makefile",
+]
+note = "Uses upstream stdlib unittest discovery directly; pytest is unnecessary."

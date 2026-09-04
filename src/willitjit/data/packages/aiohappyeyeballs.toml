@@ -7,8 +7,13 @@ ref = "v2.7.1"
 release_version = "2.7.1"
 release_date = "2026-07-01T17:11:54.055058Z"
 install = [
-  ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "pytest", "pytest-cov", "pytest-asyncio"],
+  ["-m", "pip", "install", "poetry"],
+  ["-m", "poetry", "install", "--no-interaction"],
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
+guidance = [
+  "https://github.com/aio-libs/aiohappyeyeballs/blob/4dfc926e30eea8d24c1a71602d73c0e9a895c191/pyproject.toml",
+]
+environment = { "POETRY_VIRTUALENVS_CREATE" = "false" }
+note = "Uses upstream Poetry dev dependencies and lock instead of unconstrained pytest/plugin versions; installs into the selected environment."

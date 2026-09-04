@@ -12,3 +12,7 @@ install = [
 test = ["-m", "pytest", "testing"]
 timeout_seconds = 600
 note = "Installs the pinned checkout with its upstream testing extra."
+guidance = [
+  "https://github.com/pytest-dev/pluggy/blob/fd08ab5f811a9b2fa9124ae8cbbd393221151e2c/tox.ini",
+  "https://github.com/pytest-dev/pluggy/blob/fd08ab5f811a9b2fa9124ae8cbbd393221151e2c/pyproject.toml",
+]

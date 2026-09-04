@@ -13,3 +13,6 @@ install = [
 test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 900
 note = "The optional libyaml extension is used when platform build dependencies are available."
+guidance = [
+  "https://github.com/yaml/pyyaml/blob/49790e73684bebad1df05ef8d828fa12f685bffb/pyproject.toml",
+]

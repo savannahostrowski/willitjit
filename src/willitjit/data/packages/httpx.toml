@@ -13,3 +13,7 @@ install = [
 test = ["-m", "pytest", "tests", "--timeout=60"]
 timeout_seconds = 1800
 note = "The release's upstream matrix stops at Python 3.12. A per-test timeout prevents its fixed-port server fixture from consuming the full package timeout when it cannot start on Python 3.14."
+guidance = [
+  "https://github.com/encode/httpx/blob/26d48e0634e6ee9cdc0533996db289ce4b430177/scripts/test",
+  "https://github.com/encode/httpx/blob/26d48e0634e6ee9cdc0533996db289ce4b430177/requirements.txt",
+]

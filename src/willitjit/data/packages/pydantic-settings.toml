@@ -8,6 +8,10 @@ release_version = "2.15.0"
 release_date = "2026-08-07T09:24:55.839145Z"
 install = []
 uv_sync = ["--frozen", "--group", "testing", "--all-extras"]
-test = ["-m", "pytest", "tests", "-p", "no:xdist", "-W", "ignore:Exception ignored while finalizing scandir iterator:pytest.PytestUnraisableExceptionWarning"]
+test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 1800
-note = "Uses the release's frozen uv environment and ignores only CPython's scandir finalization warning."
+note = "Uses the release frozen testing/all-extras environment. No local suppression of unraisable-exception warnings."
+guidance = [
+  "https://github.com/pydantic/pydantic-settings/blob/f725ca187bee4212e9ef799eefa3cb25be788462/Makefile",
+  "https://github.com/pydantic/pydantic-settings/blob/f725ca187bee4212e9ef799eefa3cb25be788462/pyproject.toml",
+]

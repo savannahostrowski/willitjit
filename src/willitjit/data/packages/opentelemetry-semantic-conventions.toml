@@ -6,7 +6,13 @@ repository = "https://github.com/open-telemetry/opentelemetry-python.git"
 ref = "v1.44.0"
 release_version = "0.65b0"
 release_date = "2026-07-16T15:25:30.688910Z"
-install = [["-m", "pip", "install", "-r", "opentelemetry-semantic-conventions/test-requirements.txt"]]
+install = [
+  ["-m", "pip", "install", "-r", "opentelemetry-semantic-conventions/test-requirements.txt"],
+]
 test = ["-m", "pytest", "opentelemetry-semantic-conventions/tests"]
 timeout_seconds = 1200
 note = "Uses the package's upstream test requirements from the OpenTelemetry monorepo."
+guidance = [
+  "https://github.com/open-telemetry/opentelemetry-python/blob/53a5a40c9604583c501bcf13970a635f00e62df4/tox.ini",
+  "https://github.com/open-telemetry/opentelemetry-python/blob/53a5a40c9604583c501bcf13970a635f00e62df4/opentelemetry-semantic-conventions/test-requirements.txt",
+]

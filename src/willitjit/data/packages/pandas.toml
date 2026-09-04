@@ -14,3 +14,7 @@ install = [
 test = ["-m", "pytest", "-m", "not slow and not network and not clipboard and not single_cpu", "pandas", "-p", "no:xdist"]
 timeout_seconds = 3600
 note = "Uses pandas' declared build requirements in the persistent test environment, then runs the upstream core suite without slow, network, clipboard, or single-CPU lanes."
+guidance = [
+  "https://github.com/pandas-dev/pandas/blob/e68db09ecf6427d1b62e565bacf17f2e525a3032/.github/workflows/unit-tests.yml",
+  "https://github.com/pandas-dev/pandas/blob/e68db09ecf6427d1b62e565bacf17f2e525a3032/pyproject.toml",
+]

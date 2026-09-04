@@ -10,8 +10,10 @@ sparse_paths = ["packages/google-api-core"]
 install = [
   ["-m", "pip", "install", "pytest", "pytest-asyncio", "pytest-mock", "pytest-xdist", "asyncmock"],
   ["-m", "pip", "install", "-e", "./packages/google-api-core[grpc]", "-c", "packages/google-api-core/testing/constraints-3.14.txt"],
-  ["-m", "pip", "install", "google-auth==2.56.2"],
 ]
-test = ["-m", "pytest", "packages/google-api-core/tests", "-p", "no:xdist"]
+test = ["-m", "pytest", "packages/google-api-core/tests/unit", "packages/google-api-core/tests/asyncio", "-p", "no:xdist"]
 timeout_seconds = 1800
-note = "Uses the package's Python 3.14 constraints and the preceding google-auth release so the tagged compatibility fallback is exercised as its tests expect."
+note = "Upstream Python 3.14 constraints, grpc extra and unit/async tests. No post-install google-auth downgrade; failures of the pinned release remain evidence."
+guidance = [
+  "https://github.com/googleapis/google-cloud-python/blob/905bfe39396d0062fde6df462e5c495e93b9749e/packages/google-api-core/noxfile.py",
+]

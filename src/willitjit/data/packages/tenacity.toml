@@ -6,6 +6,12 @@ repository = "https://github.com/jd/tenacity.git"
 ref = "9.1.4"
 release_version = "9.1.4"
 release_date = "2026-02-07T10:45:32.240169Z"
-install = [["-m", "pip", "install", "-e", ".[test]"]]
+install = [
+  ["-m", "pip", "install", "-e", ".[test]"],
+]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1200
+guidance = [
+  "https://github.com/jd/tenacity/blob/d4e868d6b8368c00b5a1fad54de36c2c8c3a0fb3/tox.ini",
+  "https://github.com/jd/tenacity/blob/d4e868d6b8368c00b5a1fad54de36c2c8c3a0fb3/setup.cfg",
+]

@@ -12,3 +12,7 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
+guidance = [
+  "https://github.com/fastapi/annotated-doc/blob/ef48d6ad51d226f772fd9c5284f55199afe4007c/scripts/test.sh",
+  "https://github.com/fastapi/annotated-doc/blob/ef48d6ad51d226f772fd9c5284f55199afe4007c/pyproject.toml",
+]

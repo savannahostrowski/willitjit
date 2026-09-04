@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import tomllib
+from dataclasses import fields
 from datetime import datetime
 from importlib.resources import files
 from importlib.resources.abc import Traversable
 from pathlib import Path
 from typing import Any
 
-from .models import Package
+from .models import Package, RecipeOverride
 
 
 def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Package]]:
@@ -30,6 +31,11 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
             raise TypeError(f"{package_file.name} needs a package table")
         if package_file.name != f"{item.get('name')}.toml":
             raise ValueError(f"package filename does not match {item.get('name')}")
+        unknown = item.keys() - {field.name for field in fields(Package)}
+        if unknown:
+            raise ValueError(
+                f"unknown adapter fields in {package_file.name}: {unknown}"
+            )
         package_items.append(item)
     package_items.sort(key=lambda item: item["rank"])
     packages = [
@@ -47,6 +53,7 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
             fixture_ref=item.get("fixture_ref", ""),
             fixture_destination=item.get("fixture_destination", ""),
             test_cwd=item.get("test_cwd", "."),
+            test_patch=item.get("test_patch", ""),
             timeout_seconds=item.get("timeout_seconds", 900),
             note=item.get("note", ""),
             environment=tuple(item.get("environment", {}).items()),
@@ -56,10 +63,12 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
             embedded_python=item.get("embedded_python", False),
             fetch_tags=item.get("fetch_tags", False),
             sparse_paths=tuple(item.get("sparse_paths", ())),
-            skip_platforms=tuple(item.get("skip_platforms", {}).items()),
+            skip_reason=item.get("skip_reason", ""),
             focused_test=tuple(item.get("focused_test", ())),
             release_version=item.get("release_version", ""),
             release_date=item.get("release_date", ""),
+            guidance=tuple(item.get("guidance", ())),
+            overrides=tuple(_override(value) for value in item.get("overrides", ())),
         )
         for item in package_items
     ]
@@ -73,6 +82,31 @@ def load_registry(path: Path | None = None) -> tuple[dict[str, Any], list[Packag
     return dataset, packages
 
 
+def _override(value: dict[str, Any]) -> RecipeOverride:
+    allowed = {
+        "runtime",
+        "platform",
+        "install",
+        "test",
+        "uv_sync",
+        "environment",
+        "note",
+    }
+    if value.keys() - allowed:
+        raise ValueError(f"unknown adapter override fields: {value.keys() - allowed}")
+    return RecipeOverride(
+        runtime=value.get("runtime"),
+        platform=value.get("platform"),
+        install=tuple(tuple(command) for command in value["install"])
+        if "install" in value
+        else None,
+        test=tuple(value["test"]) if "test" in value else None,
+        uv_sync=tuple(value["uv_sync"]) if "uv_sync" in value else None,
+        environment=tuple(value.get("environment", {}).items()),
+        note=value.get("note", ""),
+    )
+
+
 def validate_registry(
     packages: list[Package], *, release_cutoff: str | None = None
 ) -> None:
@@ -84,10 +118,28 @@ def validate_registry(
     if len(names) != len(set(names)):
         raise ValueError("package names must be unique")
     for package in packages:
+        selectors = set()
+        for override in package.overrides:
+            selector = (override.runtime, override.platform)
+            if (
+                selector == (None, None)
+                or selector in selectors
+                or override.runtime not in (None, "jit", "free-threaded")
+                or override.platform not in (None, *supported_platforms)
+                or not override.note
+            ):
+                raise ValueError(f"invalid or undocumented override for {package.name}")
+            selectors.add(selector)
+        if package.overrides:
+            # Validate effective recipes too, including environment and command safety.
+            for runtime in ("jit", "free-threaded"):
+                for platform in supported_platforms:
+                    validate_registry([package.for_environment(runtime, platform)])
+        if any(not url.startswith("https://") for url in package.guidance):
+            raise ValueError(f"invalid guidance URL for {package.name}")
         if Path(package.name).name != package.name or package.name in {"", ".", ".."}:
             raise ValueError(f"unsafe package name: {package.name}")
-        skipped_platforms = {platform for platform, _reason in package.skip_platforms}
-        fully_skipped = skipped_platforms == supported_platforms
+        fully_skipped = bool(package.skip_reason)
         if (
             not package.repository.startswith("https://github.com/")
             and not fully_skipped
@@ -113,6 +165,15 @@ def validate_registry(
             path = Path(directory)
             if path.is_absolute() or ".." in path.parts:
                 raise ValueError(f"unsafe {field} for {package.name}")
+        if package.test_patch and (
+            "/" in package.test_patch
+            or "\\" in package.test_patch
+            or not package.test_patch.endswith(".patch")
+            or not files("willitjit")
+            .joinpath("data", "patches", package.test_patch)
+            .is_file()
+        ):
+            raise ValueError(f"unknown or unsafe test patch for {package.name}")
         if any(
             not path or Path(path).is_absolute() or ".." in Path(path).parts
             for path in package.sparse_paths
@@ -120,11 +181,11 @@ def validate_registry(
             raise ValueError(f"unsafe sparse path for {package.name}")
         if any(not key or "=" in key for key, _value in package.environment):
             raise ValueError(f"invalid environment key for {package.name}")
-        if any(
-            platform not in supported_platforms or not reason
-            for platform, reason in package.skip_platforms
-        ):
-            raise ValueError(f"invalid platform skip for {package.name}")
+        if {key.upper() for key, _ in package.environment} & {
+            "PYTHON_JIT",
+            "PYTHON_GIL",
+        }:
+            raise ValueError(f"adapter cannot override runtime toggles: {package.name}")
         fixture_fields = (
             package.fixture_repository,
             package.fixture_ref,

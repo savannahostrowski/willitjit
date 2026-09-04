@@ -13,3 +13,7 @@ install = [
 test = ["-bb", "-W", "error", "-m", "pytest", "tests"]
 timeout_seconds = 900
 note = "Uses upstream's CI requirements, which include pytest-cov in addition to the wheel test dependencies."
+guidance = [
+  "https://github.com/aio-libs/aiosignal/blob/1cf80149c869d410c90a58e85e9c703be6ef8692/pyproject.toml",
+  "https://github.com/aio-libs/aiosignal/blob/1cf80149c869d410c90a58e85e9c703be6ef8692/requirements/ci-wheel.txt",
+]
