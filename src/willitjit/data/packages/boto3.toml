@@ -3,9 +3,9 @@ rank = 1
 name = "boto3"
 downloads = 3717556977
 repository = "https://github.com/boto/boto3.git"
-ref = "1.43.68"
-release_version = "1.43.68"
-release_date = "2026-08-10T19:22:05.592139Z"
+ref = "1.43.73"
+release_version = "1.43.73"
+release_date = "2026-08-17T20:39:41.636309Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements-dev-lock.txt"],
   ["-m", "pip", "install", "-e", "."],

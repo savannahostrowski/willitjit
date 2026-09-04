@@ -3,9 +3,9 @@ rank = 6
 name = "idna"
 downloads = 1760742555
 repository = "https://github.com/kjd/idna.git"
-ref = "v3.18"
-release_version = "3.18"
-release_date = "2026-06-02T14:34:06.319954Z"
+ref = "v3.19"
+release_version = "3.19"
+release_date = "2026-08-18T05:14:22.343598Z"
 install = [
   ["-m", "pip", "install", "-e", "."],
   ["-m", "pip", "install", "pytest>=8.3.2", "hypothesis>=6.141.1"],

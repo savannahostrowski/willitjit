@@ -3,9 +3,9 @@ rank = 46
 name = "litellm"
 downloads = 682782233
 repository = "https://github.com/BerriAI/litellm.git"
-ref = "v1.96.0"
-release_version = "1.96.0"
-release_date = "2026-08-09T01:35:19.155629Z"
+ref = "v1.97.0"
+release_version = "1.97.0"
+release_date = "2026-08-16T00:05:20.055801Z"
 install = [
   ["-m", "pip", "install", "--group", "dev"],
   ["-m", "pip", "install", "-e", "."],
