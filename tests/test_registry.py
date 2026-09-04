@@ -27,6 +27,12 @@ class RegistryTests(unittest.TestCase):
                 RecipeOverride(
                     platform="Windows", test=("-m", "unittest"), note="Windows suite"
                 ),
+                RecipeOverride(
+                    runtime="jit",
+                    platform="Darwin",
+                    skip_reason="No documented macOS lane.",
+                    note="Skip unsupported lane",
+                ),
             ),
         )
         for runtime in ("jit", "free-threaded"):
@@ -46,8 +52,14 @@ class RegistryTests(unittest.TestCase):
                         "2" if runtime == "free-threaded" else None,
                     )
                     self.assertEqual(dict(recipe.environment)["BASE"], "1")
+                    self.assertEqual(
+                        recipe.skip_reason,
+                        "No documented macOS lane."
+                        if runtime == "jit" and platform == "Darwin"
+                        else "",
+                    )
                     self.assertEqual(recipe.for_environment(runtime, platform), recipe)
-        self.assertEqual(len(base.overrides), 2)
+        self.assertEqual(len(base.overrides), 3)
 
     def test_rejects_ambiguous_or_unsafe_overrides(self) -> None:
         _, packages = load_registry()

@@ -21,6 +21,7 @@ class RecipeOverride:
     install: tuple[tuple[str, ...], ...] | None = None
     test: tuple[str, ...] | None = None
     uv_sync: tuple[str, ...] | None = None
+    skip_reason: str | None = None
     environment: tuple[tuple[str, str], ...] = ()
     note: str = ""
 
@@ -67,7 +68,7 @@ class Package:
                 continue
             changes = {
                 name: value
-                for name in ("install", "test", "uv_sync")
+                for name in ("install", "test", "uv_sync", "skip_reason")
                 if (value := getattr(override, name)) is not None
             }
             environment = dict(package.environment)

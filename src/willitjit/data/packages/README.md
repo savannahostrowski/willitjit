@@ -30,6 +30,9 @@ an empty command list explicitly clears it. Put general rules before specific
 ones. The resulting recipe is identical for the baseline and target condition.
 Adapters cannot set `PYTHON_JIT` or `PYTHON_GIL`.
 
+An override may set `skip_reason` when upstream documents a lane on only some
+platforms. The other platform cells remain visible as Not tested.
+
 The runner checks the actual test environment after installation. Don't launch
 tox or nox inside it: that creates a second environment whose interpreter and
 toggle may differ. Translate the selected upstream session's setup and test

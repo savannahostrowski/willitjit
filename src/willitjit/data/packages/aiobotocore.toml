@@ -11,12 +11,24 @@ install = [
   ["-m", "build", "--wheel", "--outdir", "dist"],
   ["-m", "pip", "install", "--force-reinstall", "--no-deps", "dist/aiobotocore-{release_version}-py3-none-any.whl"],
 ]
-test = ["-P", "-m", "pytest", "-m", "not localonly", "tests", "-p", "no:xdist"]
+test = ["-P", "-m", "pytest", "-vv", "-m", "not localonly", "-n", "auto", "--dist", "worksteal", "--log-cli-level=DEBUG", "--http-backend=aiohttp"]
 timeout_seconds = 1800
-note = "Upstream frozen test environment and built-wheel not-localonly lane. -P avoids adding the checkout to sys.path when invoking pytest through the selected Python. No independent botocore pin."
+environment = { "HTTP_BACKEND" = "aiohttp", "PYTHONTRACEMALLOC" = "5" }
+note = "Matches upstream's Linux Moto lane without coverage, using its frozen test group and installed wheel. -P keeps the checkout from shadowing the installed package."
 isolate_home = true
 guidance = [
   "https://github.com/aio-libs/aiobotocore/blob/9e70a4e371cf9698062cc79c54567f9f050fdfe9/CONTRIBUTING.rst",
   "https://github.com/aio-libs/aiobotocore/blob/9e70a4e371cf9698062cc79c54567f9f050fdfe9/pyproject.toml",
+  "https://github.com/aio-libs/aiobotocore/blob/9e70a4e371cf9698062cc79c54567f9f050fdfe9/.github/workflows/ci-cd.yml",
 ]
-uv_sync = ["--frozen", "--group", "test"]
+uv_sync = ["--frozen", "--no-install-project", "--no-default-groups", "--group", "test"]
+
+[[package.overrides]]
+platform = "Darwin"
+skip_reason = "Not tested: upstream's Moto CI lane runs on Linux and requires Docker for Lambda tests."
+note = "Do not turn missing Docker into a macOS baseline failure."
+
+[[package.overrides]]
+platform = "Windows"
+skip_reason = "Not tested: upstream's Moto CI lane runs on Linux and requires Docker for Lambda tests."
+note = "Do not replace the documented Linux lane with an incomplete Windows subset."

@@ -13,7 +13,16 @@ install = [
 test = ["-m", "virtue", "jsonschema"]
 timeout_seconds = 2400
 environment = { "JSON_SCHEMA_TEST_SUITE" = "json", "PYTHONUTF8" = "1" }
-note = "Uses upstream's virtue test runner and UTF-8 mode, with enough time for the full generated suite on Windows."
+note = "Uses upstream's virtue runner and format-extra lane on Linux and macOS."
 guidance = [
   "https://github.com/python-jsonschema/jsonschema/blob/a7277432b0f7bcd0551f6e589d30457017125df4/noxfile.py",
+  "https://github.com/python-jsonschema/jsonschema/blob/a7277432b0f7bcd0551f6e589d30457017125df4/.github/workflows/ci.yml",
 ]
+
+[[package.overrides]]
+platform = "Windows"
+install = [
+  ["-m", "pip", "install", "--group", "test"],
+  ["-m", "pip", "install", "-e", "."],
+]
+note = "Upstream excludes the format-extra variants on Windows, so this uses its no-extras test lane."

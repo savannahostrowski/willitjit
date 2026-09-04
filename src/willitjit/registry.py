@@ -89,6 +89,7 @@ def _override(value: dict[str, Any]) -> RecipeOverride:
         "install",
         "test",
         "uv_sync",
+        "skip_reason",
         "environment",
         "note",
     }
@@ -102,6 +103,7 @@ def _override(value: dict[str, Any]) -> RecipeOverride:
         else None,
         test=tuple(value["test"]) if "test" in value else None,
         uv_sync=tuple(value["uv_sync"]) if "uv_sync" in value else None,
+        skip_reason=value.get("skip_reason"),
         environment=tuple(value.get("environment", {}).items()),
         note=value.get("note", ""),
     )
