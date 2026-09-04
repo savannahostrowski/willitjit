@@ -7,6 +7,7 @@ import type {
   CompatibilityHistory,
   LegacySnapshot,
   PreviousCompatibilityHistory,
+  ResultsIndex,
   Snapshot,
 } from "./types";
 import "./styles.css";
@@ -27,8 +28,8 @@ async function fetchJson<T>(url: string): Promise<T> {
 function normalizeHistory(
   history: CompatibilityHistory | PreviousCompatibilityHistory,
 ): CompatibilityHistory {
-  if (history.schemaVersion === 3) return history;
-  return { schemaVersion: 3, activeSeries: null, series: [] };
+  if (history.schemaVersion === 4) return history;
+  return { schemaVersion: 4, activeSeries: null, series: [] };
 }
 
 function normalizeSnapshot(snapshot: Snapshot | LegacySnapshot): Snapshot {
@@ -76,28 +77,95 @@ function normalizeSnapshot(snapshot: Snapshot | LegacySnapshot): Snapshot {
   };
 }
 
+function pythonSeries(version: string | undefined) {
+  return version?.match(/^(\d+\.\d+)/)?.[1] ?? "current";
+}
+
+function snapshotPath(path: string) {
+  if (!/^[A-Za-z0-9._/-]+\.json$/.test(path) || path.includes("..") || path.startsWith("/")) {
+    throw new Error("The results index contains an invalid snapshot path.");
+  }
+  return `${DATA_ROOT}/${path}`;
+}
+
 function Dashboard() {
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [index, setIndex] = useState<ResultsIndex | null>(null);
+  const [snapshots, setSnapshots] = useState<Record<string, Snapshot>>({});
+  const [activeVersion, setActiveVersion] = useState<string | null>(null);
   const [history, setHistory] = useState<CompatibilityHistory | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([
-      fetchJson<Snapshot | LegacySnapshot>(`${DATA_ROOT}/results.json`),
-      fetchJson<CompatibilityHistory | PreviousCompatibilityHistory>(`${DATA_ROOT}/history.json`),
-    ])
-      .then(([nextSnapshot, nextHistory]) => {
-        setSnapshot(normalizeSnapshot(nextSnapshot));
-        setHistory(normalizeHistory(nextHistory));
+    let cancelled = false;
+    const historyRequest = fetchJson<CompatibilityHistory | PreviousCompatibilityHistory>(
+      `${DATA_ROOT}/history.json`,
+    );
+
+    async function load() {
+      let nextIndex: ResultsIndex;
+      let nextSnapshots: Record<string, Snapshot>;
+      try {
+        nextIndex = await fetchJson<ResultsIndex>(`${DATA_ROOT}/index.json`);
+        if (nextIndex.schemaVersion !== 1 || nextIndex.versions.length === 0) {
+          throw new Error("The results index has an unsupported format.");
+        }
+        const entries = await Promise.all(nextIndex.versions.map(async (version) => [
+          version.id,
+          normalizeSnapshot(await fetchJson<Snapshot | LegacySnapshot>(snapshotPath(version.path))),
+        ] as const));
+        nextSnapshots = Object.fromEntries(entries);
+      } catch {
+        const snapshot = normalizeSnapshot(
+          await fetchJson<Snapshot | LegacySnapshot>(`${DATA_ROOT}/results.json`),
+        );
+        const exactVersion = snapshot.run.github?.cpythonVersion ?? "Current";
+        const id = pythonSeries(snapshot.run.github?.cpythonVersion);
+        nextIndex = {
+          schemaVersion: 1,
+          defaultVersion: id,
+          versions: [{ id, pythonVersion: exactVersion, path: "results.json" }],
+        };
+        nextSnapshots = { [id]: snapshot };
+      }
+
+      const nextHistory = normalizeHistory(await historyRequest);
+      const requestedVersion = new URLSearchParams(window.location.search).get("python");
+      const selectedVersion = requestedVersion && nextSnapshots[requestedVersion]
+        ? requestedVersion
+        : nextIndex.defaultVersion;
+      if (!nextSnapshots[selectedVersion]) {
+        throw new Error("The default Python version has no results snapshot.");
+      }
+      return { nextHistory, nextIndex, nextSnapshots, selectedVersion };
+    }
+
+    load()
+      .then(({ nextHistory, nextIndex, nextSnapshots, selectedVersion }) => {
+        if (cancelled) return;
+        setIndex(nextIndex);
+        setSnapshots(nextSnapshots);
+        setActiveVersion(selectedVersion);
+        setHistory(nextHistory);
       })
       .catch((reason: unknown) => {
+        if (cancelled) return;
         setError(
           reason instanceof Error
             ? reason.message
             : "Results could not be loaded.",
         );
       });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  function selectVersion(version: string) {
+    setActiveVersion(version);
+    const url = new URL(window.location.href);
+    url.searchParams.set("python", version);
+    window.history.replaceState(null, "", url);
+  }
 
   if (error) {
     return (
@@ -108,7 +176,8 @@ function Dashboard() {
       </div>
     );
   }
-  if (!snapshot || !history) {
+  const snapshot = activeVersion ? snapshots[activeVersion] : null;
+  if (!snapshot || !history || !index || !activeVersion) {
     return (
       <div className="load-state" aria-live="polite">
         <p className="eyebrow">Will It JIT?</p>
@@ -118,7 +187,12 @@ function Dashboard() {
   }
   return (
     <>
-      <ResultsExplorer snapshot={snapshot} />
+      <ResultsExplorer
+        snapshot={snapshot}
+        versions={index.versions}
+        activeVersion={activeVersion}
+        onVersionChange={selectVersion}
+      />
       <HistoryChart history={history} />
     </>
   );

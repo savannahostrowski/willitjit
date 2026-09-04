@@ -47,7 +47,9 @@ def build_compatibility_results(
     packages: list[Package],
     expected_platforms: tuple[str, ...] = EXPECTED_PLATFORMS,
     expected_runtimes: tuple[Runtime, ...] = EXPECTED_RUNTIMES,
+    cpython_series: str | None = None,
     github_run_id: str | None = None,
+    github_source_run_id: str | None = None,
 ) -> dict[str, Any]:
     files = list(run_files)
     replacement_files = list(replacement_run_files)
@@ -60,13 +62,22 @@ def build_compatibility_results(
     }
     run_ids: set[str] = set()
     github: dict[str, Any] = {}
+    matching_runs = 0
+    matching_versions: set[str] = set()
 
     def add_run(run_file: Path, *, replace: bool) -> None:
+        nonlocal matching_runs
         raw = json.loads(run_file.read_text())
         run = raw.get("run", {})
+        run_python_version = _run_python_version(run)
+        if cpython_series and _python_series(run_python_version) != cpython_series:
+            return
         runtime = _runtime_name(run)
         if runtime not in expected_runtimes:
             return
+        matching_runs += 1
+        if run_python_version:
+            matching_versions.add(run_python_version)
         platform_name = _platform_name(run, raw)
         run_ids.add(str(run.get("id", run_file.parent.name)))
         github.update(
@@ -96,6 +107,11 @@ def build_compatibility_results(
     for run_file in replacement_files:
         raw = json.loads(run_file.read_text())
         run = raw.get("run", {})
+        if (
+            cpython_series
+            and _python_series(_run_python_version(run)) != cpython_series
+        ):
+            continue
         runtime = _runtime_name(run)
         if runtime not in expected_runtimes:
             continue
@@ -114,8 +130,19 @@ def build_compatibility_results(
         replacement_keys.update(keys)
         add_run(run_file, replace=True)
 
+    if matching_runs == 0:
+        suffix = f" for CPython {cpython_series}" if cpython_series else ""
+        raise ValueError(f"no matching run.json files found{suffix}")
+    if len(matching_versions) > 1:
+        raise ValueError(
+            "cannot merge multiple CPython patch versions: "
+            + ", ".join(sorted(matching_versions))
+        )
+
     if github_run_id:
         github["runId"] = github_run_id
+    if github_source_run_id:
+        github["sourceRunId"] = github_source_run_id
 
     public_packages = []
     runtime_summaries: dict[Runtime, dict[str, Any]] = {}
@@ -228,7 +255,9 @@ def write_compatibility_results(
     packages: list[Package],
     expected_platforms: tuple[str, ...] = EXPECTED_PLATFORMS,
     expected_runtimes: tuple[Runtime, ...] = EXPECTED_RUNTIMES,
+    cpython_series: str | None = None,
     github_run_id: str | None = None,
+    github_source_run_id: str | None = None,
 ) -> None:
     payload = build_compatibility_results(
         run_files=run_files,
@@ -237,10 +266,24 @@ def write_compatibility_results(
         packages=packages,
         expected_platforms=expected_platforms,
         expected_runtimes=expected_runtimes,
+        cpython_series=cpython_series,
         github_run_id=github_run_id,
+        github_source_run_id=github_source_run_id,
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, indent=2) + "\n")
+
+
+def _run_python_version(run: dict[str, Any]) -> str | None:
+    version = run.get("github", {}).get("cpythonVersion")
+    return str(version) if version else None
+
+
+def _python_series(version: str | None) -> str | None:
+    if not version:
+        return None
+    match = re.match(r"(\d+\.\d+)", version)
+    return match.group(1) if match else None
 
 
 def _platform_name(run: dict[str, Any], raw: dict[str, Any]) -> str:

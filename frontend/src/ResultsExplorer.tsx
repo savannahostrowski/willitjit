@@ -3,6 +3,7 @@ import { Fragment, useMemo, useState } from "react";
 import type {
   Condition,
   Observation,
+  ResultsVersion,
   Runtime,
   RuntimeResult,
   Snapshot,
@@ -35,6 +36,15 @@ const filters: { value: StatusFilter; label: string }[] = [
   { value: "infrastructure-failure", label: "Setup failed" },
   { value: "not-tested", label: "Not tested" },
 ];
+
+const filterDescriptions: Record<StatusFilter, string> = {
+  all: "Results compare the same upstream tests with the JIT off and on. Packages without a passing JIT-off baseline are excluded from the compatibility rate.",
+  compatible: "JIT compatible means the tests passed with the JIT off and on across every tested platform.",
+  "needs-triage": "Needs triage means the tests passed with the JIT off but failed or timed out with it on.",
+  "baseline-blocked": "Baseline failed means the JIT-off test run did not pass, so the package does not count against JIT compatibility.",
+  "infrastructure-failure": "Setup failed means checkout, environment, or dependency setup did not complete, so no compatibility result was produced.",
+  "not-tested": "Not tested means no result was collected for this package and Python version.",
+};
 
 const compactNumber = new Intl.NumberFormat("en-US", {
   notation: "compact",
@@ -119,7 +129,17 @@ function packageStatusLabel(results: Partial<Record<Runtime, RuntimeResult>>) {
   return statusLabels[status];
 }
 
-export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
+export function ResultsExplorer({
+  snapshot,
+  versions,
+  activeVersion,
+  onVersionChange,
+}: {
+  snapshot: Snapshot;
+  versions: ResultsVersion[];
+  activeVersion: string;
+  onVersionChange: (version: string) => void;
+}) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [query, setQuery] = useState("");
   const [evidenceRuntimeByPackage, setEvidenceRuntimeByPackage] = useState<Record<string, Runtime>>({});
@@ -128,8 +148,6 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
   const baselineEligible = jitSummary?.baselineEligible ?? 0;
   const rate = compatibilityRate(compatible, baselineEligible);
   const pending = !jitSummary?.completedObservations;
-  const cpythonVersion = snapshot.run.github?.cpythonVersion ?? "3.14.6";
-  const cpythonLabel = cpythonVersion.replace(".0rc", " RC").toUpperCase();
   const githubRepository = snapshot.run.github?.repository;
   const githubRunId = snapshot.run.github?.runId;
   const githubRunUrl = githubRepository
@@ -158,13 +176,27 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
         <div>
           <h1>Will It JIT?</h1>
           <p>Testing JIT compatibility across the top PyPI packages.</p>
+          <div className="python-versions" role="group" aria-label="Python version">
+            {versions.map((version) => (
+              <button
+                type="button"
+                aria-label={`CPython ${version.pythonVersion}`}
+                aria-pressed={version.id === activeVersion}
+                key={version.id}
+                onClick={() => onVersionChange(version.id)}
+              >
+                <span>{version.id}</span>
+                <small>{version.pythonVersion}</small>
+              </button>
+            ))}
+          </div>
         </div>
         <div className="survey-summary">
           <div className="runtime-summaries">
             <div
               className="compatibility-summary"
               aria-label={pending
-                ? "JIT survey pending"
+                ? "JIT results pending"
                 : `${compatible} of ${baselineEligible} packages with passing baselines are JIT compatible.`}
             >
               <span>JIT</span>
@@ -172,10 +204,10 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
                 {pending ? "Pending" : rate}
                 {!pending && <small>%</small>}
               </strong>
-              <p>{pending ? "not surveyed yet" : `${compatible} of ${baselineEligible} compatible`}</p>
+              <p>{pending ? "results pending" : `${compatible} of ${baselineEligible} compatible`}</p>
             </div>
           </div>
-          {pending && <small className="summary-coverage">Targeting CPython {cpythonLabel}</small>}
+          {pending && <small className="summary-coverage">Package tests pending</small>}
           {githubRunUrl && (
             <a
               className="summary-run-link"
@@ -226,6 +258,9 @@ export function ResultsExplorer({ snapshot }: { snapshot: Snapshot }) {
           />
         </label>
       </div>
+      <p className="filter-description" aria-live="polite">
+        {filterDescriptions[statusFilter]}
+      </p>
       <p className="sr-only" aria-live="polite">
         Showing {visiblePackages.length} of {snapshot.packages.length} packages.
       </p>

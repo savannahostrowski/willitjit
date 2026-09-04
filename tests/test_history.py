@@ -19,6 +19,7 @@ def snapshot(
     jit_completed: int | None = None,
     expected_platforms: list[str] | None = None,
     include_github_version: bool = True,
+    source_run_id: str | None = None,
 ) -> dict:
     summary = {
         "packages": {"compatible": compatible},
@@ -50,6 +51,7 @@ def snapshot(
             "ids": ["survey-run"],
             "github": {
                 "runId": run_id,
+                "sourceRunId": source_run_id or run_id,
                 **(
                     {"cpythonVersion": python_version} if include_github_version else {}
                 ),
@@ -72,7 +74,7 @@ class HistoryTests(unittest.TestCase):
     def test_records_only_jit_compatibility_history(self) -> None:
         history = build_history(snapshot(include_free_threaded=True))
 
-        self.assertEqual(history["schemaVersion"], 3)
+        self.assertEqual(history["schemaVersion"], 4)
         self.assertEqual(len(history["series"]), 1)
         self.assertEqual(history["series"][0]["id"], "3.14-top100-2026-08-01")
         self.assertEqual(history["series"][0]["points"][0]["compatible"], 42)
@@ -127,6 +129,32 @@ class HistoryTests(unittest.TestCase):
         self.assertEqual(len(points), 1)
         self.assertEqual(points[0]["compatible"], 42)
         self.assertEqual(points[0]["baselineEligible"], 50)
+
+    def test_replacement_publication_updates_the_source_run_point(self) -> None:
+        history = build_history(
+            snapshot(
+                run_id="publish-1",
+                source_run_id="survey-1",
+                generated_at="2026-08-24T12:00:00Z",
+                compatible=40,
+            )
+        )
+        history = build_history(
+            snapshot(
+                run_id="publish-2",
+                source_run_id="survey-1",
+                generated_at="2026-09-04T12:00:00Z",
+                compatible=42,
+            ),
+            history,
+        )
+
+        points = history["series"][0]["points"]
+        self.assertEqual(len(points), 1)
+        self.assertEqual(points[0]["sourceRunId"], "survey-1")
+        self.assertEqual(points[0]["runId"], "publish-2")
+        self.assertEqual(points[0]["date"], "2026-08-24T12:00:00Z")
+        self.assertEqual(points[0]["compatible"], 42)
 
     def test_minor_release_starts_a_new_series(self) -> None:
         history = build_history(snapshot())
@@ -199,8 +227,8 @@ class HistoryTests(unittest.TestCase):
 
         self.assertEqual(history["activeSeries"], "3.15-top100-2026-08-01")
 
-    def test_resets_history_with_the_old_denominator(self) -> None:
-        for schema_version in (1, 2):
+    def test_resets_legacy_history(self) -> None:
+        for schema_version in (1, 2, 3):
             with self.subTest(schema_version=schema_version):
                 previous = {
                     "schemaVersion": schema_version,
@@ -217,7 +245,7 @@ class HistoryTests(unittest.TestCase):
 
                 history = build_history(snapshot(complete=False), previous)
 
-                self.assertEqual(history["schemaVersion"], 3)
+                self.assertEqual(history["schemaVersion"], 4)
                 self.assertEqual(history["series"], [])
                 self.assertIsNone(history["activeSeries"])
 

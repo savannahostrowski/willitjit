@@ -60,6 +60,7 @@ export type Snapshot = {
       cpythonVersion?: string;
       repository?: string;
       runId?: string;
+      sourceRunId?: string;
     };
   };
   dataset: { source: string; releaseCutoff?: string };
@@ -86,9 +87,22 @@ export type LegacySnapshot = {
   }>;
 };
 
+export type ResultsVersion = {
+  id: string;
+  pythonVersion: string;
+  path: string;
+};
+
+export type ResultsIndex = {
+  schemaVersion: 1;
+  defaultVersion: string;
+  versions: ResultsVersion[];
+};
+
 export type HistoryPoint = {
   date: string;
   runId: string;
+  sourceRunId: string;
   pythonVersion: string | null;
   compatible: number;
   baselineEligible: number;
@@ -104,10 +118,10 @@ export type CompatibilitySeries = {
 };
 
 export type CompatibilityHistory = {
-  schemaVersion: 3;
+  schemaVersion: 4;
   activeSeries: string | null;
   series: CompatibilitySeries[];
 };
 
 export type PreviousCompatibilityHistory =
-  { schemaVersion: 1 | 2 };
+  { schemaVersion: 1 | 2 | 3 };

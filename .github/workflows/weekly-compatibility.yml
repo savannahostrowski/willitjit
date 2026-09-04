@@ -34,6 +34,14 @@ on:
           - jit
           - free-threaded
         type: choice
+      python:
+        description: Python version to test
+        default: all
+        options:
+          - all
+          - "3.14"
+          - "3.15"
+        type: choice
       platform:
         description: Platform to test
         default: all
@@ -55,11 +63,6 @@ defaults:
   run:
     shell: bash
 
-env:
-  # Test one exact interpreter at a time. Patch updates continue the same
-  # history series; minor-version changes start a new series after completion.
-  CPYTHON_VERSION: 3.14.6
-
 jobs:
   prepare:
     name: Select package test jobs
@@ -67,6 +70,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       platforms: ${{ steps.matrix.outputs.platforms }}
+      pythons: ${{ steps.matrix.outputs.pythons }}
       runtimes: ${{ steps.matrix.outputs.runtimes }}
       shards: ${{ steps.matrix.outputs.shards }}
       targeted: ${{ steps.matrix.outputs.targeted }}
@@ -76,6 +80,7 @@ jobs:
         env:
           PACKAGE: ${{ inputs.package }}
           PLATFORM: ${{ inputs.platform }}
+          PYTHON: ${{ inputs.python }}
           RUNTIME: ${{ inputs.runtime }}
           REPLACEMENT_RUN_IDS: ${{ inputs.replacement_run_ids }}
           SHARD: ${{ inputs.shard }}
@@ -101,9 +106,17 @@ jobs:
           fi
 
           platforms='["linux","macos","windows"]'
+          pythons='[{"series":"3.14","version":"3.14.6","setupVersion":"3.14.6"},{"series":"3.15","version":"3.15.0rc2","setupVersion":"3.15.0-rc.2"}]'
           runtimes='["jit","free-threaded"]'
           shards='[0,1,2,3,4,5,6,7,8,9]'
           [[ -n "$PLATFORM" && "$PLATFORM" != all ]] && platforms="[\"$PLATFORM\"]"
+          if [[ -n "$PYTHON" && "$PYTHON" != all ]]; then
+            case "$PYTHON" in
+              3.14) pythons='[{"series":"3.14","version":"3.14.6","setupVersion":"3.14.6"}]' ;;
+              3.15) pythons='[{"series":"3.15","version":"3.15.0rc2","setupVersion":"3.15.0-rc.2"}]' ;;
+              *) echo "Unknown Python series: $PYTHON" >&2; exit 1 ;;
+            esac
+          fi
           [[ -n "$RUNTIME" && "$RUNTIME" != all ]] && runtimes="[\"$RUNTIME\"]"
           [[ -n "$SHARD" ]] && shards="[$SHARD]"
           [[ -n "$PACKAGE" ]] && shards='[0]'
@@ -111,20 +124,76 @@ jobs:
           targeted=false
           if [[ -n "$PACKAGE" || -n "$SHARD" ||
                 ( -n "$PLATFORM" && "$PLATFORM" != all ) ||
+                ( -n "$PYTHON" && "$PYTHON" != all ) ||
                 ( -n "$RUNTIME" && "$RUNTIME" != all ) ]]; then
             targeted=true
           fi
           echo "platforms=$platforms" >> "$GITHUB_OUTPUT"
+          echo "pythons=$pythons" >> "$GITHUB_OUTPUT"
           echo "runtimes=$runtimes" >> "$GITHUB_OUTPUT"
           echo "shards=$shards" >> "$GITHUB_OUTPUT"
           echo "targeted=$targeted" >> "$GITHUB_OUTPUT"
 
+  linux_jit_python:
+    name: Build Linux JIT Python ${{ matrix.python.series }}
+    needs: prepare
+    if: >-
+      needs.prepare.result == 'success' &&
+      contains(needs.prepare.outputs.platforms, 'linux') &&
+      contains(needs.prepare.outputs.runtimes, 'jit')
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ${{ fromJSON(needs.prepare.outputs.pythons) }}
+    steps:
+      - name: Check out CPython
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: python/cpython
+          ref: v${{ matrix.python.version }}
+          path: cpython
+          persist-credentials: false
+
+      - name: Install build dependencies
+        run: sudo ./cpython/.github/workflows/posix-deps-apt.sh
+
+      - name: Build JIT-enabled CPython
+        env:
+          PYTHON_SERIES: ${{ matrix.python.series }}
+        run: |
+          install_dir="$GITHUB_WORKSPACE/.python/$PYTHON_SERIES"
+          cd cpython
+          ./configure \
+            --prefix="$install_dir" \
+            --enable-experimental-jit=yes-off
+          make --jobs 4
+          make install
+          PYTHON_JIT=1 "$install_dir/bin/python3" -c \
+            'import sys, test.support; assert sys._jit.is_enabled()'
+          tar --create --gzip \
+            --file "$GITHUB_WORKSPACE/linux-jit-python-$PYTHON_SERIES.tar.gz" \
+            --directory "$install_dir" .
+
+      - name: Upload JIT-enabled CPython
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: linux-jit-python-${{ matrix.python.series }}
+          path: linux-jit-python-${{ matrix.python.series }}.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
   package_tests:
     name: >-
-      ${{ matrix.runtime }} ${{ matrix.platform }}
+      Python ${{ matrix.python.series }} ${{ matrix.runtime }} ${{ matrix.platform }}
       ${{ inputs.package != '' && format('package {0}', inputs.package) || format('shard {0}', matrix.shard) }}
-    needs: prepare
-    if: inputs.source_run_id == '' && needs.prepare.result == 'success'
+    needs: [prepare, linux_jit_python]
+    if: >-
+      always() && inputs.source_run_id == '' &&
+      needs.prepare.result == 'success' &&
+      (needs.linux_jit_python.result == 'success' || needs.linux_jit_python.result == 'skipped')
     runs-on: >-
       ${{ matrix.platform == 'linux' && 'ubuntu-26.04' ||
           matrix.platform == 'macos' && 'macos-26' ||
@@ -133,6 +202,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        python: ${{ fromJSON(needs.prepare.outputs.pythons) }}
         runtime: ${{ fromJSON(needs.prepare.outputs.runtimes) }}
         platform: ${{ fromJSON(needs.prepare.outputs.platforms) }}
         shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
@@ -154,43 +224,47 @@ jobs:
           version: "0.11.32"
           download-from-astral-mirror: false
           enable-cache: true
-          cache-suffix: shard-${{ matrix.shard }}
+          cache-suffix: py${{ matrix.python.series }}-shard-${{ matrix.shard }}
           save-cache: ${{ matrix.runtime == 'jit' }}
           prune-cache: true
 
-      - name: Install full JIT CPython on Linux
+      - name: Download Linux JIT CPython
+        if: matrix.runtime == 'jit' && matrix.platform == 'linux'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: linux-jit-python-${{ matrix.python.series }}
+          path: .python
+
+      - name: Select Linux JIT CPython
         if: matrix.runtime == 'jit' && matrix.platform == 'linux'
         env:
-          # Use the full archive because these package tests need test.support.
-          # When upgrading Python, update the build release and archive checksum below.
-          PBS_RELEASE: "20260718"
-          PBS_SHA256: "9838744c02920aaa8e83947733462160d0b736cdf431db3d1b2d0599670e15ec"
+          CPYTHON_VERSION: ${{ matrix.python.version }}
+          PYTHON_SERIES: ${{ matrix.python.series }}
         run: |
-          install_dir="$(mktemp -d "$RUNNER_TEMP/jit-python.XXXXXX")"
-          archive="$install_dir/python.tar.zst"
-          curl --fail --location --silent --show-error --retry 3 \
-            "https://github.com/astral-sh/python-build-standalone/releases/download/$PBS_RELEASE/cpython-$CPYTHON_VERSION%2B$PBS_RELEASE-x86_64-unknown-linux-gnu-pgo%2Blto-full.tar.zst" \
-            --output "$archive"
-          printf '%s  %s\n' "$PBS_SHA256" "$archive" | sha256sum --check --strict
-          tar --zstd --extract --file "$archive" --directory "$install_dir" \
-            --strip-components=2 python/install
-          python_path="$install_dir/bin/python3"
-          echo "TARGET_PYTHON=$python_path" >> "$GITHUB_ENV"
-          "$python_path" --version
+          install_dir="$GITHUB_WORKSPACE/.python/$PYTHON_SERIES"
+          mkdir -p "$install_dir"
+          tar --extract --gzip \
+            --file ".python/linux-jit-python-$PYTHON_SERIES.tar.gz" \
+            --directory "$install_dir"
+          echo "CPYTHON_VERSION=$CPYTHON_VERSION" >> "$GITHUB_ENV"
+          echo "TARGET_PYTHON=$install_dir/bin/python3" >> "$GITHUB_ENV"
+          "$install_dir/bin/python3" -VV
 
       - name: Install CPython with setup-python
         if: matrix.runtime != 'jit' || matrix.platform != 'linux'
         id: target-python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: ${{ env.CPYTHON_VERSION }}
+          python-version: ${{ matrix.python.setupVersion }}
           freethreaded: ${{ matrix.runtime == 'free-threaded' }}
 
       - name: Select setup-python interpreter
         if: matrix.runtime != 'jit' || matrix.platform != 'linux'
         env:
+          CPYTHON_VERSION: ${{ matrix.python.version }}
           PYTHON_PATH: ${{ steps.target-python.outputs.python-path }}
         run: |
+          echo "CPYTHON_VERSION=$CPYTHON_VERSION" >> "$GITHUB_ENV"
           echo "TARGET_PYTHON=$PYTHON_PATH" >> "$GITHUB_ENV"
           "$PYTHON_PATH" -VV
 
@@ -302,7 +376,7 @@ jobs:
         env:
           PACKAGE: ${{ inputs.package }}
           PACKAGE_RUN_ID: >-
-            github-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.runtime }}-${{ matrix.platform }}-${{
+            github-${{ github.run_id }}-${{ github.run_attempt }}-py${{ matrix.python.series }}-${{ matrix.runtime }}-${{ matrix.platform }}-${{
             inputs.package != '' && format('package-{0}', inputs.package) || format('shard-{0}', matrix.shard) }}
           SHARD_INDEX: ${{ matrix.shard }}
           RUNTIME: ${{ matrix.runtime }}
@@ -328,7 +402,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: >-
-            raw-${{ matrix.runtime }}-${{ matrix.platform }}-${{
+            raw-py${{ matrix.python.series }}-${{ matrix.runtime }}-${{ matrix.platform }}-${{
             inputs.package != '' && format('package-{0}', inputs.package) || format('shard-{0}', matrix.shard) }}
           if-no-files-found: warn
           retention-days: 30
@@ -404,6 +478,7 @@ jobs:
       - name: Merge compatibility results
         env:
           REPLACEMENT_RUN_IDS: ${{ inputs.replacement_run_ids }}
+          SOURCE_RUN_ID: ${{ inputs.source_run_id || github.run_id }}
         run: |
           uv sync --locked
           replacement_args=()
@@ -413,8 +488,22 @@ jobs:
           uv run willitjit merge \
             --input artifacts \
             "${replacement_args[@]}" \
-            --output compatibility-results.json \
+            --output compatibility-results-3.14.json \
+            --cpython-series 3.14 \
             --github-run-id "$GITHUB_RUN_ID" \
+            --github-source-run-id "$SOURCE_RUN_ID" \
+            --expected-platform Linux \
+            --expected-platform macOS \
+            --expected-platform Windows \
+            --expected-runtime jit \
+            --expected-runtime free-threaded
+          uv run willitjit merge \
+            --input artifacts \
+            "${replacement_args[@]}" \
+            --output compatibility-results-3.15.json \
+            --cpython-series 3.15 \
+            --github-run-id "$GITHUB_RUN_ID" \
+            --github-source-run-id "$SOURCE_RUN_ID" \
             --expected-platform Linux \
             --expected-platform macOS \
             --expected-platform Windows \
@@ -429,18 +518,37 @@ jobs:
             --output previous-history.json; then
             history_args=(--previous previous-history.json)
           fi
-          mkdir published-data
-          cp compatibility-results.json published-data/results.json
+          mkdir -p published-data/results
+          cp compatibility-results-3.14.json published-data/results/3.14.json
+          cp compatibility-results-3.15.json published-data/results/3.15.json
+          cp compatibility-results-3.15.json published-data/results.json
+          python_314="$(jq -r '.run.github.cpythonVersion' compatibility-results-3.14.json)"
+          python_315="$(jq -r '.run.github.cpythonVersion' compatibility-results-3.15.json)"
+          jq --null-input \
+            --arg python314 "$python_314" \
+            --arg python315 "$python_315" \
+            '{
+              schemaVersion: 1,
+              defaultVersion: "3.15",
+              versions: [
+                {id: "3.14", pythonVersion: $python314, path: "results/3.14.json"},
+                {id: "3.15", pythonVersion: $python315, path: "results/3.15.json"}
+              ]
+            }' > published-data/index.json
           uv run willitjit history \
-            --snapshot compatibility-results.json \
+            --snapshot compatibility-results-3.14.json \
             "${history_args[@]}" \
+            --output history-with-3.14.json
+          uv run willitjit history \
+            --snapshot compatibility-results-3.15.json \
+            --previous history-with-3.14.json \
             --output published-data/history.json
 
       - name: Upload compatibility JSON
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: compatibility-results
-          path: compatibility-results.json
+          path: compatibility-results-*.json
           if-no-files-found: error
           retention-days: 90
 

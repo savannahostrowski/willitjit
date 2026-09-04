@@ -43,8 +43,16 @@ def parser() -> argparse.ArgumentParser:
     )
     merge.add_argument("--output", type=Path, required=True)
     merge.add_argument(
+        "--cpython-series",
+        help="only merge runs produced with this CPython minor series",
+    )
+    merge.add_argument(
         "--github-run-id",
         help="GitHub Actions run that publishes the merged snapshot",
+    )
+    merge.add_argument(
+        "--github-source-run-id",
+        help="full GitHub Actions run that produced the base results",
     )
     merge.add_argument("--limit", type=int, help="only include the top N packages")
     merge.add_argument(
@@ -281,7 +289,9 @@ def main(argv: list[str] | None = None) -> int:
                 expected_platforms=tuple(args.expected_platform)
                 or ("Linux", "macOS", "Windows"),
                 expected_runtimes=tuple(args.expected_runtime) or ("jit",),
+                cpython_series=args.cpython_series,
                 github_run_id=args.github_run_id,
+                github_source_run_id=args.github_source_run_id,
             )
         except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:
             print(f"Could not merge results: {error}", file=sys.stderr)

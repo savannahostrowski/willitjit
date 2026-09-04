@@ -103,9 +103,10 @@ export function AboutPage() {
             <a href="https://github.com/hugovk/top-pypi-packages" target="_blank" rel="noreferrer">
               Top PyPI Packages list
             </a>.
-            Releases are pinned while a survey runs across Linux, macOS, and
-            Windows. Only GitHub-hosted sources are tested for now. Packages hosted
-            elsewhere stay on the list as not tested.
+            Releases are pinned while weekly package tests run across Linux,
+            macOS, and Windows for CPython 3.14 and 3.15. Only GitHub-hosted
+            sources are tested for now. Packages hosted elsewhere stay on the
+            list as not tested.
           </p>
           <p>
             Results include the source revision, command used, test summary, run

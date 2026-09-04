@@ -19,12 +19,15 @@ def build_history(
     python_series = _python_series(python_version)
     package_count = int(run["targetPackages"])
     dataset_updated = str(snapshot["dataset"]["updated"])
-    run_id = str(run.get("github", {}).get("runId") or run["ids"][0])
+    github = run.get("github", {})
+    run_id = str(github.get("runId") or run["ids"][0])
+    source_run_id = str(github.get("sourceRunId") or run_id)
     series = history["series"]
     series_id = _series_id(python_series, package_count, dataset_updated)
     point = {
         "date": str(snapshot["generatedAt"]),
         "runId": run_id,
+        "sourceRunId": source_run_id,
         "pythonVersion": python_version,
         "compatible": int(summary["packages"].get("compatible", 0)),
         "baselineEligible": int(summary["baselineEligible"]),
@@ -41,8 +44,14 @@ def build_history(
         }
         series.append(current)
 
+    previous_point = next(
+        (value for value in current["points"] if value["sourceRunId"] == source_run_id),
+        None,
+    )
+    if previous_point is not None:
+        point["date"] = previous_point["date"]
     current["points"] = [
-        value for value in current["points"] if value["runId"] != run_id
+        value for value in current["points"] if value["sourceRunId"] != source_run_id
     ]
     current["points"].append(point)
     current["points"].sort(key=lambda value: value["date"])
@@ -65,22 +74,23 @@ def write_history(
 def _normalize_history(previous: dict[str, Any] | None) -> dict[str, Any]:
     if previous is None:
         return _empty_history()
-    if previous.get("schemaVersion") == 3:
+    if previous.get("schemaVersion") == 4:
         series = [_series(value) for value in previous.get("series", [])]
         return {
-            "schemaVersion": 3,
+            "schemaVersion": 4,
             "activeSeries": _newest_series(series),
             "series": series,
         }
-    if previous.get("schemaVersion") in (1, 2):
-        # Older points used every surveyed package as the denominator. That is
-        # not comparable with the baseline-eligible compatibility rate.
+    if previous.get("schemaVersion") in (1, 2, 3):
+        # Schemas 1 and 2 used a different denominator. Schema 3 treated every
+        # correction publication as a new package test run. Neither history is
+        # reliable.
         return _empty_history()
     raise ValueError("unsupported compatibility history schema")
 
 
 def _empty_history() -> dict[str, Any]:
-    return {"schemaVersion": 3, "activeSeries": None, "series": []}
+    return {"schemaVersion": 4, "activeSeries": None, "series": []}
 
 
 def _series(value: dict[str, Any]) -> dict[str, Any]:
@@ -104,6 +114,7 @@ def _point(value: dict[str, Any]) -> dict[str, Any]:
     return {
         "date": str(value["date"]),
         "runId": str(value["runId"]),
+        "sourceRunId": str(value["sourceRunId"]),
         "pythonVersion": (
             str(value["pythonVersion"])
             if value.get("pythonVersion") is not None

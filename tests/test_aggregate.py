@@ -134,6 +134,46 @@ class AggregateTests(unittest.TestCase):
             "upstream-test-fix.patch",
         )
 
+    def test_filters_runs_by_cpython_series(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            run_files = []
+            for version, classification in (
+                ("3.14.6", "baseline-failure"),
+                ("3.15.0rc2", "observed-compatible"),
+            ):
+                run_file = root / version / "run.json"
+                run_file.parent.mkdir()
+                payload = run_payload("Linux", classification)
+                payload["run"]["github"]["cpythonVersion"] = version
+                run_file.write_text(json.dumps(payload))
+                run_files.append(run_file)
+
+            merged = build_compatibility_results(
+                run_files=run_files,
+                dataset=TEST_DATASET,
+                packages=[package()],
+                expected_platforms=("Linux",),
+                cpython_series="3.15",
+            )
+
+        self.assertEqual(merged["run"]["github"]["cpythonVersion"], "3.15.0rc2")
+        self.assertEqual(merged["packages"][0]["overallStatus"], "compatible")
+
+    def test_rejects_missing_cpython_version(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_file = Path(temporary) / "run.json"
+            run_file.write_text(json.dumps(run_payload("Linux", "observed-compatible")))
+
+            with self.assertRaisesRegex(ValueError, "no matching run.json files"):
+                build_compatibility_results(
+                    run_files=[run_file],
+                    dataset=TEST_DATASET,
+                    packages=[package()],
+                    expected_platforms=("Linux",),
+                    cpython_series="3.14",
+                )
+
     def test_reads_legacy_jit_run_schema(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             run_file = Path(temporary) / "run.json"
@@ -391,12 +431,14 @@ class AggregateTests(unittest.TestCase):
                 packages=[package()],
                 expected_platforms=("Linux",),
                 github_run_id="456",
+                github_source_run_id="123",
             )
 
         observation = merged["packages"][0]["runtimes"]["jit"]["platforms"]["Linux"]
         self.assertEqual(observation["status"], "compatible")
         self.assertEqual(merged["run"]["completedObservations"], 1)
         self.assertEqual(merged["run"]["github"]["runId"], "456")
+        self.assertEqual(merged["run"]["github"]["sourceRunId"], "123")
 
     def test_rejects_replacement_without_existing_observation(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

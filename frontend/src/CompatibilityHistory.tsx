@@ -1,5 +1,3 @@
-import { useState } from "react";
-
 import type {
   CompatibilityHistory as History,
   CompatibilitySeries,
@@ -11,23 +9,12 @@ const LEFT = 54;
 const RIGHT = 24;
 const TOP = 24;
 const BOTTOM = 48;
-const RANGES = [3, 6, 12] as const;
-
-type RangeMonths = (typeof RANGES)[number];
-
 function compatibilityRate(compatible: number, baselineEligible: number) {
   return baselineEligible ? Math.round((compatible / baselineEligible) * 100) : 0;
 }
 
-function shortDate(value: string | number) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(value));
-}
-
-function axisDate(value: number, rangeMonths: RangeMonths) {
-  if (rangeMonths === 12) {
-    return new Intl.DateTimeFormat("en", { month: "short", year: "2-digit" }).format(new Date(value));
-  }
-  return shortDate(value);
+function axisDate(value: number) {
+  return new Intl.DateTimeFormat("en", { month: "short", year: "2-digit" }).format(new Date(value));
 }
 
 function fullDate(value: string) {
@@ -59,14 +46,13 @@ function dateTime(value: string) {
   return new Date(value).getTime();
 }
 
-function cutoffTime(latest: number, months: RangeMonths) {
+function cutoffTime(latest: number) {
   const cutoff = new Date(latest);
-  cutoff.setUTCMonth(cutoff.getUTCMonth() - months);
+  cutoff.setUTCFullYear(cutoff.getUTCFullYear() - 1);
   return cutoff.getTime();
 }
 
 export function CompatibilityHistory({ history }: { history: History }) {
-  const [rangeMonths, setRangeMonths] = useState<RangeMonths>(3);
   const populatedSeries = history.series.filter((series) => series.points.length > 0);
   const latest = Math.max(
     ...populatedSeries.flatMap((series) => series.points.map((point) => dateTime(point.date))),
@@ -79,7 +65,7 @@ export function CompatibilityHistory({ history }: { history: History }) {
       seriesColors.set(key, seriesColors.size % 4);
     }
   }
-  const cutoff = latest ? cutoffTime(latest, rangeMonths) : 0;
+  const cutoff = latest ? cutoffTime(latest) : 0;
   const visibleSeries = populatedSeries
     .map((series) => ({
       ...series,
@@ -102,40 +88,20 @@ export function CompatibilityHistory({ history }: { history: History }) {
 
   return (
     <section className="history-section" id="history">
-      <div className="history-copy">
-        <h2>Compatibility<br />over time</h2>
-        <p>
-          Each line shows the share of packages with a passing baseline that
-          are JIT compatible across every tested platform.
-        </p>
-      </div>
+      <h2>Compatibility over time</h2>
 
       <div className="chart-card">
         {populatedSeries.length > 0 && (
-          <div className="chart-toolbar">
-            <div className="history-legend" aria-label="History series">
-              {visibleLabels.map((series) => (
-                <span
-                  className={`chart-series-${seriesColors.get(series.pythonSeries) ?? 0}`}
-                  key={series.pythonSeries}
-                >
-                  <i aria-hidden="true" />
-                  Python {series.pythonSeries}
-                </span>
-              ))}
-            </div>
-            <div className="history-range" role="group" aria-label="History range">
-              {RANGES.map((months) => (
-                <button
-                  type="button"
-                  aria-pressed={rangeMonths === months}
-                  onClick={() => setRangeMonths(months)}
-                  key={months}
-                >
-                  {months === 12 ? "1Y" : `${months}M`}
-                </button>
-              ))}
-            </div>
+          <div className="history-legend" aria-label="History series">
+            {visibleLabels.map((series) => (
+              <span
+                className={`chart-series-${seriesColors.get(series.pythonSeries) ?? 0}`}
+                key={series.pythonSeries}
+              >
+                <i aria-hidden="true" />
+                Python {series.pythonSeries}
+              </span>
+            ))}
           </div>
         )}
 
@@ -156,7 +122,7 @@ export function CompatibilityHistory({ history }: { history: History }) {
               ))}
               {xTicks.map((tick) => (
                 <text className="chart-x-label" x={LEFT + ((tick - cutoff) / (latest - cutoff)) * plotWidth} y={HEIGHT - 15} key={tick}>
-                  {axisDate(tick, rangeMonths)}
+                  {axisDate(tick)}
                 </text>
               ))}
               {visibleSeries.map((series) => {
@@ -167,8 +133,12 @@ export function CompatibilityHistory({ history }: { history: History }) {
                 return (
                   <g className={`chart-series-${series.colorIndex}`} key={series.id}>
                     {points.length > 1 && <polyline className="chart-series-line" points={line} />}
-                    {points.map((point) => {
+                    {points.map((point, index) => {
                       const rate = compatibilityRate(point.compatible, point.baselineEligible);
+                      const isLatest = index === points.length - 1;
+                      const labelOffset = series.colorIndex % 2 === 0
+                        ? -16 - Math.floor(series.colorIndex / 2) * 16
+                        : 24 + Math.floor(series.colorIndex / 2) * 16;
                       return (
                         <g key={`${series.id}-${point.runId}-${point.date}`}>
                           <circle
@@ -177,13 +147,16 @@ export function CompatibilityHistory({ history }: { history: History }) {
                             cy={y(rate)}
                             r="7"
                           />
-                          <text
-                            className="chart-value"
-                            x={x(point.date)}
-                            y={y(rate) - 15}
-                          >
-                            {rate}%
-                          </text>
+                          {isLatest && (
+                            <text
+                              className="chart-value"
+                              x={x(point.date) - 12}
+                              y={y(rate) + labelOffset}
+                              textAnchor="end"
+                            >
+                              {rate}%
+                            </text>
+                          )}
                         </g>
                       );
                     })}
@@ -193,7 +166,7 @@ export function CompatibilityHistory({ history }: { history: History }) {
             </svg>
             <div className="sr-only">
               <table>
-                <caption>Compatibility history for the selected time range</caption>
+                <caption>Compatibility history for the past year</caption>
                 <thead>
                   <tr>
                     <th scope="col">Series</th>
@@ -201,7 +174,7 @@ export function CompatibilityHistory({ history }: { history: History }) {
                     <th scope="col">Python version</th>
                     <th scope="col">Compatible packages</th>
                     <th scope="col">Packages with passing baselines</th>
-                    <th scope="col">Surveyed packages</th>
+                    <th scope="col">Packages in cohort</th>
                     <th scope="col">Compatibility rate</th>
                   </tr>
                 </thead>
@@ -222,7 +195,7 @@ export function CompatibilityHistory({ history }: { history: History }) {
             </div>
           </>
         ) : (
-          <div className="chart-placeholder">No completed hosted snapshots in this range.</div>
+          <div className="chart-placeholder">No completed results in the past year.</div>
         )}
       </div>
     </section>
