@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       source_run_id:
-        description: Existing workflow run ID to merge without rerunning surveys
+        description: Existing workflow run ID to merge without rerunning package tests
         required: false
         type: string
       supplemental_run_id:
@@ -56,13 +56,13 @@ defaults:
     shell: bash
 
 env:
-  # Survey one exact interpreter at a time. Patch updates continue the same
+  # Test one exact interpreter at a time. Patch updates continue the same
   # history series; minor-version changes start a new series after completion.
   CPYTHON_VERSION: 3.14.6
 
 jobs:
   prepare:
-    name: Prepare survey matrix
+    name: Select package test jobs
     if: inputs.source_run_id == ''
     runs-on: ubuntu-24.04
     outputs:
@@ -119,7 +119,7 @@ jobs:
           echo "shards=$shards" >> "$GITHUB_OUTPUT"
           echo "targeted=$targeted" >> "$GITHUB_OUTPUT"
 
-  survey:
+  package_tests:
     name: >-
       ${{ matrix.runtime }} ${{ matrix.platform }}
       ${{ inputs.package != '' && format('package {0}', inputs.package) || format('shard {0}', matrix.shard) }}
@@ -138,7 +138,7 @@ jobs:
         shard: ${{ fromJSON(needs.prepare.outputs.shards) }}
 
     steps:
-      - name: Check out survey
+      - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
@@ -205,7 +205,7 @@ jobs:
           git config --global core.eol lf
           git config --global core.longpaths true
 
-      - name: Install survey
+      - name: Install package test runner
         run: uv sync --locked --python 3.11
 
       - name: Inspect shard prerequisites
@@ -301,7 +301,7 @@ jobs:
       - name: Run paired package suites
         env:
           PACKAGE: ${{ inputs.package }}
-          SURVEY_RUN_ID: >-
+          PACKAGE_RUN_ID: >-
             github-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.runtime }}-${{ matrix.platform }}-${{
             inputs.package != '' && format('package-{0}', inputs.package) || format('shard-{0}', matrix.shard) }}
           SHARD_INDEX: ${{ matrix.shard }}
@@ -319,7 +319,7 @@ jobs:
             --python "$TARGET_PYTHON" \
             --runtime "$RUNTIME" \
             "${selection[@]}" \
-            --run-id "$SURVEY_RUN_ID" \
+            --run-id "$PACKAGE_RUN_ID" \
             --allow-findings \
             --stream-test-output
 
@@ -343,14 +343,14 @@ jobs:
       always() &&
       (inputs.source_run_id != '' ||
        (needs.prepare.result == 'success' && needs.prepare.outputs.targeted == 'false'))
-    needs: [prepare, survey]
+    needs: [prepare, package_tests]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       actions: read # Download artifacts from this or a selected prior run.
       contents: read
     steps:
-      - name: Check out survey
+      - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
