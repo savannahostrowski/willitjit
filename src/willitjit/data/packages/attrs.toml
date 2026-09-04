@@ -13,3 +13,6 @@ install = [
 test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 1200
 note = "The pinned tag is present in the shallow checkout so hatch-vcs generates the release version expected by the upstream packaging tests."
+guidance = [
+  "https://github.com/python-attrs/attrs/blob/7bfc49e9b22d5ba25b6e429524c3d49fee27cb36/pyproject.toml",
+]

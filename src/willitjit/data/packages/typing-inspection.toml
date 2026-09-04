@@ -12,3 +12,7 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 600
+guidance = [
+  "https://github.com/pydantic/typing-inspection/blob/2648bdf83a4bee689a315c57f4f999f3eb4df57c/Makefile",
+  "https://github.com/pydantic/typing-inspection/blob/2648bdf83a4bee689a315c57f4f999f3eb4df57c/pyproject.toml",
+]

@@ -99,6 +99,8 @@ class AggregateTests(unittest.TestCase):
                     "observed-compatible" if runtime == "jit" else "baseline-failure"
                 )
                 payload = run_payload("Linux", classification, runtime)
+                if runtime == "jit":
+                    payload["results"][0]["test_patch"] = "upstream-test-fix.patch"
                 if classification == "baseline-failure":
                     payload["results"][0]["baseline"]["returncode"] = 1
                     payload["results"][0]["target"] = None
@@ -127,6 +129,10 @@ class AggregateTests(unittest.TestCase):
             {"baseline-blocked": 1},
         )
         self.assertEqual(merged["packages"][0]["overallStatus"], "compatible")
+        self.assertEqual(
+            merged["packages"][0]["runtimes"]["jit"]["platforms"]["Linux"]["testPatch"],
+            "upstream-test-fix.patch",
+        )
 
     def test_reads_legacy_jit_run_schema(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

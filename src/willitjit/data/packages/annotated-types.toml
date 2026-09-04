@@ -7,8 +7,13 @@ ref = "v0.8.0"
 release_version = "0.8.0"
 release_date = "2026-07-23T20:16:12.938651Z"
 install = [
-  ["-m", "pip", "install", "-r", "requirements/testing.in"],
+  ["-m", "pip", "install", "-r", "requirements/all.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 600
+guidance = [
+  "https://github.com/annotated-types/annotated-types/blob/9eb96680138269811a39d838d720abc3dce33954/requirements/testing.in",
+  "https://github.com/annotated-types/annotated-types/blob/9eb96680138269811a39d838d720abc3dce33954/pyproject.toml",
+]
+note = "Uses upstream compiled requirements rather than the unpinned testing.in input."

@@ -9,11 +9,12 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
-from willitjit.models import CommandResult, Package
+from willitjit.models import CommandResult, Package, RecipeOverride
 from willitjit.runner import (
     SurveyRunner,
     classify_target,
     condition_clone_command,
+    condition_probe_command,
     fetch_tags_command,
     installation_command,
     release_install_arguments,
@@ -50,36 +51,54 @@ def python_probe(
 
 
 class PythonValidationTests(unittest.TestCase):
+    def test_shared_probe_rejects_wrong_runtime_and_missing_prerequisites(self) -> None:
+        for runtime in ("jit", "free-threaded"):
+            for target in (False, True):
+                state = python_probe(
+                    jit_enabled=runtime == "jit" and target,
+                    free_threaded=runtime == "free-threaded",
+                    gil_enabled=not (runtime == "free-threaded" and target),
+                )
+                with (
+                    self.subTest(runtime=runtime, target=target),
+                    patch("willitjit.runner.PROBE", ""),
+                ):
+                    code = condition_probe_command(Path("python"), runtime, target)[-1]
+                    exec(code, {"probe": state})  # noqa: S102 - our own probe, never upstream code
+                    fields = [
+                        "ssl_available",
+                        "smoke_result",
+                        "free_threaded",
+                        "jit_enabled",
+                        "gil_enabled",
+                    ]
+                    if runtime == "jit":
+                        fields += ["jit_api", "jit_available"]
+                    for field in fields:
+                        broken = {**state, field: not state[field]}
+                        with (
+                            self.subTest(field=field),
+                            self.assertRaisesRegex(SystemExit, field),
+                        ):
+                            exec(code, {"probe": broken})  # noqa: S102 - our own probe
+
     @patch("willitjit.runner.probe_python")
-    def test_requires_the_smoke_check_in_both_modes(self, probe_mock) -> None:
-        baseline = python_probe(jit_enabled=False)
-        baseline["smoke_result"] = 0
-        probe_mock.side_effect = [baseline, python_probe(jit_enabled=True)]
-
-        with self.assertRaisesRegex(RuntimeError, "interpreter smoke check"):
-            validate_runtime_python(Path("python"), "jit")
-
-    @patch("willitjit.runner.probe_python")
-    def test_requires_ssl_in_both_jit_modes(self, probe_mock) -> None:
-        probe_mock.side_effect = [
-            python_probe(jit_enabled=False, ssl_available=False),
-            python_probe(jit_enabled=True, ssl_available=False),
-        ]
-
-        with self.assertRaisesRegex(RuntimeError, "could not import ssl"):
-            validate_runtime_python(Path("python"), "jit")
-
-    @patch("willitjit.runner.probe_python")
-    def test_requires_a_verified_free_threaded_gil_toggle(self, probe_mock) -> None:
-        probe_mock.side_effect = [
-            python_probe(jit_enabled=False, free_threaded=True, gil_enabled=True),
-            python_probe(jit_enabled=False, free_threaded=True, gil_enabled=False),
-        ]
-
-        probe = validate_runtime_python(Path("python"), "free-threaded")
-
-        self.assertTrue(probe["baseline"]["gil_enabled"])
-        self.assertFalse(probe["target"]["gil_enabled"])
+    def test_initial_validation_checks_both_conditions(self, probe_mock) -> None:
+        python = Path(sys.executable)
+        for runtime in ("jit", "free-threaded"):
+            with self.subTest(runtime=runtime):
+                probe_mock.reset_mock()
+                probe_mock.side_effect = [
+                    {"condition": "baseline"},
+                    {"condition": "target"},
+                ]
+                validated = validate_runtime_python(python, runtime)
+                self.assertEqual(validated["baseline"], {"condition": "baseline"})
+                self.assertEqual(validated["target"], {"condition": "target"})
+                self.assertEqual(
+                    [call.args for call in probe_mock.call_args_list],
+                    [(python, runtime, False), (python, runtime, True)],
+                )
 
 
 class ClassificationTests(unittest.TestCase):
@@ -337,6 +356,50 @@ class StreamingOutputTests(unittest.TestCase):
                 self.assertEqual(command_result.returncode, 0)
                 self.assertIn("\N{REPLACEMENT CHARACTER}", log.read_text())
 
+    def test_streams_unicode_to_legacy_console_without_blocking_child(self) -> None:
+        # Enough output to fill the pipe if the reader dies on the first line.
+        payload = "test_\u09ea\n" * 20_000
+        with tempfile.TemporaryDirectory() as temporary:
+            log = Path(temporary) / "test.log"
+            buffer = io.BytesIO()
+            output = io.TextIOWrapper(buffer, encoding="cp1252", errors="strict")
+            with redirect_stdout(output):
+                command_result = run_logged(
+                    [
+                        sys.executable,
+                        "-c",
+                        "import sys; sys.stdout.buffer.write(('test_\\u09ea\\n' * 20000).encode('utf-8'))",
+                    ],
+                    cwd=Path(temporary),
+                    env=os.environ.copy(),
+                    timeout_seconds=10,
+                    log_path=log,
+                    stream_output=True,
+                )
+
+            self.assertEqual(command_result.returncode, 0)
+            self.assertFalse(command_result.timed_out)
+            self.assertTrue(log.read_text(encoding="utf-8").endswith(payload))
+            self.assertEqual(buffer.getvalue(), b"test_\\u09ea\n" * 20_000)
+            output.close()
+
+    def test_console_write_failure_is_a_harness_error(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            log = Path(temporary) / "test.log"
+            with (
+                patch("willitjit.runner.print", side_effect=OSError("console closed")),
+                self.assertRaisesRegex(RuntimeError, "Could not stream test output"),
+            ):
+                run_logged(
+                    [sys.executable, "-c", "print('suite output')"],
+                    cwd=Path(temporary),
+                    env=os.environ.copy(),
+                    timeout_seconds=10,
+                    log_path=log,
+                    stream_output=True,
+                )
+            self.assertIn("suite output", log.read_text(encoding="utf-8"))
+
     def test_escapes_github_workflow_commands_in_streamed_output(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             log = Path(temporary) / "test.log"
@@ -448,8 +511,171 @@ class ConditionEnvironmentTests(unittest.TestCase):
 
 
 class FailEarlyTests(unittest.TestCase):
-    @patch("willitjit.runner.platform.system", return_value="Linux")
-    def test_platform_skip_is_reported_without_running_commands(self, _system) -> None:
+    @patch("willitjit.runner.subprocess.run")
+    @patch("willitjit.runner.run_logged")
+    def test_execution_resolves_overrides_and_focused_command(
+        self, run_mock, subprocess_mock
+    ) -> None:
+        package = Package(
+            1,
+            "example",
+            1,
+            "https://github.com/example/example.git",
+            "v1",
+            (("-m", "pip", "install", "."),),
+            ("-m", "pytest", "default"),
+            overrides=(RecipeOverride(runtime="jit", test=("-m", "pytest", "jit")),),
+            focused_test=("-m", "pytest", "focused"),
+        )
+        subprocess_mock.return_value.stdout = "abcdef123456\n"
+        for focused in (False, True):
+            with (
+                self.subTest(focused=focused),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                run_mock.reset_mock()
+
+                def run_stub(command, **kwargs):
+                    if command[:3] == ["git", "clone", "--local"]:
+                        Path(command[-1]).mkdir(parents=True)
+                    return result(0)
+
+                run_mock.side_effect = run_stub
+                outcome = SurveyRunner(
+                    Path(sys.executable), Path(temporary)
+                ).run_package(package, focused=focused)
+                suites = [
+                    call.args[0][1:]
+                    for call in run_mock.call_args_list
+                    if call.args[0][1:3] == ["-m", "pytest"]
+                ]
+                self.assertEqual(
+                    suites, [["-m", "pytest", "focused" if focused else "jit"]] * 2
+                )
+                self.assertEqual(outcome.classification, "observed-compatible")
+
+    @patch("willitjit.runner.subprocess.run")
+    @patch("willitjit.runner.run_logged")
+    def test_actual_test_environment_is_verified_before_each_suite(
+        self, run_mock, subprocess_mock
+    ) -> None:
+        package = Package(
+            1,
+            "example",
+            1,
+            "https://github.com/example/example.git",
+            "v1",
+            (("-m", "pip", "install", "."),),
+            ("-m", "pytest"),
+        )
+        subprocess_mock.return_value.stdout = "abcdef123456\n"
+        for runtime in ("jit", "free-threaded"):
+            for failed_check in (None, "baseline", "target"):
+                with (
+                    self.subTest(runtime=runtime, failed_check=failed_check),
+                    tempfile.TemporaryDirectory() as temporary,
+                ):
+                    run_mock.reset_mock()
+
+                    def run_stub(command, _failed_check=failed_check, **kwargs):
+                        if command[:3] == ["git", "clone", "--local"]:
+                            Path(command[-1]).mkdir(parents=True)
+                        log = kwargs["log_path"]
+                        return result(
+                            1
+                            if log.name == "runtime-check.log"
+                            and log.parent.name == _failed_check
+                            else 0
+                        )
+
+                    run_mock.side_effect = run_stub
+                    outcome = SurveyRunner(
+                        Path(sys.executable), Path(temporary) / "run", runtime=runtime
+                    ).run_package(package)
+                    calls = run_mock.call_args_list
+                    suites = [
+                        call for call in calls if call.args[0][-2:] == ["-m", "pytest"]
+                    ]
+                    self.assertEqual(
+                        len(suites),
+                        2 if failed_check is None else int(failed_check == "target"),
+                    )
+                    self.assertEqual(
+                        outcome.classification,
+                        "observed-compatible"
+                        if failed_check is None
+                        else "setup-error",
+                    )
+                    for suite in suites:
+                        check = calls[calls.index(suite) - 1]
+                        self.assertEqual(
+                            check.kwargs["log_path"].name, "runtime-check.log"
+                        )
+                        self.assertEqual(check.args[0][0], suite.args[0][0])
+                        self.assertEqual(check.kwargs["env"], suite.kwargs["env"])
+                        self.assertEqual(check.kwargs["cwd"], suite.kwargs["cwd"])
+
+    @patch("willitjit.runner.subprocess.run")
+    @patch("willitjit.runner.run_logged")
+    def test_patches_both_conditions_or_stops_at_setup_failure(
+        self, run_logged_mock, subprocess_mock
+    ) -> None:
+        package = Package(
+            1,
+            "example",
+            1,
+            "https://github.com/example/example.git",
+            "v1",
+            (("-m", "pip", "install", "."),),
+            ("-m", "pytest"),
+            test_patch="anyio-8dbe5b792a49344d8748e88ccbe1c6432bff49f3.patch",
+        )
+        subprocess_mock.return_value.stdout = "abcdef123456\n"
+        for patch_code in (0, 1):
+            with (
+                self.subTest(patch_code=patch_code),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                run_logged_mock.reset_mock()
+
+                def run_stub(command, _patch_code=patch_code, **_kwargs):
+                    if command[:3] == ["git", "clone", "--local"]:
+                        Path(command[-1]).mkdir(parents=True)
+                    return result(_patch_code if command[:2] == ["git", "apply"] else 0)
+
+                run_logged_mock.side_effect = run_stub
+                outcome = SurveyRunner(
+                    Path(sys.executable), Path(temporary) / "run"
+                ).run_package(package)
+                patches = [
+                    call
+                    for call in run_logged_mock.call_args_list
+                    if call.args[0][:2] == ["git", "apply"]
+                ]
+                setup_order = [
+                    "patch" if call.args[0][:2] == ["git", "apply"] else "install"
+                    for call in run_logged_mock.call_args_list
+                    if call.args[0][:2] == ["git", "apply"] or "install" in call.args[0]
+                ]
+                self.assertEqual(
+                    setup_order, ["install", "patch"] * (2 if patch_code == 0 else 1)
+                )
+                self.assertEqual(outcome.test_patch, package.test_patch)
+                self.assertEqual(len(patches), 2 if patch_code == 0 else 1)
+                self.assertEqual(patches[0].kwargs["cwd"].parent.name, "baseline")
+                if patch_code == 0:
+                    self.assertEqual(patches[1].kwargs["cwd"].parent.name, "target")
+                    self.assertEqual(outcome.classification, "observed-compatible")
+                else:
+                    self.assertEqual(outcome.classification, "setup-error")
+                    self.assertIsNone(outcome.baseline)
+                    self.assertIsNone(outcome.target)
+
+    @patch("willitjit.runner.run_logged")
+    @patch("willitjit.runner.subprocess.run")
+    def test_package_skip_is_reported_without_running_commands(
+        self, subprocess_mock, run_mock
+    ) -> None:
         package = Package(
             1,
             "example",
@@ -458,7 +684,7 @@ class FailEarlyTests(unittest.TestCase):
             "HEAD",
             (("-m", "pip", "install", "."),),
             ("-m", "pytest"),
-            skip_platforms=(("Linux", "Selected Python omits test.support."),),
+            skip_reason="Selected Python omits test.support.",
         )
         outcome = SurveyRunner(Path("/tmp/python"), Path("/tmp/run")).run_package(
             package
@@ -467,20 +693,18 @@ class FailEarlyTests(unittest.TestCase):
         self.assertEqual(outcome.classification, "not-tested")
         self.assertEqual(outcome.error, "Selected Python omits test.support.")
         self.assertEqual(outcome.setup, ())
+        subprocess_mock.assert_not_called()
+        run_mock.assert_not_called()
 
     @patch("willitjit.runner.subprocess.run")
     @patch("willitjit.runner.run_logged")
     def test_baseline_failure_skips_jit_condition(
         self, run_logged_mock, subprocess_mock
     ) -> None:
-        passed = result(0)
-        failed = result(1)
-        results = iter([passed, passed, passed, passed, passed, failed])
-
         def run_stub(command, **_kwargs):
             if command[:3] == ["git", "clone", "--local"]:
                 Path(command[-1]).mkdir(parents=True)
-            return next(results)
+            return result(1 if command[-2:] == ["-m", "pytest"] else 0)
 
         run_logged_mock.side_effect = run_stub
         subprocess_mock.return_value.stdout = "abcdef123456\n"
@@ -502,7 +726,12 @@ class FailEarlyTests(unittest.TestCase):
         self.assertEqual(outcome.classification, "baseline-failure")
         self.assertIsNotNone(outcome.baseline)
         self.assertIsNone(outcome.target)
-        self.assertEqual(run_logged_mock.call_count, 6)
+        self.assertFalse(
+            any(
+                call.kwargs["log_path"].name == "target.log"
+                for call in run_logged_mock.call_args_list
+            )
+        )
         self.assertEqual(
             run_logged_mock.call_args_list[2].args[0][-4:],
             [

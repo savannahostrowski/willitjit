@@ -7,10 +7,14 @@ ref = "v3.18"
 release_version = "3.18"
 release_date = "2026-06-02T14:34:06.319954Z"
 install = [
+  ["-m", "pip", "install", "-r", ".github/requirements/test.txt"],
   ["-m", "pip", "install", "-e", "."],
-  ["-m", "pip", "install", "pytest>=8.3.2", "hypothesis>=6.141.1"],
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 600
-environment = { PYTHONUTF8 = "1" }
-note = "Forces UTF-8 subprocess I/O so the CLI can emit decoded IDNs on Windows, matching Python's UTF-8 CI mode."
+environment = {  }
+note = "Uses the upstream CI test requirements rather than an invented dependency list; no local UTF-8 or hypothesis override."
+guidance = [
+  "https://github.com/kjd/idna/blob/f39ea903ba49eb5a0b2c6723c9a929b41ed4a0f1/.github/requirements/test.txt",
+  "https://github.com/kjd/idna/blob/f39ea903ba49eb5a0b2c6723c9a929b41ed4a0f1/pyproject.toml",
+]

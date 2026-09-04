@@ -12,5 +12,8 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 2400
-environment = { POETRY_VIRTUALENVS_CREATE = "false" }
+environment = { "POETRY_VIRTUALENVS_CREATE" = "false" }
 note = "Uses the Poetry lock and install command from upstream's Python 3.14 CI."
+guidance = [
+  "https://github.com/Textualize/textual/blob/1d99508b928a771b51e1a527319c6b87dcff9e05/.github/workflows/pythonpackage.yml",
+]

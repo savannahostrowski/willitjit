@@ -14,3 +14,7 @@ test = ["-m", "pytest", "referencing/tests"]
 timeout_seconds = 900
 recursive_submodules = true
 note = "Uses the pinned test requirements from upstream's Nox session and initializes the referencing-suite submodule."
+guidance = [
+  "https://github.com/python-jsonschema/referencing/blob/944ed5a20bc5125f2349156cbdc365daac0e67e6/noxfile.py",
+  "https://github.com/python-jsonschema/referencing/blob/944ed5a20bc5125f2349156cbdc365daac0e67e6/test-requirements.txt",
+]

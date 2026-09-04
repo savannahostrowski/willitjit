@@ -8,6 +8,15 @@ release_version = "2.7.0"
 release_date = "2026-05-07T16:13:17.151740Z"
 install = []
 uv_sync = ["--frozen", "--group", "dev", "--extra", "socks", "--extra", "brotli", "--extra", "zstd", "--extra", "h2"]
-test = ["-m", "pytest", "test"]
+test = ["-m", "pytest", "test", "--strict-config", "--strict-markers", "--disable-socket", "--allow-unix-socket", "--allow-hosts=localhost,127.0.0.1,::1,127.0.0.0,240.0.0.0", "-p", "no:xdist"]
 timeout_seconds = 1800
-note = "Uses the release's frozen uv environment, matching upstream's Python 3.14 nox session."
+note = "Upstream nox default test suite, frozen dev environment and socket restrictions. Coverage and memray are deliberately not run."
+guidance = [
+  "https://github.com/urllib3/urllib3/blob/9a950b92d999f906b6020bb2d1076ee56cddd5d2/noxfile.py",
+]
+environment = { "PYTHONWARNINGS" = "always::FutureWarning" }
+
+[[package.overrides]]
+runtime = "free-threaded"
+uv_sync = ["--frozen", "--group", "dev", "--extra", "socks", "--extra", "zstd", "--extra", "h2"]
+note = "Upstream nox omits brotli on free-threaded builds because brotlicffi does not support them. Use the same extras for both GIL conditions."

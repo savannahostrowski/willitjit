@@ -13,3 +13,7 @@ install = [
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1200
 note = "Installs the runtime extras and test runners without unrelated documentation, profiling, and benchmark dependencies."
+guidance = [
+  "https://github.com/encode/httpcore/blob/98209758cc14e1a5f966fe1dfdc1064b94055d8c/scripts/test",
+  "https://github.com/encode/httpcore/blob/98209758cc14e1a5f966fe1dfdc1064b94055d8c/requirements.txt",
+]

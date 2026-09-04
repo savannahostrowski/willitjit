@@ -10,7 +10,11 @@ install = [
   ["-m", "pip", "install", "-r", "requirements/pytest.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
-test = ["-m", "pytest", "-m", "not leaks", "--no-cov", "--no-c-extensions", "tests", "-p", "no:xdist"]
+test = ["-m", "pytest", "--no-cov", "--no-c-extensions", "tests", "-n", "0"]
 timeout_seconds = 1800
-environment = { MULTIDICT_NO_EXTENSIONS = "1" }
-note = "Uses the upstream non-leak pure-Python build and test lane so the JIT exercises Python code."
+environment = { "MULTIDICT_NO_EXTENSIONS" = "1" }
+note = "Upstream pure-Python lane with serial execution. No extra leak-test exclusion."
+guidance = [
+  "https://github.com/aio-libs/multidict/blob/39d3c322f6a9e824beee9b6f178e3166205f0f59/pyproject.toml",
+  "https://github.com/aio-libs/multidict/blob/39d3c322f6a9e824beee9b6f178e3166205f0f59/.github/workflows/ci-cd.yml",
+]

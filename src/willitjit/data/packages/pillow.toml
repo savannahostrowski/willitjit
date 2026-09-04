@@ -9,7 +9,15 @@ release_date = "2026-07-01T11:53:27.808291Z"
 fixture_repository = "https://github.com/python-pillow/test-images.git"
 fixture_ref = "7077675d2cda485d63de4aefe0fefbf6f655c5a0"
 fixture_destination = "Tests/images"
-install = [["-m", "pip", "install", "Pillow[tests]=={release_version}"]]
-test = ["-m", "pytest", "Tests", "-p", "no:xdist", "--deselect=Tests/test_image_access.py::TestEmbeddable::test_embeddable"]
+install = [
+  ["-m", "pip", "install", "Pillow[tests]=={release_version}"],
+]
+test = ["-m", "pytest", "Tests", "-p", "no:xdist"]
 timeout_seconds = 2400
-note = "Runs the checkout's upstream suite against the matching Pillow release wheel and separately versioned upstream image fixtures. The Windows embedding test is deselected because it assumes a non-venv interpreter home, unlike the isolated survey environment."
+note = "Runs Tests from upstream's wheel-test lane with the matching Pillow wheel. Image fixtures use the upstream test-images commit dated 2025-05-27 rather than moving main. No embeddable-test deselection; wheel packaging checks and standalone selftest.py remain separate."
+guidance = [
+  "https://github.com/python-pillow/Pillow/blob/bb1d8e8ab8d29048624d96e3ee53cecf7c13d13d/.github/workflows/wheels-test.ps1",
+  "https://github.com/python-pillow/Pillow/blob/bb1d8e8ab8d29048624d96e3ee53cecf7c13d13d/.ci/test.sh",
+  "https://github.com/python-pillow/Pillow/blob/bb1d8e8ab8d29048624d96e3ee53cecf7c13d13d/.github/workflows/wheels-test.sh",
+  "https://github.com/python-pillow/test-images/commit/7077675d2cda485d63de4aefe0fefbf6f655c5a0",
+]

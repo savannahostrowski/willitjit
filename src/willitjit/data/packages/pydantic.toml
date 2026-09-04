@@ -11,3 +11,7 @@ uv_sync = ["--frozen", "--all-packages", "--group", "testing-extra", "--all-extr
 test = ["-m", "pytest", "tests", "-p", "no:xdist", "--durations=10"]
 timeout_seconds = 1800
 note = "Uses the release's frozen workspace environment, matching upstream's Python 3.14 CI."
+guidance = [
+  "https://github.com/pydantic/pydantic/blob/cf67d4b3193c3fe43ede18612ed62785eee11382/Makefile",
+  "https://github.com/pydantic/pydantic/blob/cf67d4b3193c3fe43ede18612ed62785eee11382/.github/workflows/ci.yml",
+]

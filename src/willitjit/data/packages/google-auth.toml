@@ -7,7 +7,12 @@ ref = "google-auth-v2.56.3"
 release_version = "2.56.3"
 release_date = "2026-08-06T06:22:51.788856Z"
 sparse_paths = ["packages/google-auth"]
-install = [["-m", "pip", "install", "-e", "./packages/google-auth[testing]"]]
+install = [
+  ["-m", "pip", "install", "-e", "./packages/google-auth[testing]", "-c", "packages/google-auth/testing/constraints-3.14.txt"],
+]
 test = ["-m", "pytest", "packages/google-auth/tests", "packages/google-auth/tests_async", "-p", "no:xdist"]
 timeout_seconds = 1800
-note = "Runs the google-auth package suites from the upstream Google Cloud Python monorepo."
+note = "Upstream base unit lane with Python 3.14 constraints. The deprecated rsa/oauth2client extras are a separate upstream lane, not silently required here."
+guidance = [
+  "https://github.com/googleapis/google-cloud-python/blob/905bfe39396d0062fde6df462e5c495e93b9749e/packages/google-auth/noxfile.py",
+]

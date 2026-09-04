@@ -6,6 +6,11 @@ repository = "https://github.com/cpburnz/python-pathspec.git"
 ref = "v1.1.1"
 release_version = "1.1.1"
 release_date = "2026-04-27T01:46:07.060850Z"
-install = [["-m", "pip", "install", "-e", "."]]
+install = [
+  ["-m", "pip", "install", "-e", "."],
+]
 test = ["-m", "unittest", "discover", "-t", ".", "-s", "tests"]
 timeout_seconds = 600
+guidance = [
+  "https://github.com/cpburnz/python-pathspec/blob/ecf71a99ca739479d450b9830f43416ea0c519c7/tox.toml",
+]

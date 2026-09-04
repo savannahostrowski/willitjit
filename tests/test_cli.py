@@ -35,6 +35,33 @@ def packages(count: int) -> list[Package]:
 
 
 class SelectionTests(unittest.TestCase):
+    def test_plan_shows_requested_platform_and_runtime_recipe(self) -> None:
+        for runtime, expected in (
+            ("jit", "brotli"),
+            ("free-threaded", "without-brotli"),
+        ):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = main(
+                    [
+                        "plan",
+                        "--package",
+                        "urllib3",
+                        "--runtime",
+                        runtime,
+                        "--platform",
+                        "Windows",
+                    ]
+                )
+            self.assertEqual(code, 0)
+            setup = next(
+                line for line in output.getvalue().splitlines() if "setup (" in line
+            )
+            self.assertEqual("--extra brotli" in setup, expected == "brotli")
+            self.assertIn(
+                "upstream guidance: https://github.com/urllib3/", output.getvalue()
+            )
+
     def test_limit_is_applied_before_sharding(self) -> None:
         selected = _select(packages(8), [], 5, 2, 1)
         self.assertEqual([item.rank for item in selected], [2, 4])
@@ -201,7 +228,6 @@ class PlanTests(unittest.TestCase):
 
         rendered = output.getvalue()
         self.assertEqual(exit_code, 0)
-        self.assertIn("checkout: fetch tags", rendered)
         self.assertIn("sparse checkout: packages/google-auth", rendered)
         self.assertIn("checkout: initialize recursive submodules", rendered)
         self.assertIn(

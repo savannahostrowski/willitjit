@@ -6,6 +6,11 @@ repository = "https://github.com/eliben/pycparser.git"
 ref = "release_v3.00"
 release_version = "3.0"
 release_date = "2026-01-21T14:26:50.693739Z"
-install = [["-m", "pip", "install", "."]]
+install = [
+  ["-m", "pip", "install", "."],
+]
 test = ["-m", "unittest", "discover", "-s", "tests"]
 timeout_seconds = 600
+guidance = [
+  "https://github.com/eliben/pycparser/blob/77de509f0268f44ee587b5a4d9f0d680e269fcae/Makefile",
+]

@@ -226,13 +226,35 @@ jobs:
           fi
           packages="$(uv run willitjit plan "${selection[@]}" --names-only)"
           printf '%s\n' "$packages"
-          for package in cryptography pip pyarrow; do
+          for package in anyio cryptography pip pyarrow; do
             if printf '%s\n' "$packages" | grep -Fxq "$package"; then
               echo "$package=true" >> "$GITHUB_OUTPUT"
             else
               echo "$package=false" >> "$GITHUB_OUTPUT"
             fi
           done
+
+      - name: Add AnyIO DNS fixtures on Unix
+        if: matrix.platform != 'windows' && steps.shard.outputs.anyio == 'true'
+        run: |
+          printf '%s\n' '1.2.3.4 xn--fa-hia.de' '5.6.7.8 fass.de' | sudo tee -a /etc/hosts
+
+      - name: Add AnyIO DNS fixtures on Windows
+        if: matrix.platform == 'windows' && steps.shard.outputs.anyio == 'true'
+        shell: pwsh
+        run: |
+          Add-Content C:\Windows\System32\drivers\etc\hosts "1.2.3.4 xn--fa-hia.de"
+          Add-Content C:\Windows\System32\drivers\etc\hosts "5.6.7.8 fass.de"
+
+      - name: Select system certificate paths for AnyIO on Linux
+        if: matrix.platform == 'linux' && steps.shard.outputs.anyio == 'true'
+        run: |
+          # Avoid python-build-standalone's fallback-path os.stat calls inside
+          # async TLS tests. Certificate verification still uses Ubuntu's trust store.
+          test -r /etc/ssl/certs/ca-certificates.crt
+          test -d /etc/ssl/certs
+          echo "SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt" >> "$GITHUB_ENV"
+          echo "SSL_CERT_DIR=/etc/ssl/certs" >> "$GITHUB_ENV"
 
       - name: Download OpenSSL for Cryptography on Windows
         if: matrix.platform == 'windows' && steps.shard.outputs.cryptography == 'true'

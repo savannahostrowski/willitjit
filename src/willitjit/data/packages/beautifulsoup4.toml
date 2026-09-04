@@ -8,5 +8,7 @@ release_version = "4.15.0"
 release_date = "2026-06-07T16:44:20.453113Z"
 install = []
 test = []
-skip_platforms = { Linux = "The official source is not hosted on GitHub, which is the only source host currently supported by the survey.", Darwin = "The official source is not hosted on GitHub, which is the only source host currently supported by the survey.", Windows = "The official source is not hosted on GitHub, which is the only source host currently supported by the survey." }
-note = "Included to keep the cohort equal to the source dataset's top 100. Test execution is deferred until the survey supports the package's official source host."
+guidance = [
+  "https://www.crummy.com/software/BeautifulSoup/bs4/doc/",
+]
+skip_reason = "The official source is not hosted on GitHub, which is the only source host currently supported by the survey."

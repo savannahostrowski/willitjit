@@ -10,7 +10,16 @@ install = [
   ["-m", "pip", "install", "cffi=={release_version}"],
   ["-m", "pip", "install", "pytest", "setuptools", "meson-python", "ninja"],
 ]
-test = ["-m", "pytest", "src/c"]
+test = ["-m", "pytest", "src/c", "testing"]
 timeout_seconds = 1200
-note = "Runs the upstream wheel-test subset used on Windows. The larger testing directory is intentionally excluded because upstream documents that it takes about 45 minutes and has failures there."
+note = "Runs the upstream C/backend and Python testing directories, with the documented Windows-only exception below."
 embedded_python = true
+guidance = [
+  "https://github.com/python-cffi/cffi/blob/fd33e7700f0ebafe6f30bd5053f13327221b77a2/.github/workflows/ci.yaml",
+  "https://github.com/python-cffi/cffi/blob/fd33e7700f0ebafe6f30bd5053f13327221b77a2/README.md",
+]
+
+[[package.overrides]]
+platform = "Windows"
+test = ["-m", "pytest", "src/c"]
+note = "Upstream Windows cibuildwheel explicitly restricts the suite to src/c; testing is still run on Unix."

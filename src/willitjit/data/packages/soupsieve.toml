@@ -7,8 +7,13 @@ ref = "2.9.2"
 release_version = "2.9.2"
 release_date = "2026-08-07T00:57:23.524076Z"
 install = [
-  ["-m", "pip", "install", "pytest", "pytest-cov", "beautifulsoup4"],
+  ["-m", "pip", "install", "-r", "requirements/tests.txt"],
   ["-m", "pip", "install", "-e", "."],
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1200
+guidance = [
+  "https://github.com/facelessuser/soupsieve/blob/78661a6e4f54e0bc3ec99f548e9fcd6787d1902c/requirements/tests.txt",
+  "https://github.com/facelessuser/soupsieve/blob/78661a6e4f54e0bc3ec99f548e9fcd6787d1902c/pyproject.toml",
+]
+note = "Upstream standard parser lane with lxml and html5lib from requirements/tests.txt. Static mypy and coverage reporting are not part of this runtime survey."

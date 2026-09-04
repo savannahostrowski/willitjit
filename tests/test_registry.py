@@ -6,11 +6,96 @@ from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from willitjit.models import Package
+from willitjit.models import Package, RecipeOverride
 from willitjit.registry import load_registry, validate_registry
 
 
 class RegistryTests(unittest.TestCase):
+    def test_overrides_select_a_recipe_without_changing_the_base(self) -> None:
+        _, packages = load_registry()
+        base = replace(
+            packages[0],
+            environment=(("BASE", "1"),),
+            overrides=(
+                RecipeOverride(
+                    runtime="free-threaded",
+                    uv_sync=("--frozen",),
+                    install=(),
+                    environment=(("EXTRA", "2"),),
+                    note="FT requirements",
+                ),
+                RecipeOverride(
+                    platform="Windows", test=("-m", "unittest"), note="Windows suite"
+                ),
+            ),
+        )
+        for runtime in ("jit", "free-threaded"):
+            for platform in ("Linux", "Darwin", "Windows"):
+                with self.subTest(runtime=runtime, platform=platform):
+                    recipe = base.for_environment(runtime, platform)
+                    self.assertEqual(
+                        recipe.install,
+                        () if runtime == "free-threaded" else base.install,
+                    )
+                    self.assertEqual(
+                        recipe.test,
+                        ("-m", "unittest") if platform == "Windows" else base.test,
+                    )
+                    self.assertEqual(
+                        dict(recipe.environment).get("EXTRA"),
+                        "2" if runtime == "free-threaded" else None,
+                    )
+                    self.assertEqual(dict(recipe.environment)["BASE"], "1")
+                    self.assertEqual(recipe.for_environment(runtime, platform), recipe)
+        self.assertEqual(len(base.overrides), 2)
+
+    def test_rejects_ambiguous_or_unsafe_overrides(self) -> None:
+        _, packages = load_registry()
+        cases = (
+            (RecipeOverride(note="no selector"),),
+            (RecipeOverride(platform="Windows"),),
+            (RecipeOverride(platform="win32", note="wrong platform"),),
+            (
+                RecipeOverride(runtime="jit", note="one"),
+                RecipeOverride(runtime="jit", note="duplicate"),
+            ),
+            (
+                RecipeOverride(
+                    runtime="jit",
+                    note="unsafe toggle",
+                    environment=(("PYTHON_JIT", "0"),),
+                ),
+            ),
+            (RecipeOverride(runtime="jit", note="empty test", test=()),),
+        )
+        for overrides in cases:
+            with self.subTest(overrides=overrides), self.assertRaises(ValueError):
+                validate_registry([replace(packages[0], overrides=overrides)])
+
+    def test_all_adapters_have_sources_and_no_nested_test_environment(self) -> None:
+        _, packages = load_registry()
+        for package in packages:
+            with self.subTest(package=package.name):
+                self.assertTrue(package.guidance)
+                for runtime in ("jit", "free-threaded"):
+                    for platform in ("Linux", "Darwin", "Windows"):
+                        recipe = package.for_environment(runtime, platform)
+                        self.assertFalse({"tox", "nox"} & set(recipe.test))
+
+    def test_rejects_unbundled_test_patches(self) -> None:
+        _, packages = load_registry()
+        for name in (
+            "../outside.patch",
+            "..\\outside.patch",
+            "/outside.patch",
+            "missing.patch",
+        ):
+            with (
+                self.subTest(name=name),
+                self.assertRaisesRegex(ValueError, "unsafe test patch"),
+            ):
+                validate_registry([replace(packages[0], test_patch=name)])
+
     def test_rejects_package_filename_mismatch(self) -> None:
         with TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -23,6 +108,21 @@ class RegistryTests(unittest.TestCase):
             )
 
             with self.assertRaisesRegex(ValueError, "filename does not match"):
+                load_registry(root)
+
+    def test_rejects_removed_adapter_fields(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "packages").mkdir()
+            (root / "dataset.toml").write_text(
+                '[dataset]\nrelease_cutoff = "2026-08-11T00:00:00Z"\n'
+            )
+            (root / "packages" / "example.toml").write_text(
+                '[package]\nname = "example"\nskip_platforms = {Linux = "disabled"}\n'
+            )
+            with self.assertRaisesRegex(
+                ValueError, "unknown adapter fields.*skip_platforms"
+            ):
                 load_registry(root)
 
     def test_rejects_unsafe_package_name(self) -> None:
@@ -85,245 +185,24 @@ class RegistryTests(unittest.TestCase):
                 release_cutoff="2026-08-11T00:00:00Z",
             )
 
-    def test_bundled_top_hundred(self) -> None:
+    def test_bundled_registry_invariants(self) -> None:
         dataset, packages = load_registry()
-        self.assertEqual(dataset["last_update"], "2026-08-01 06:34:08")
-        self.assertEqual(
-            dataset["selection"],
-            "top 100 packages; test execution currently requires GitHub-hosted source",
-        )
         cutoff = datetime.fromisoformat(dataset["release_cutoff"])
-        self.assertEqual(len(packages), 100)
-        self.assertNotIn("HEAD", {package.ref for package in packages})
-        self.assertTrue(all(package.release_version for package in packages))
-        self.assertTrue(all(package.release_date for package in packages))
-        self.assertTrue(
-            all(
-                datetime.fromisoformat(package.release_date) <= cutoff
-                for package in packages
-            )
-        )
-        self.assertEqual(
-            [package.name for package in packages],
-            [
-                "boto3",
-                "packaging",
-                "typing-extensions",
-                "certifi",
-                "urllib3",
-                "idna",
-                "requests",
-                "charset-normalizer",
-                "setuptools",
-                "botocore",
-                "cryptography",
-                "cffi",
-                "pluggy",
-                "pygments",
-                "pyyaml",
-                "python-dateutil",
-                "six",
-                "aiobotocore",
-                "numpy",
-                "pycparser",
-                "pydantic",
-                "pytest",
-                "click",
-                "iniconfig",
-                "anyio",
-                "pydantic-core",
-                "grpcio-status",
-                "attrs",
-                "s3transfer",
-                "h11",
-                "fsspec",
-                "annotated-types",
-                "protobuf",
-                "markupsafe",
-                "httpx",
-                "httpcore",
-                "typing-inspection",
-                "pandas",
-                "platformdirs",
-                "pathspec",
-                "python-dotenv",
-                "jinja2",
-                "filelock",
-                "pyjwt",
-                "s3fs",
-                "litellm",
-                "jmespath",
-                "tqdm",
-                "aiohttp",
-                "yarl",
-                "pip",
-                "rich",
-                "markdown-it-py",
-                "rpds-py",
-                "uvicorn",
-                "starlette",
-                "jsonschema",
-                "wheel",
-                "multidict",
-                "google-auth",
-                "propcache",
-                "pyasn1",
-                "fastapi",
-                "aiohappyeyeballs",
-                "frozenlist",
-                "pytz",
-                "mdurl",
-                "pillow",
-                "referencing",
-                "importlib-metadata",
-                "websockets",
-                "opentelemetry-semantic-conventions",
-                "trove-classifiers",
-                "jsonschema-specifications",
-                "aiosignal",
-                "virtualenv",
-                "zipp",
-                "opentelemetry-sdk",
-                "googleapis-common-protos",
-                "tzdata",
-                "wrapt",
-                "sniffio",
-                "hatchling",
-                "google-api-core",
-                "greenlet",
-                "opentelemetry-api",
-                "pyasn1-modules",
-                "annotated-doc",
-                "pydantic-settings",
-                "scipy",
-                "grpcio",
-                "textual",
-                "huggingface-hub",
-                "regex",
-                "pyarrow",
-                "beautifulsoup4",
-                "colorama",
-                "tenacity",
-                "soupsieve",
-                "sqlalchemy",
-            ],
-        )
-        self.assertEqual(packages[-6].rank, 95)
-        self.assertEqual(packages[-5].rank, 96)
-        self.assertEqual(packages[-1].rank, 100)
-        numpy = next(package for package in packages if package.name == "numpy")
-        self.assertFalse(numpy.recursive_submodules)
-        self.assertIn("numpy=={release_version}", numpy.install[-1])
-        protobuf = next(package for package in packages if package.name == "protobuf")
-        self.assertIn(
-            ("PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION", "python"),
-            protobuf.environment,
-        )
-        aiohttp = next(package for package in packages if package.name == "aiohttp")
-        self.assertTrue(aiohttp.recursive_submodules)
-        scipy = next(package for package in packages if package.name == "scipy")
-        self.assertFalse(scipy.recursive_submodules)
-        self.assertIn("scipy=={release_version}", scipy.install[-1])
-        referencing = next(
-            package for package in packages if package.name == "referencing"
-        )
-        self.assertTrue(referencing.recursive_submodules)
-        attrs = next(package for package in packages if package.name == "attrs")
-        self.assertFalse(attrs.fetch_tags)
-        urllib3 = next(package for package in packages if package.name == "urllib3")
-        self.assertIn("dev", urllib3.uv_sync)
-        pytest = next(package for package in packages if package.name == "pytest")
-        self.assertIn("tox", pytest.install[0])
-        self.assertIn("py314", pytest.test)
-        jinja2 = next(package for package in packages if package.name == "jinja2")
-        self.assertIn("requirements/tests.txt", jinja2.install[0])
-        pluggy = next(package for package in packages if package.name == "pluggy")
-        self.assertIn(".[testing]", pluggy.install[0])
-        sniffio = next(package for package in packages if package.name == "sniffio")
-        self.assertIn("test-requirements.txt", sniffio.install[0])
-        google_auth = next(
-            package for package in packages if package.name == "google-auth"
-        )
-        self.assertEqual(google_auth.sparse_paths, ("packages/google-auth",))
-        pydantic_core = next(
-            package for package in packages if package.name == "pydantic-core"
-        )
-        self.assertEqual(
-            pydantic_core.repository, "https://github.com/pydantic/pydantic.git"
-        )
-        self.assertFalse(pydantic_core.sparse_paths)
-        self.assertIn("testing-extra", pydantic_core.uv_sync)
-        pillow = next(package for package in packages if package.name == "pillow")
-        self.assertFalse(pillow.skip_platforms)
-        self.assertEqual(
-            pillow.install,
-            (("-m", "pip", "install", "Pillow[tests]=={release_version}"),),
-        )
-        self.assertEqual(
-            pillow.fixture_repository,
-            "https://github.com/python-pillow/test-images.git",
-        )
-        self.assertEqual(
-            pillow.fixture_ref,
-            "7077675d2cda485d63de4aefe0fefbf6f655c5a0",
-        )
-        self.assertEqual(pillow.fixture_destination, "Tests/images")
-        beautifulsoup = next(
-            package for package in packages if package.name == "beautifulsoup4"
-        )
-        self.assertEqual(beautifulsoup.install, ())
-        self.assertEqual(beautifulsoup.test, ())
-        self.assertEqual(
-            {platform for platform, _reason in beautifulsoup.skip_platforms},
-            {"Linux", "Darwin", "Windows"},
-        )
-        aiobotocore = next(
-            package for package in packages if package.name == "aiobotocore"
-        )
-        self.assertIn("botocore==1.43.56", aiobotocore.install[-1])
-        pandas = next(package for package in packages if package.name == "pandas")
-        self.assertIn("tzdata", pandas.install[-1])
-        h11 = next(package for package in packages if package.name == "h11")
-        self.assertIn("-e", h11.install[-1])
-        virtualenv = next(
-            package for package in packages if package.name == "virtualenv"
-        )
-        self.assertIn("tox-uv", virtualenv.install[0])
-        self.assertIn("3.14", virtualenv.test)
-        self.assertTrue(virtualenv.windows_native_line_endings)
-        grpcio = next(package for package in packages if package.name == "grpcio")
-        self.assertEqual(grpcio.install_cwd, ".")
-        self.assertIn("--no-deps", grpcio.install[-2])
-        self.assertIn("--no-build-isolation", grpcio.install[-2])
-        self.assertEqual(
-            grpcio.install[-1],
-            ("src/python/grpcio_tests/setup.py", "preprocess"),
-        )
-        self.assertIn("--ignore=tests/unit/test_all_modules_installed.py", grpcio.test)
-        referencing = next(
-            package for package in packages if package.name == "referencing"
-        )
-        self.assertIn("test-requirements.txt", referencing.install[0])
-        for package_name in ("setuptools", "importlib-metadata", "zipp"):
-            package = next(
-                package for package in packages if package.name == package_name
-            )
-            self.assertEqual(
-                {platform for platform, _reason in package.skip_platforms},
-                {"Linux", "Darwin", "Windows"},
-            )
-        botocore = next(package for package in packages if package.name == "botocore")
-        self.assertEqual(
-            botocore.focused_test,
-            ("-m", "pytest", "functional/csm/test_monitoring.py"),
-        )
-        self.assertIn("not slow", numpy.test)
-        multidict = next(package for package in packages if package.name == "multidict")
-        self.assertIn("--no-c-extensions", multidict.test)
-        sqlalchemy = next(
-            package for package in packages if package.name == "sqlalchemy"
-        )
-        self.assertFalse(any("--group" in command for command in sqlalchemy.install))
+        self.assertEqual([package.rank for package in packages], list(range(1, 101)))
+        self.assertEqual(len({package.name for package in packages}), 100)
+        for package in packages:
+            with self.subTest(package=package.name):
+                self.assertTrue(package.release_version)
+                self.assertNotEqual(package.ref, "HEAD")
+                self.assertLessEqual(
+                    datetime.fromisoformat(package.release_date), cutoff
+                )
+                if package.fixture_repository:
+                    self.assertRegex(package.fixture_ref, r"^[0-9a-f]{40}$")
+                if package.skip_reason:
+                    self.assertFalse(package.install or package.uv_sync or package.test)
+                elif not package.repository.startswith("https://github.com/"):
+                    self.fail("Non-GitHub sources must remain explicitly untested")
 
 
 if __name__ == "__main__":

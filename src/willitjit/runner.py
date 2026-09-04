@@ -10,6 +10,8 @@ import sys
 import threading
 import time
 from collections.abc import Iterable, Mapping
+from dataclasses import replace
+from importlib.resources import as_file, files
 from pathlib import Path
 from typing import Any
 
@@ -29,7 +31,7 @@ else:
     openssl_version = ssl.OPENSSL_VERSION
 jit = getattr(sys, "_jit", None)
 smoke_result = sum(range(10_000))
-print(json.dumps({
+probe = {
     "executable": sys.executable,
     "version": sys.version,
     "cache_tag": sys.implementation.cache_tag,
@@ -43,7 +45,8 @@ print(json.dumps({
     "ssl_error": ssl_error,
     "openssl_version": openssl_version,
     "smoke_result": smoke_result,
-}))
+}
+print(json.dumps(probe))
 """
 
 SENSITIVE_ENVIRONMENT_NAMES = frozenset(
@@ -105,15 +108,41 @@ def runtime_condition_labels(runtime: Runtime) -> tuple[str, str]:
     return "GIL on", "GIL off"
 
 
+def condition_probe_command(
+    python: Path, runtime: Runtime, target_enabled: bool
+) -> list[str]:
+    expected = {
+        "ssl_available": True,
+        "smoke_result": 49_995_000,
+        "free_threaded": runtime == "free-threaded",
+        "jit_enabled": runtime == "jit" and target_enabled,
+        "gil_enabled": not (runtime == "free-threaded" and target_enabled),
+    }
+    if runtime == "jit":
+        expected.update(jit_api=True, jit_available=True)
+    check = f"""
+expected = {expected!r}
+problems = [
+    f"{{key}}: expected {{value!r}}, got {{probe.get(key)!r}}"
+    for key, value in expected.items() if probe.get(key) != value
+]
+if problems:
+    raise SystemExit("Runtime verification failed: " + "; ".join(problems))
+"""
+    return [str(python), "-c", PROBE + check]
+
+
 def probe_python(
     python: Path, runtime: Runtime, target_enabled: bool
 ) -> dict[str, Any]:
     env = os.environ.copy()
     env.update(runtime_environment(runtime, target_enabled))
     completed = subprocess.run(
-        [str(python), "-c", PROBE],
+        condition_probe_command(python, runtime, target_enabled),
         env=env,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         timeout=30,
         check=False,
@@ -133,38 +162,10 @@ def probe_python(
 def validate_runtime_python(
     python: Path, runtime: Runtime
 ) -> dict[str, dict[str, Any]]:
-    baseline = probe_python(python, runtime, False)
-    target = probe_python(python, runtime, True)
-    problems = []
-    if runtime == "jit":
-        if target["free_threaded"]:
-            problems.append("the JIT survey requires a regular GIL-enabled build")
-        if not target["jit_api"]:
-            problems.append("sys._jit is missing")
-        elif not target["jit_available"]:
-            problems.append("sys._jit.is_available() is false")
-        if baseline["jit_enabled"]:
-            problems.append("PYTHON_JIT=0 did not disable the JIT")
-        if not target["jit_enabled"]:
-            problems.append("PYTHON_JIT=1 did not enable the JIT")
-    else:
-        if not target["free_threaded"]:
-            problems.append("Py_GIL_DISABLED is not set")
-        if baseline["gil_enabled"] is not True:
-            problems.append("PYTHON_GIL=1 did not enable the GIL")
-        if target["gil_enabled"] is not False:
-            problems.append("PYTHON_GIL=0 did not disable the GIL")
-        if baseline["jit_enabled"] or target["jit_enabled"]:
-            problems.append("the JIT must remain disabled in free-threaded mode")
-    baseline_label, target_label = runtime_condition_labels(runtime)
-    for condition, probe in ((baseline_label, baseline), (target_label, target)):
-        if not probe["ssl_available"]:
-            problems.append(f"{condition} could not import ssl: {probe['ssl_error']}")
-        if probe["smoke_result"] != 49_995_000:
-            problems.append(f"{condition} failed the interpreter smoke check")
-    if problems:
-        raise RuntimeError("; ".join(problems))
-    return {"baseline": baseline, "target": target}
+    return {
+        "baseline": probe_python(python, runtime, False),
+        "target": probe_python(python, runtime, True),
+    }
 
 
 def format_command(command: Iterable[str]) -> str:
@@ -252,6 +253,8 @@ def _run_logged_streaming(
 ) -> CommandResult:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     timed_out = False
+    output_error: Exception | None = None
+    console_encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
     with log_path.open("w", encoding="utf-8") as log:
         log.write(header)
         process = subprocess.Popen(
@@ -268,12 +271,26 @@ def _run_logged_streaming(
         assert process.stdout is not None
 
         def copy_output() -> None:
-            for line in iter(process.stdout.readline, ""):
-                log.write(line)
-                log.flush()
-                # GitHub treats lines beginning with "::" as workflow commands.
-                console_line = f" {line}" if line.startswith("::") else line
-                print(console_line, end="", flush=True)
+            nonlocal output_error
+            try:
+                for line in iter(process.stdout.readline, ""):
+                    log.write(line)
+                    log.flush()
+                    # Preserve Unicode in the log even on a legacy Windows console.
+                    console_line = line.encode(
+                        console_encoding, errors="backslashreplace"
+                    ).decode(console_encoding)
+                    # GitHub treats lines beginning with "::" as workflow commands.
+                    if console_line.startswith("::"):
+                        console_line = f" {console_line}"
+                    print(console_line, end="", flush=True)
+            except Exception as error:  # noqa: BLE001 - re-raised in the calling thread
+                output_error = error
+                # A dead reader can fill the pipe and make a healthy suite hang.
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    pass
 
         output_thread = threading.Thread(target=copy_output, daemon=True)
         output_thread.start()
@@ -286,6 +303,10 @@ def _run_logged_streaming(
             returncode = None
         output_thread.join()
         process.stdout.close()
+        if output_error is not None:
+            raise RuntimeError(
+                f"Could not stream test output to {log_path}"
+            ) from output_error
         if timed_out:
             message = f"\nTIMED OUT AFTER {timeout_seconds}s\n"
             log.write(message)
@@ -434,9 +455,9 @@ class SurveyRunner:
         for directory in ("baseline", "target", "jit", "source", "fixture"):
             shutil.rmtree(package_dir / directory, ignore_errors=True)
 
-    def run_package(self, package: Package) -> PackageResult:
-        skip_reason = dict(package.skip_platforms).get(platform.system())
-        if skip_reason:
+    def run_package(self, package: Package, *, focused: bool = False) -> PackageResult:
+        package = package.for_environment(self.runtime, platform.system())
+        if package.skip_reason:
             return PackageResult(
                 package=package.name,
                 rank=package.rank,
@@ -446,8 +467,12 @@ class SurveyRunner:
                 setup=(),
                 baseline=None,
                 target=None,
-                error=skip_reason,
+                error=package.skip_reason,
             )
+        if focused:
+            if not package.focused_test:
+                raise ValueError(f"no focused test configured for: {package.name}")
+            package = replace(package, test=package.focused_test)
         package_dir = self.run_dir / package.name
         source_repository = package_dir / "source"
         fixture_repository = package_dir / "fixture"
@@ -711,6 +736,29 @@ class SurveyRunner:
                         revision,
                     )
 
+            # Install the clean release first so a test patch cannot affect
+            # SCM-derived package versions or wheel contents.
+            if package.test_patch:
+                resource = files("willitjit").joinpath(
+                    "data", "patches", package.test_patch
+                )
+                with as_file(resource) as patch_path:
+                    result = run_logged(
+                        ["git", "apply", str(patch_path)],
+                        cwd=repository,
+                        env=base_env,
+                        timeout_seconds=30,
+                        log_path=logs / condition / "test-patch.log",
+                    )
+                setup_results.append(result)
+                if result.returncode != 0 or result.timed_out:
+                    return self._setup_error(
+                        package,
+                        setup_results,
+                        f"{condition} test patch failed",
+                        revision,
+                    )
+
             test_cwd = (repository / package.test_cwd).resolve()
             if repository not in test_cwd.parents and test_cwd != repository:
                 return self._setup_error(
@@ -724,6 +772,25 @@ class SurveyRunner:
                     package,
                     setup_results,
                     f"{condition} test_cwd does not exist",
+                    revision,
+                )
+            # Setup tools may replace the environment. Verify the executable that
+            # will launch this suite, not only the original CLI interpreter.
+            result = run_logged(
+                condition_probe_command(
+                    venv_python(venv), self.runtime, target_enabled
+                ),
+                cwd=test_cwd,
+                env=environment,
+                timeout_seconds=30,
+                log_path=logs / condition / "runtime-check.log",
+            )
+            setup_results.append(result)
+            if result.returncode != 0 or result.timed_out:
+                return self._setup_error(
+                    package,
+                    setup_results,
+                    f"{condition} runtime verification failed",
                     revision,
                 )
             if self.stream_test_output:
@@ -752,6 +819,7 @@ class SurveyRunner:
                         revision=revision,
                         runtime=self.runtime,
                         classification="baseline-failure",
+                        test_patch=package.test_patch,
                         setup=tuple(setup_results),
                         baseline=baseline,
                         target=None,
@@ -765,6 +833,7 @@ class SurveyRunner:
             revision=revision,
             runtime=self.runtime,
             classification=classify_target(target),
+            test_patch=package.test_patch,
             setup=tuple(setup_results),
             baseline=baseline,
             target=target,
@@ -838,6 +907,7 @@ class SurveyRunner:
             revision=revision,
             runtime=self.runtime,
             classification="setup-error",
+            test_patch=package.test_patch,
             setup=tuple(setup),
             baseline=None,
             target=None,

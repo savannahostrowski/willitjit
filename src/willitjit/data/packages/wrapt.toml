@@ -6,6 +6,12 @@ repository = "https://github.com/GrahamDumpleton/wrapt.git"
 ref = "2.3.0"
 release_version = "2.3.0"
 release_date = "2026-07-28T06:04:04.858030Z"
-install = [["-m", "pip", "install", "-e", ".[dev]"]]
+install = [
+  ["-m", "pip", "install", "-e", ".[dev]"],
+]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 1200
+guidance = [
+  "https://github.com/GrahamDumpleton/wrapt/blob/95d5d01bd671186000c02e1d0f6806a4d7c5d217/TESTING.md",
+  "https://github.com/GrahamDumpleton/wrapt/blob/95d5d01bd671186000c02e1d0f6806a4d7c5d217/tox.ini",
+]

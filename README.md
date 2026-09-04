@@ -9,3 +9,6 @@ Package rankings come from
 [`hugovk/top-pypi-packages`](https://github.com/hugovk/top-pypi-packages). This
 project measures compatibility only, not performance. Sources hosted outside
 GitHub are not surveyed yet.
+
+See [package adapters](src/willitjit/data/packages/README.md) for the test recipes
+and links to their upstream guidance.

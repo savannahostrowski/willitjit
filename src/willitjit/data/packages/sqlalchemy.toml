@@ -12,5 +12,9 @@ install = [
 ]
 test = ["-m", "pytest", "-c", "pyproject.toml", "--nomemory", "--notimingintensive", "--nomypy", "test", "-p", "no:xdist"]
 timeout_seconds = 2400
-environment = { DISABLE_SQLALCHEMY_CEXT = "1" }
+environment = { "DISABLE_SQLALCHEMY_CEXT" = "1" }
 note = "Installs SQLAlchemy's documented core pytest dependencies directly because uv rejects upstream's intentional legacy duplicate extra names, then runs the non-memory, non-timing, non-mypy suite in pure Python mode."
+guidance = [
+  "https://github.com/sqlalchemy/sqlalchemy/blob/c8e26d5c9ffcde0a82b4b7fa5de27f0c6bc46bec/pyproject.toml",
+  "https://github.com/sqlalchemy/sqlalchemy/blob/c8e26d5c9ffcde0a82b4b7fa5de27f0c6bc46bec/tox.ini",
+]

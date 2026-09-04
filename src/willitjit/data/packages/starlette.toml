@@ -12,3 +12,7 @@ install = [
 ]
 test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 1800
+guidance = [
+  "https://github.com/Kludex/starlette/blob/4f250d6b814587e20c5365f0a5f0c4d42bcb929f/pyproject.toml",
+  "https://github.com/Kludex/starlette/blob/4f250d6b814587e20c5365f0a5f0c4d42bcb929f/scripts/test",
+]

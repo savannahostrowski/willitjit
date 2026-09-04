@@ -6,7 +6,10 @@ repository = "https://github.com/jaraco/zipp.git"
 ref = "v4.1.0"
 release_version = "4.1.0"
 release_date = "2026-05-18T20:08:57.045692Z"
-install = [["-m", "pip", "install", "-e", ".[test]"]]
-test = ["-m", "pytest", "tests"]
+install = []
+test = []
 timeout_seconds = 900
-skip_platforms = { Linux = "The Actions CPython build omits test.support, which this upstream suite requires.", Darwin = "The Actions CPython build omits test.support, which this upstream suite requires.", Windows = "The Actions CPython build omits test.support, which this upstream suite requires." }
+guidance = [
+  "https://github.com/jaraco/zipp/blob/29a7a55c6bac1a6f705b54135dbea82d03e997c3/pyproject.toml",
+]
+skip_reason = "The Actions CPython build omits test.support, which this upstream suite requires."

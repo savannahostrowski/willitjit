@@ -15,3 +15,7 @@ test_cwd = "tests"
 timeout_seconds = 1800
 note = "Uses the release's locked development requirements; integration tests are excluded."
 isolate_home = true
+guidance = [
+  "https://github.com/boto/boto3/blob/64ffe2afa675a6d65e61121732ec5d3ec6c63a92/scripts/ci/run-tests",
+  "https://github.com/boto/boto3/blob/64ffe2afa675a6d65e61121732ec5d3ec6c63a92/scripts/ci/install",
+]

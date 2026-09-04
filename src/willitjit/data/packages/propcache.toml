@@ -12,5 +12,9 @@ install = [
 ]
 test = ["-m", "pytest", "tests", "--no-c-extensions"]
 timeout_seconds = 1200
-environment = { PROPCACHE_NO_EXTENSIONS = "1" }
+environment = { "PROPCACHE_NO_EXTENSIONS" = "1" }
 note = "Uses upstream's explicit --no-c-extensions test lane so the JIT exercises Python code."
+guidance = [
+  "https://github.com/aio-libs/propcache/blob/041f7afe0dff07f3baa77ff444dd735433290940/pytest.ini",
+  "https://github.com/aio-libs/propcache/blob/041f7afe0dff07f3baa77ff444dd735433290940/pyproject.toml",
+]

@@ -13,3 +13,6 @@ install = [
 test = ["-W", "error", "-m", "pytest"]
 timeout_seconds = 300
 note = "Matches upstream's warning-as-error pytest invocation."
+guidance = [
+  "https://github.com/certifi/python-certifi/blob/f4bc676bc101fe2235846e37044e8c693d6cbaf4/.github/workflows/ci.yml",
+]

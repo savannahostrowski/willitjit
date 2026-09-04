@@ -342,6 +342,7 @@ def _observation(
         "label": label,
         "explanation": explanation,
         "revision": result.get("revision"),
+        "testPatch": result.get("test_patch") or None,
         "command": command,
         "baseline": _condition(result.get("baseline"), run_dir),
         "target": _condition(target, run_dir),

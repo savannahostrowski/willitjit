@@ -10,5 +10,10 @@ install = [
   ["-m", "pip", "install", "--group", "dev"],
   ["-m", "pip", "install", "-e", ".[standard]"],
 ]
-test = ["-m", "pytest", "tests", "-o", "addopts=", "-p", "no:xdist"]
+test = ["-m", "pytest", "tests", "-n", "0"]
 timeout_seconds = 1800
+guidance = [
+  "https://github.com/Kludex/uvicorn/blob/ee8e45ca472db17b4aef1d539f209539062d002e/pyproject.toml",
+  "https://github.com/Kludex/uvicorn/blob/ee8e45ca472db17b4aef1d539f209539062d002e/scripts/test",
+]
+note = "Uses upstream dev/standard dependencies and test configuration. Only worker count is overridden; strict configuration and marker checks remain enabled."

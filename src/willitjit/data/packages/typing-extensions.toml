@@ -6,8 +6,13 @@ repository = "https://github.com/python/typing_extensions.git"
 ref = "4.16.0"
 release_version = "4.16.0"
 release_date = "2026-07-02T08:40:04.659120Z"
-install = [["-m", "pip", "install", "-e", "."]]
-test = ["-m", "unittest", "discover"]
+install = [
+  ["-m", "pip", "install", "-e", "."],
+]
+test = ["-W", "error", "-m", "unittest", "discover"]
 test_cwd = "src"
 timeout_seconds = 600
 note = "Matches tox's changedir=src and python -m unittest discover."
+guidance = [
+  "https://github.com/python/typing_extensions/blob/f29cd28d8ed7642cafb1d18daf5aa41be6a5c0aa/tox.ini",
+]

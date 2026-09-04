@@ -12,3 +12,6 @@ install = [
 ]
 test = ["-m", "pytest", "tests"]
 timeout_seconds = 900
+guidance = [
+  "https://github.com/tox-dev/py-filelock/blob/9a6cc4365b1e47368bce33ab005beb749983f3e5/pyproject.toml",
+]

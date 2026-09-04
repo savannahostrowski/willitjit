@@ -12,6 +12,15 @@ install = [
 ]
 test = ["-m", "pytest", "-m", "not dev_mode and not autobahn", "-p", "no:xdist"]
 timeout_seconds = 2400
-environment = { AIOHTTP_NO_EXTENSIONS = "1" }
+environment = { "AIOHTTP_NO_EXTENSIONS" = "1" }
 note = "Uses the upstream pure-Python lane and excludes its separate dev-mode and Autobahn lanes."
 recursive_submodules = true
+guidance = [
+  "https://github.com/aio-libs/aiohttp/blob/5e392ce0456f5235a4ee6ad46f0e806df2f15873/.github/workflows/ci-cd.yml",
+  "https://github.com/aio-libs/aiohttp/blob/5e392ce0456f5235a4ee6ad46f0e806df2f15873/requirements/test-ft.in",
+]
+
+[[package.overrides]]
+runtime = "free-threaded"
+install = [["-m", "pip", "install", "-r", "requirements/test-ft.in", "-c", "requirements/test-ft.txt"], ["-m", "pip", "install", "-e", "."]]
+note = "Uses the separate upstream FT requirements/constraints for both GIL conditions."

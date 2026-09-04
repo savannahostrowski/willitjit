@@ -9,11 +9,15 @@ release_date = "2026-07-28T17:14:09.497041Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements.txt"],
   ["-m", "pip", "install", "-r", "test_requirements.txt"],
-  ["-m", "pip", "install", "pytest-asyncio", "pytest-timeout", "ujson", "requests", "decorator", "httpretty"],
+  ["-m", "pip", "install", "pytest-asyncio", "pytest-timeout", "ujson", "requests", "decorator", "httpretty", "moto!=5.2.0", "flask"],
   ["-m", "pip", "install", "--no-deps", "-e", "."],
 ]
 test = ["-m", "pytest", "-vv", "-s", "s3fs"]
 timeout_seconds = 1800
-environment = { AWS_ACCESS_KEY_ID = "foobar_key", AWS_SECRET_ACCESS_KEY = "foobar_secret", AWS_DEFAULT_REGION = "us-east-1" }
-note = "Matches upstream's Python 3.14 conda dependency set and test lane with dummy AWS credentials."
+environment = { "AWS_ACCESS_KEY_ID" = "foobar_key", "AWS_SECRET_ACCESS_KEY" = "foobar_secret", "AWS_DEFAULT_REGION" = "us-east-1" }
+note = "Uses declared requirements plus Python dependencies from ci/env.yaml, including the moto exclusion. Unlike upstream CI, uses the package-declared fsspec release range rather than mutable fsspec Git main. Dummy AWS values are fixtures, not credentials."
 isolate_home = true
+guidance = [
+  "https://github.com/fsspec/s3fs/blob/609950a67e1d2f26bd98b5053b016200272a35dd/ci/env.yaml",
+  "https://github.com/fsspec/s3fs/blob/609950a67e1d2f26bd98b5053b016200272a35dd/.github/workflows/ci.yml",
+]

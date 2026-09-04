@@ -6,10 +6,10 @@ repository = "https://github.com/tqdm/tqdm.git"
 ref = "v4.70.0"
 release_version = "4.70.0"
 release_date = "2026-07-27T11:33:13.167874Z"
-install = [
-  ["-m", "pip", "install", "-r", ".meta/requirements-test.txt"],
-  ["-m", "pip", "install", "-e", "."],
-]
-test = ["-m", "pytest", "-k", "not perf", "tests"]
+install = []
+test = []
 timeout_seconds = 1200
-note = "Runs the upstream test suite without its separate performance tests."
+guidance = [
+  "https://github.com/tqdm/tqdm/blob/96f2e60e4584cdab57a23602e27043d0465254ad/pyproject.toml",
+]
+skip_reason = "Not tested: upstream test requirements fetch nbval from an unpinned Git branch. An immutable, reviewed dependency input is needed before executing this recipe; do not silently drop notebook tests or invent a replacement environment."

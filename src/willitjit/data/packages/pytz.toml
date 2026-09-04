@@ -6,7 +6,15 @@ repository = "https://github.com/stub42/pytz.git"
 ref = "release_2026.3.post1"
 release_version = "2026.3.post1"
 release_date = "2026-07-25T15:12:05.782880Z"
-install = [["-m", "pip", "install", "pytz=={release_version}", "pytest"]]
-test = ["-m", "pytest", "src/pytz/tests"]
+install = [
+  ["-m", "pip", "install", "pytz=={release_version}"],
+]
+test_cwd = "src/pytz/tests"
+test = ["-W", "error", "-m", "unittest", "test_lazy", "test_tzinfo.test_suite", "test_docs.test_suite"]
 timeout_seconds = 900
-note = "Runs the pinned release wheel against the upstream GitHub test suite because the checkout omits generated timezone data."
+note = "Runs the upstream unittest entry points, including timezone and README doctests, against the matching release wheel. Working in the tests directory avoids importing the unbuilt src/pytz package. Timezone-data generation and the external zdump comparison are separate build checks."
+guidance = [
+  "https://github.com/stub42/pytz/blob/661bca921e29dc3eedd4430bac70816c9154c05e/Makefile",
+  "https://github.com/stub42/pytz/blob/661bca921e29dc3eedd4430bac70816c9154c05e/src/pytz/tests/test_tzinfo.py",
+  "https://github.com/stub42/pytz/blob/661bca921e29dc3eedd4430bac70816c9154c05e/src/pytz/tests/test_docs.py",
+]

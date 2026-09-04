@@ -9,9 +9,11 @@ release_date = "2026-01-07T13:41:05.306692Z"
 install = [
   ["-m", "pip", "install", "--group", "test"],
   ["-m", "pip", "install", "-e", ".[format]"],
-  ["-m", "pip", "install", "pytest"],
 ]
 test = ["-m", "virtue", "jsonschema"]
 timeout_seconds = 2400
-environment = { JSON_SCHEMA_TEST_SUITE = "json", PYTHONUTF8 = "1" }
+environment = { "JSON_SCHEMA_TEST_SUITE" = "json", "PYTHONUTF8" = "1" }
 note = "Uses upstream's virtue test runner and UTF-8 mode, with enough time for the full generated suite on Windows."
+guidance = [
+  "https://github.com/python-jsonschema/jsonschema/blob/a7277432b0f7bcd0551f6e589d30457017125df4/noxfile.py",
+]

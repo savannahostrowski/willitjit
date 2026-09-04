@@ -6,10 +6,18 @@ repository = "https://github.com/apache/arrow.git"
 ref = "apache-arrow-25.0.1"
 release_version = "25.0.1"
 release_date = "2026-08-10T12:36:33.857237Z"
-install = [["-m", "pip", "install", "pyarrow==25.0.1", "pytest", "hypothesis", "cffi", "pytz", "tzdata", "pandas"]]
+install = [
+  ["-m", "pip", "install", "pyarrow=={release_version}"],
+  ["-m", "pip", "install", "-r", "python/requirements-wheel-test.txt"],
+  ["-c", "import pyarrow; pyarrow.create_library_symlinks()"],
+]
 test = ["-m", "pytest", "--pyargs", "pyarrow.tests", "-p", "no:xdist"]
 test_cwd = "cpp"
 timeout_seconds = 3600
-environment = { ARROW_TEST_DATA = "../testing/data", PARQUET_TEST_DATA = "submodules/parquet-testing/data" }
-note = "Runs the release wheel's bundled upstream suite with Arrow's pinned test-data submodules, from outside the source package so the checkout cannot shadow pyarrow."
+environment = { "ARROW_TEST_DATA" = "../testing/data", "PARQUET_TEST_DATA" = "submodules/parquet-testing/data" }
+note = "Upstream wheel-test requirements and library symlink preparation. Tests run outside the Python source tree with the release-pinned Arrow/Parquet fixture submodules."
 recursive_submodules = true
+guidance = [
+  "https://github.com/apache/arrow/blob/beccec0d0c451b7aa3e4530416ac431b3c035c69/ci/scripts/python_wheel_unix_test.sh",
+  "https://github.com/apache/arrow/blob/beccec0d0c451b7aa3e4530416ac431b3c035c69/python/requirements-wheel-test.txt",
+]

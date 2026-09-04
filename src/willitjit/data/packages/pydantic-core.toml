@@ -12,3 +12,7 @@ test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 test_cwd = "pydantic-core"
 timeout_seconds = 1800
 note = "Uses the release's frozen workspace so the parent Pydantic and core test dependencies match pydantic-core."
+guidance = [
+  "https://github.com/pydantic/pydantic/blob/5922459fcf33d9a8767fd0fd25a982bbf0d7668d/pydantic-core/Makefile",
+  "https://github.com/pydantic/pydantic/blob/5922459fcf33d9a8767fd0fd25a982bbf0d7668d/pydantic-core/pyproject.toml",
+]

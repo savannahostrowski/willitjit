@@ -8,9 +8,13 @@ release_version = "1.8.0"
 release_date = "2025-10-06T05:35:23.699793Z"
 install = [
   ["-m", "pip", "install", "-r", "requirements/test.txt"],
-  ["-m", "pip", "install", "-e", "."],
+  ["-m", "pip", "install", "-e", ".", "--config-settings=pure-python=true"],
 ]
 test = ["-m", "pytest", "tests", "-p", "no:xdist"]
 timeout_seconds = 1200
-environment = { FROZENLIST_NO_EXTENSIONS = "1" }
-note = "Uses the upstream pure-Python lane so the JIT exercises Python code."
+environment = { "FROZENLIST_NO_EXTENSIONS" = "1" }
+note = "Upstream pure-Python build config plus runtime no-extensions flag and tests; compiled-extension lanes are separate."
+guidance = [
+  "https://github.com/aio-libs/frozenlist/blob/48324affeecc2fff8f84f38368f720426c0354cf/pyproject.toml",
+  "https://github.com/aio-libs/frozenlist/blob/48324affeecc2fff8f84f38368f720426c0354cf/.github/workflows/ci-cd.yml",
+]

@@ -12,3 +12,7 @@ install = [
 ]
 test = ["-m", "pytest", "h11"]
 timeout_seconds = 600
+guidance = [
+  "https://github.com/python-hyper/h11/blob/1c5b07581f058886c8bdd87adababd7d959dc7ca/tox.ini",
+  "https://github.com/python-hyper/h11/blob/1c5b07581f058886c8bdd87adababd7d959dc7ca/test-requirements.txt",
+]
