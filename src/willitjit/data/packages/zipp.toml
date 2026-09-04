@@ -6,10 +6,14 @@ repository = "https://github.com/jaraco/zipp.git"
 ref = "v4.1.0"
 release_version = "4.1.0"
 release_date = "2026-05-18T20:08:57.045692Z"
-install = []
-test = []
+install = [["-m", "pip", "install", "-e", ".[test]"]]
+test = ["-m", "pytest", "--ignore=tests/test_complexity.py"]
+environment = { "PYTHONWARNDEFAULTENCODING" = "1" }
 timeout_seconds = 900
 guidance = [
   "https://github.com/jaraco/zipp/blob/29a7a55c6bac1a6f705b54135dbea82d03e997c3/pyproject.toml",
+  "https://github.com/jaraco/zipp/blob/29a7a55c6bac1a6f705b54135dbea82d03e997c3/tox.ini",
+  "https://github.com/jaraco/zipp/blob/29a7a55c6bac1a6f705b54135dbea82d03e997c3/pytest.ini",
+  "https://github.com/jaraco/zipp/blob/29a7a55c6bac1a6f705b54135dbea82d03e997c3/tests/test_complexity.py",
 ]
-skip_reason = "The Actions CPython build omits test.support, which this upstream suite requires."
+note = "Uses upstream tox's editable test extra and encoding-warning setting, preserving pytest doctests outside the excluded tests/test_complexity.py benchmark module. Performance, style, typing and coverage are outside scope. Requires stdlib test.support."

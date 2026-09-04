@@ -6,10 +6,13 @@ repository = "https://github.com/python/importlib_metadata.git"
 ref = "v9.0.0"
 release_version = "9.0.0"
 release_date = "2026-03-20T06:42:55.665400Z"
-install = []
-test = []
+install = [["-m", "pip", "install", "-e", ".[test]"]]
+test = ["-m", "pytest", "-p", "no:perf"]
+environment = { "PYTHONWARNDEFAULTENCODING" = "1" }
 timeout_seconds = 1200
 guidance = [
   "https://github.com/python/importlib_metadata/blob/a9f883fef337c667a81a987bc0cbc0dbb43b2bfe/pyproject.toml",
+  "https://github.com/python/importlib_metadata/blob/a9f883fef337c667a81a987bc0cbc0dbb43b2bfe/tox.ini",
+  "https://github.com/python/importlib_metadata/blob/a9f883fef337c667a81a987bc0cbc0dbb43b2bfe/pytest.ini",
 ]
-skip_reason = "The Actions CPython build omits test.support, which this upstream suite requires."
+note = "Uses upstream tox's editable test extra and encoding-warning setting, preserving pytest doctests. Disables pytest-perf benchmarks; style, typing and coverage are outside scope. Requires stdlib test.support."

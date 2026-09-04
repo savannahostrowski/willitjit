@@ -216,7 +216,7 @@ class PlanTests(unittest.TestCase):
                     "--package",
                     "google-auth",
                     "--package",
-                    "importlib-metadata",
+                    "protobuf",
                     "--package",
                     "referencing",
                     "--package",
@@ -234,7 +234,7 @@ class PlanTests(unittest.TestCase):
             "fixture: https://github.com/python-pillow/test-images.git@", rendered
         )
         self.assertIn("setup (.): uv sync --frozen", rendered)
-        self.assertIn("not tested: The Actions CPython build omits", rendered)
+        self.assertIn("Bazel-selected interpreters", rendered)
         self.assertIn("test twice (.): python -m pytest tests", rendered)
         self.assertIn("timeout:", rendered)
         self.assertIn("release:", rendered)

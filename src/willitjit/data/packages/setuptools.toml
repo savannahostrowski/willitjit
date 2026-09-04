@@ -6,10 +6,13 @@ repository = "https://github.com/pypa/setuptools.git"
 ref = "v84.0.0"
 release_version = "84.0.0"
 release_date = "2026-08-08T18:27:56.719708Z"
-install = []
-test = []
+install = [["-m", "pip", "install", "-e", ".[test,core]"]]
+test = ["-m", "pytest", "-p", "no:perf", "-p", "no:xdist"]
+environment = { "PYTHONWARNDEFAULTENCODING" = "1", "SETUPTOOLS_ENFORCE_DEPRECATION" = "0" }
 timeout_seconds = 2400
 guidance = [
   "https://github.com/pypa/setuptools/blob/72e919a8b10aaafc041205d4e3ae0e6a2e1e5f87/pyproject.toml",
+  "https://github.com/pypa/setuptools/blob/72e919a8b10aaafc041205d4e3ae0e6a2e1e5f87/tox.ini",
+  "https://github.com/pypa/setuptools/blob/72e919a8b10aaafc041205d4e3ae0e6a2e1e5f87/pytest.ini",
 ]
-skip_reason = "The Actions CPython build omits test.support, which this upstream suite requires."
+note = "Uses upstream tox's editable test/core extras and environment defaults, preserving pytest doctests and warning rules. Runs serially without pytest-perf benchmarks; style, typing, coverage and the separate integration lane are outside scope. Requires stdlib test.support."

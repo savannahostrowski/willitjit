@@ -50,6 +50,3 @@ Some upstream jobs need credentials, services, mutable Git dependencies or a
 custom interpreter-owning harness. Until a safe, documented lane is established,
 mark them Not tested. A documented recipe can still fail on our interpreter;
 keep that failure as evidence and validate changes in targeted hosted jobs.
-
-The dated [top-100 source audit](../../../../docs/adapter-audit.md) records the
-review behind these recipes. It is not evidence of hosted test success.
