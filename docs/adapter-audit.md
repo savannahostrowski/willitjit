@@ -35,7 +35,14 @@ overrides and the review process.
   needs a documented service-free lane; its broad exclusions and unrestricted
   retries are removed. tqdm needs a reviewed immutable replacement for its
   upstream mutable-Git nbval dependency. These five adapters now do no setup or
-  test execution. Existing BeautifulSoup and missing-test.support skips remain.
+  test execution. BeautifulSoup remains untested because its source is not on GitHub.
+
+The subsequent interpreter setup fix verified `test.support` and both runtime
+toggles in all six hosted packaging jobs (run `33895535997`). Setuptools,
+importlib-metadata and zipp now have restored upstream-based recipes, with
+benchmark exclusions documented in their adapters. Their own targeted hosted
+runs are still required; the historical missing-test.support findings below
+describe the original environment.
 
 Deliberate scope differences remain documented, not hidden: no coverage,
 performance or credentialed integration jobs; serial execution; named
