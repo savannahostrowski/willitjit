@@ -157,48 +157,46 @@ jobs:
           cache-suffix: shard-${{ matrix.shard }}
           save-cache: ${{ matrix.runtime == 'jit' }}
           prune-cache: true
-          cache-python: true
 
-      - name: Install JIT CPython from uv
-        if: matrix.runtime == 'jit' && matrix.platform != 'windows'
+      - name: Install full JIT CPython on Linux
+        if: matrix.runtime == 'jit' && matrix.platform == 'linux'
+        env:
+          # Use the full archive because these package tests need test.support.
+          # When upgrading Python, update the build release and archive checksum below.
+          PBS_RELEASE: "20260718"
+          PBS_SHA256: "9838744c02920aaa8e83947733462160d0b736cdf431db3d1b2d0599670e15ec"
         run: |
-          uv python install "$CPYTHON_VERSION"
-          python_path="$(uv python find --managed-python "$CPYTHON_VERSION")"
+          install_dir="$(mktemp -d "$RUNNER_TEMP/jit-python.XXXXXX")"
+          archive="$install_dir/python.tar.zst"
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://github.com/astral-sh/python-build-standalone/releases/download/$PBS_RELEASE/cpython-$CPYTHON_VERSION%2B$PBS_RELEASE-x86_64-unknown-linux-gnu-pgo%2Blto-full.tar.zst" \
+            --output "$archive"
+          printf '%s  %s\n' "$PBS_SHA256" "$archive" | sha256sum --check --strict
+          tar --zstd --extract --file "$archive" --directory "$install_dir" \
+            --strip-components=2 python/install
+          python_path="$install_dir/bin/python3"
           echo "TARGET_PYTHON=$python_path" >> "$GITHUB_ENV"
           "$python_path" --version
 
-      - name: Install official JIT CPython on Windows
-        if: matrix.runtime == 'jit' && matrix.platform == 'windows'
-        id: windows-python
+      - name: Install CPython with setup-python
+        if: matrix.runtime != 'jit' || matrix.platform != 'linux'
+        id: target-python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: ${{ env.CPYTHON_VERSION }}
-          architecture: x64
+          freethreaded: ${{ matrix.runtime == 'free-threaded' }}
 
-      - name: Select official JIT CPython on Windows
-        if: matrix.runtime == 'jit' && matrix.platform == 'windows'
-        shell: pwsh
+      - name: Select setup-python interpreter
+        if: matrix.runtime != 'jit' || matrix.platform != 'linux'
         env:
-          PYTHON_PATH: ${{ steps.windows-python.outputs.python-path }}
-        run: |
-          "TARGET_PYTHON=$env:PYTHON_PATH" >> $env:GITHUB_ENV
-          & $env:PYTHON_PATH --version
-
-      - name: Install free-threaded CPython
-        if: matrix.runtime == 'free-threaded'
-        id: free_threaded_python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: ${{ env.CPYTHON_VERSION }}
-          freethreaded: true
-
-      - name: Select free-threaded CPython
-        if: matrix.runtime == 'free-threaded'
-        env:
-          PYTHON_PATH: ${{ steps.free_threaded_python.outputs.python-path }}
+          PYTHON_PATH: ${{ steps.target-python.outputs.python-path }}
         run: |
           echo "TARGET_PYTHON=$PYTHON_PATH" >> "$GITHUB_ENV"
           "$PYTHON_PATH" -VV
+
+      - name: Verify standard-library test support
+        run: |
+          "$TARGET_PYTHON" -c 'import test.support; from test.support import import_helper, os_helper; print("test.support:", test.support.__file__)'
 
       - name: Preserve LF test fixtures on Windows
         if: matrix.platform == 'windows'
