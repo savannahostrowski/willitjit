@@ -1,8 +1,6 @@
 name: Update adapter releases
 
 on:
-  schedule:
-    - cron: "23 10 1 * *"
   workflow_dispatch:
 
 permissions:

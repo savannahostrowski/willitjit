@@ -1,11 +1,6 @@
 name: Deploy to FastAPI Cloud
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "api/**"
-      - "frontend/**"
   workflow_dispatch:
 
 permissions:

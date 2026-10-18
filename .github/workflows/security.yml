@@ -1,15 +1,6 @@
 name: GitHub Actions security
 
 on:
-  pull_request:
-    paths:
-      - ".github/**"
-      - ".pre-commit-config.yaml"
-  push:
-    branches: [main]
-    paths:
-      - ".github/**"
-      - ".pre-commit-config.yaml"
   workflow_dispatch:
 
 permissions:
